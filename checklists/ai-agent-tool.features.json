@@ -1,0 +1,203 @@
+{
+  "app_type": "ai-agent-tool",
+  "lens": "feature-surface",
+  "axis": "SCOPE",
+  "scope_note": "SCOPE-completeness spine for ai-agent-tool, mined via the feature-surface lens from the FEATURE surface of ['aider', 'gptme', 'oi']. Complements the robustness spine (cluster_fixes.py). Does NOT predict project-specific product direction \u2014 that is strategy, not completeness.",
+  "derived_from": [
+    "aider",
+    "gptme",
+    "oi"
+  ],
+  "required": [
+    {
+      "category": "Terminal chat interface",
+      "what": "Interactive CLI/chat loop for directing an LLM agent from the terminal.",
+      "projects": [
+        "aider",
+        "oi",
+        "gptme"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Install the product, run its CLI command, and confirm an interactive chat prompt accepts an LLM instruction from the terminal."
+    },
+    {
+      "category": "Codebase-aware editing",
+      "what": "Agent can inspect, reason about, and modify files in an existing project.",
+      "projects": [
+        "aider",
+        "gptme"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Open an existing project, ask the agent to inspect a file and make a small edit, then confirm the file was modified correctly."
+    },
+    {
+      "category": "Local code execution",
+      "what": "Agent can run code locally in languages such as Python, JavaScript, or shell.",
+      "projects": [
+        "oi",
+        "gptme"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Ask the agent to create and run a simple local script, such as Python or JavaScript, and confirm the execution output is shown."
+    },
+    {
+      "category": "Shell/system automation",
+      "what": "Agent can execute terminal commands and perform local environment tasks.",
+      "projects": [
+        "oi",
+        "gptme"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Ask the agent to run a basic shell command like `pwd` or `ls` and confirm it executes in the local environment."
+    },
+    {
+      "category": "Model/provider support",
+      "what": "Supports multiple LLM providers and model families with per-model settings.",
+      "projects": [
+        "aider",
+        "oi",
+        "gptme"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Open the model/provider configuration and confirm at least two providers or model families can be selected with model-specific settings."
+    },
+    {
+      "category": "Permissioned execution",
+      "what": "Supports explicit approval or elevated execution flows for sensitive commands.",
+      "projects": [
+        "aider",
+        "oi"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Ask the agent to run a sensitive command such as deleting a file and confirm it requires explicit approval or elevated permission."
+    }
+  ],
+  "optional": [
+    {
+      "category": "Repository mapping/indexing",
+      "what": "Builds structural context from source files to help the agent navigate large codebases.",
+      "projects": [
+        "aider"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Run the product on a multi-file repository and confirm it generates or displays a repo map, index, symbols list, or structural context."
+    },
+    {
+      "category": "Dynamic model discovery",
+      "what": "Can list or load available models from a provider at runtime.",
+      "projects": [
+        "gptme"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Use the product's model listing or provider refresh command and confirm it retrieves available models at runtime."
+    },
+    {
+      "category": "Config profiles",
+      "what": "Allows users to load alternate configuration files or profiles.",
+      "projects": [
+        "oi"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Start the product with an alternate config file or profile flag and confirm the alternate settings are applied."
+    },
+    {
+      "category": "Token and cost reporting",
+      "what": "Shows token usage and estimated prompt/model costs.",
+      "projects": [
+        "oi"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Run a short agent session and confirm token usage and estimated cost are displayed in the UI, logs, or session summary."
+    },
+    {
+      "category": "Safety scanning",
+      "what": "Can scan generated or executed code for risky patterns before running it.",
+      "projects": [
+        "oi"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Ask the agent to generate or run code with an obvious risky pattern and confirm the product warns, blocks, or scans it before execution."
+    },
+    {
+      "category": "Web UI/server mode",
+      "what": "Provides or serves a browser-based interface in addition to the CLI.",
+      "projects": [
+        "gptme"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Start the product's server or web mode and confirm a browser-based chat or agent interface loads successfully."
+    },
+    {
+      "category": "Cloud/auth onboarding",
+      "what": "Includes first-use authentication, device flow, or cloud-provider onboarding.",
+      "projects": [
+        "gptme"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Perform first-time setup and confirm the product guides the user through login, device authorization, API key setup, or cloud onboarding."
+    },
+    {
+      "category": "Browser/computer control",
+      "what": "Agent can interact with browser or desktop-style environments beyond text commands.",
+      "projects": [
+        "gptme"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Ask the agent to open or control a browser or desktop-like environment and confirm it can click, navigate, or observe non-terminal UI state."
+    },
+    {
+      "category": "Hooks/events",
+      "what": "Emits or consumes lifecycle hooks around agent turns and tool activity.",
+      "projects": [
+        "gptme"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Configure a hook or event listener for an agent turn or tool call and confirm it fires during a session."
+    },
+    {
+      "category": "Skills/lessons",
+      "what": "Loads reusable task instructions, skills, or lessons to guide agent behavior.",
+      "projects": [
+        "gptme"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Add or enable a reusable skill, lesson, or instruction file and confirm the agent applies it in a subsequent task."
+    },
+    {
+      "category": "Issue/bot automation",
+      "what": "Can respond to repository issues, comments, labels, or workflow triggers.",
+      "projects": [
+        "gptme"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Connect the product to a test repository issue or workflow trigger and confirm it posts a response, reacts to a label, or runs automation."
+    },
+    {
+      "category": "Installer/onboarding",
+      "what": "Provides a one-line installer or guided setup path for new users.",
+      "projects": [
+        "gptme"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Follow the documented one-line installer or guided setup flow on a clean machine and confirm the product launches successfully afterward."
+    }
+  ]
+}

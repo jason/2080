@@ -1,6 +1,45 @@
 # 2080 — Handoff
 
-_Last updated: 2026-05-29_
+_Last updated: 2026-05-29 (session 2)_
+
+## ⏩ Session-2 update: completeness is THREE layers (the backtest ran)
+
+The decisive backtest finally ran (dexto/Saiki, uncontaminated, blind: early demo → 146 later
+feat/fix as answer key). It reframed everything.
+
+- **The adaptive engine scored recall 0.42** → gate blocked → claim "falsified" *for that target*.
+  But classifying the 146-item answer key showed **why**: 46% robustness / 34% new product features /
+  21% churn. The engine recalled ~all of the robustness and ~none of the features — it was scored
+  against a target it wasn't built for. **0.42 was a target mismatch, not a ceiling.**
+- **The second-85% decomposes into three layers, each with its own predictor:**
+  1. **Robustness** (hard-20% of what you built) → intent-derivation (`completeness.flow.js`) +
+     recurring-fix mine (`cluster_fixes.py`). *Predictable.*
+  2. **Generic scope** (features a full product of category X converges on) → **feature-surface mine**
+     (`feature_mine.py`): *find* the feature set from mature neighbors. A feature spine mined from
+     aider/OI/gptme recalled ~10 of the feature clusters (multi-provider, WebUI, plugins, auth,
+     cost, install, GitHub) the robustness engine missed entirely. *Predictable by "go find it".*
+  3. **Project-specific direction** (multimodal, subagents/A2A, vertical agents) → **not predictable,
+     deliberately out of scope.** That's product strategy, not completeness; a completeness tool
+     should name it as out of scope, not pretend to predict it.
+- **Mining is now lens-parameterized** (`mine_common.py` substrate). An axis = a lens
+  (recurring-fix → robustness; feature-surface → scope). New dimensions (integration / threat /
+  operability surface) are a new `LENS` entry, not new plumbing. (Earned design call: the user
+  predicted future dimensions; the lens registry is the seam for them.)
+- **Dogfood loop closed.** `find_neighbors` classified 2080 as `ai-codebase-gap-analysis`; mining 5
+  neighbors (kodus-ai, CodeGPT, sourcery, semgrep, sonarqube) gave a 14-capability scope spine;
+  `check.py` against it flagged 3 real gaps (custom-rules, quality-gates, reporting) — which building
+  `check.py` itself then **closed** (it IS the gate + reporting, and `--spine` IS custom rules).
+  Re-running the gate now shows only 3 remaining (provider-selection, BYOK cost, CI/CD).
+- **`check.py` keystone.** `2080 check <target> --spine <checklist>` = the product gate: runs
+  `diff_target`'s assessment, blocks (exit 3) on applicable required gaps, human + `--json` report,
+  CI-ready via exit code. **CI-ready ≠ has CI** — no workflow ships yet.
+- **`diff_target` N/A broadened**: cross-MECHANISM categories (line-review, static scanning,
+  multi-language, supply-chain on a prior-art/LLM tool) now mark `na_by_design`, so the gate doesn't
+  fire on capabilities that are a different engine's job.
+
+Below is the session-1 framing (still accurate; the above refines "what completeness means").
+
+---
 
 ## What 2080 is (evolved well beyond the original thesis)
 
@@ -81,9 +120,16 @@ Other next steps: adversarial-verify pass for `diff_target` (catch prose-level o
 (commit-count should override youth).
 
 ## Files
+- `mine_common.py` — shared mine substrate (fan call + JSON extraction); the "mine family" base
 - `find_neighbors.py` — metatool: intent → justified neighbors (measured maturity)
-- `cluster_fixes.py` — LLM-abstract + embed + DBSCAN + tiered checklist emit (`--sweep`, `--emit-checklist`)
-- `diff_target.py` — target coverage diff (sub-type N/A, citation check)
-- `completeness.flow.js` — adaptive intent-derivation engine (run on rally-flow)
-- `checklists/ai-agent-tool.json` — the one validated app-type corpus (15 required + 20 optional)
+- `cluster_fixes.py` — **recurring-fix lens** → robustness spine (LLM-abstract + embed + DBSCAN + tiered emit)
+- `feature_mine.py` — **feature-surface lens** → scope spine (README + `feat:` → convergent capability spine; `--lens` is the extension seam)
+- `diff_target.py` — target coverage diff; importable `assess_target()`; N/A now covers cross-mechanism
+- `check.py` — **keystone gate**: `2080 check <target> --spine <checklist>` → blocks (exit 3) on required gaps; CI-ready
+- `completeness.flow.js` — adaptive intent-derivation engine (run on rally-flow, `--harness fan`)
+- `checklists/ai-agent-tool.json` — robustness spine (recurring-fix lens; 15 required + 20 optional)
+- `checklists/ai-agent-tool.features.json` — scope spine for ai-agent-tool (feature lens; aider/OI/gptme)
+- `checklists/ai-codebase-gap-analysis.features.json` — **2080's OWN scope spine** (5 neighbors; the dogfood)
 - `gap_enum.md` / `gap_review.md` — the logout thesis test (the origin insight)
+
+Backtest details and scratch args live in `/tmp` clones (regenerable); `.backtest-*-args.json` are gitignored.

@@ -13,10 +13,19 @@ stops being discovered by crashing into walls one at a time over months.
 Start with [`docs/THESIS.md`](docs/THESIS.md). Current state and next step:
 [`docs/HANDOFF.md`](docs/HANDOFF.md).
 
-Status: **two working engines, validated in part.** 2080 attacks the second-85% from
-two sides: (1) **prior-art transfer** — mine what similar mature repos already had to add
-(`find_neighbors.py` → harvest → `cluster_fixes.py` → `checklists/` → `diff_target.py`);
-and (2) **adaptive intent-derivation** (`completeness.flow.js`) for the project-specific
-residual. The prior-art half is validated (~40% of engineering-debt predicted on a blind
-backtest); the adaptive half is built with a self-falsifying answer-key gate, recall not yet
-measured. See [`docs/HANDOFF.md`](docs/HANDOFF.md) for the full arc and findings.
+Status: **working pipeline, dogfooded on itself.** A blind backtest (dexto) showed the
+second-85% is **three layers**, each with its own predictor:
+
+1. **Robustness** — the hidden hard-20% of what you built (error handling, NFRs). Predicted by
+   intent-derivation (`completeness.flow.js`) + the recurring-fix mine (`cluster_fixes.py`).
+2. **Generic scope** — features a full product of category X converges on. Predicted by the
+   **feature-surface mine** (`feature_mine.py`) — *find* the feature set from mature neighbors,
+   don't imagine it.
+3. **Project-specific direction** — the team's actual product bets. *Not predictable, and
+   deliberately out of scope* (that's strategy, not completeness).
+
+Mining is **lens-parameterized** (`mine_common.py`): each axis is a lens (recurring-fix → robustness,
+feature-surface → scope; future: integration/threat/operability). `check.py` is the keystone gate —
+`2080 check <target> --spine <checklist>` runs the diff, blocks (exit 3) on applicable required gaps,
+and is CI-ready. 2080 was run against its own feature spine and closed 3 of the gaps it found.
+See [`docs/HANDOFF.md`](docs/HANDOFF.md) for the full arc and findings.

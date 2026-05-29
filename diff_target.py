@@ -8,28 +8,10 @@ target's actual README + file tree + source. Output: the target's second-85% gap
 
 Usage: diff_target.py <target-repo> <checklist.json> [--json]
 """
-import argparse, json, re, subprocess, sys
+import argparse, json, subprocess, sys
 from pathlib import Path
 
-
-def fan_call(prompt, max_tokens=3000, model="gpt-5.5", provider="openai-codex", reasoning="low"):
-    cfg = {"calls": [{"id": "0", "provider": provider, "model": model, "reasoning": reasoning,
-                      "prompt": prompt, "maxTokens": max_tokens, "timeoutMs": 180000}]}
-    r = subprocess.run(["fan"], input=json.dumps(cfg), capture_output=True, text=True, timeout=300)
-    if not r.stdout:
-        sys.exit(f"fan failed: {r.stderr[:300]}")
-    res = json.loads(r.stdout)["results"][0]
-    if not res.get("ok"):
-        sys.exit(f"fan error: {res.get('error')}")
-    return res["text"]
-
-
-def extract_json(t):
-    try:
-        return json.loads(t)
-    except Exception:
-        m = re.search(r"[\{\[][\s\S]*[\}\]]", t)
-        return json.loads(m.group(0)) if m else None
+from mine_common import fan_call, extract_json  # shared mine substrate (kills duplicated fan-call)
 
 
 def gather_evidence(repo):
@@ -51,6 +33,50 @@ def gather_evidence(repo):
     return {"readme": readme, "files": files, "source_excerpt": src[:15000]}
 
 
+def assess_target(target, cl):
+    """Assess a target repo against a checklist dict. Importable core (used by check.py).
+    Returns {"sub_type", "app_type", "categories":[{...,"status","reasoning","citation_unverified"}]}."""
+    cats = [{**c, "tier": "required"} for c in cl.get("required", [])] + \
+           [{**c, "tier": "optional"} for c in cl.get("optional", [])]
+    ev = gather_evidence(target)
+
+    cat_listing = "\n".join(
+        f"{i+1}. [{c['tier']}] {c['category']} — day-1 tell: {c.get('day1_tell', '(none)')}"
+        for i, c in enumerate(cats))
+
+    fileset = set(ev["files"])
+    out = extract_json(fan_call(
+        f"TARGET repo '{target}' (claimed app_type {cl.get('app_type')}). Evidence:\n"
+        f"README:\n{ev['readme']}\n\n"
+        f"FILES — these are the ONLY files that exist; never cite a file outside this list:\n{json.dumps(ev['files'])}\n\n"
+        f"SOURCE:\n{ev['source_excerpt']}\n\n"
+        f"CHECKLIST — categories mature {cl.get('app_type')} repos had to add, each with a day-1 check:\n{cat_listing}\n\n"
+        "STEP 1: in one short phrase, identify the TARGET's actual sub_type from the evidence.\n"
+        "STEP 2: assess EACH category using ONLY the evidence: status = covered | partial | gap | na_by_design. "
+        "Mark na_by_design when the category does not apply to THIS target, for either reason:\n"
+        "  (a) STRUCTURALLY inapplicable to the sub_type — e.g. multi-agent coordination (handoffs, leadership "
+        "leases, peer presence, stale-base) does not apply to a single-process analysis/CLI tool;\n"
+        "  (b) DIFFERENT PRODUCT MECHANISM — a capability that belongs to a different kind of engine than the "
+        "target's. E.g. for a prior-art / LLM-based completeness tool, line-level code-review suggestions, "
+        "static-analysis/AST scanning, multi-language parsers, and dependency/supply-chain scanners are a "
+        "DIFFERENT mechanism (a SAST/linter engine), not this tool's job — mark those na_by_design, not gap.\n"
+        "For each: reasoning (1 sentence) and cited_files (files FROM THE LIST you based it on; [] if none; do NOT "
+        "invent filenames). Return ONLY JSON: "
+        '{"sub_type":"...","assessments":[{"n":<num>,"status":"...","reasoning":"...","cited_files":[...]}]}',
+        max_tokens=max(3500, len(cats) * 110)))
+    if not out:
+        return None
+
+    by_n = {a_["n"]: a_ for a_ in out.get("assessments", [])}
+    for i, c in enumerate(cats):
+        asmt = by_n.get(i + 1, {})
+        c["status"] = asmt.get("status", "unknown")
+        c["reasoning"] = asmt.get("reasoning", "")
+        bad = [f for f in (asmt.get("cited_files") or []) if f not in fileset]  # deterministic anti-hallucination
+        c["citation_unverified"] = bool(bad)
+    return {"sub_type": out.get("sub_type", "?"), "app_type": cl.get("app_type"), "categories": cats}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("target")
@@ -59,40 +85,11 @@ def main():
     a = ap.parse_args()
 
     cl = json.loads(Path(a.checklist).read_text())
-    cats = [{**c, "tier": "required"} for c in cl.get("required", [])] + \
-           [{**c, "tier": "optional"} for c in cl.get("optional", [])]
-    ev = gather_evidence(a.target)
-
-    cat_listing = "\n".join(
-        f"{i+1}. [{c['tier']}] {c['category']} — day-1 tell: {c.get('day1_tell', '(none)')}"
-        for i, c in enumerate(cats))
-
-    fileset = set(ev["files"])
-    out = extract_json(fan_call(
-        f"TARGET repo '{a.target}' (claimed app_type {cl.get('app_type')}). Evidence:\n"
-        f"README:\n{ev['readme']}\n\n"
-        f"FILES — these are the ONLY files that exist; never cite a file outside this list:\n{json.dumps(ev['files'])}\n\n"
-        f"SOURCE:\n{ev['source_excerpt']}\n\n"
-        f"CHECKLIST — categories mature {cl.get('app_type')} repos had to add, each with a day-1 check:\n{cat_listing}\n\n"
-        "STEP 1: in one short phrase, identify the TARGET's actual sub_type from the evidence.\n"
-        "STEP 2: assess EACH category using ONLY the evidence: status = covered | partial | gap | na_by_design. "
-        "Mark na_by_design ONLY when the category is STRUCTURALLY inapplicable to that sub_type — e.g. multi-agent "
-        "coordination categories (handoffs, leadership leases, peer presence, stale-base) do NOT apply to a "
-        "single-process analysis/CLI tool. For each: reasoning (1 sentence) and cited_files (files FROM THE LIST you "
-        "based it on; [] if none; do NOT invent filenames). Return ONLY JSON: "
-        '{"sub_type":"...","assessments":[{"n":<num>,"status":"...","reasoning":"...","cited_files":[...]}]}',
-        max_tokens=max(3500, len(cats) * 110)))
-    if not out:
+    result = assess_target(a.target, cl)
+    if not result:
         sys.exit("could not parse assessment")
-
-    sub_type = out.get("sub_type", "?")
-    by_n = {a_["n"]: a_ for a_ in out.get("assessments", [])}
-    for i, c in enumerate(cats):
-        asmt = by_n.get(i + 1, {})
-        c["status"] = asmt.get("status", "unknown")
-        c["reasoning"] = asmt.get("reasoning", "")
-        bad = [f for f in (asmt.get("cited_files") or []) if f not in fileset]  # deterministic anti-hallucination
-        c["citation_unverified"] = bool(bad)
+    sub_type = result["sub_type"]
+    cats = result["categories"]
 
     if a.json:
         print(json.dumps({"target": a.target, "app_type": cl.get("app_type"), "categories": cats}, indent=2)); return
@@ -114,4 +111,5 @@ def main():
         print(f"  {icon.get(c['status'],'?')} {c['category']}")
 
 
-main()
+if __name__ == "__main__":
+    main()
