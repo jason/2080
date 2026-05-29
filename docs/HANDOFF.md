@@ -1,40 +1,89 @@
 # 2080 — Handoff
 
-_Last updated: 2026-05-28_
+_Last updated: 2026-05-29_
 
-## Where this came from
+## What 2080 is (evolved well beyond the original thesis)
 
-Spun out of an Agent Rally Point (`~/projects/agent-rally-point`) session. That
-work built a coordination layer (predictive contract claims, handoff receipts, a
-CI gate). The conclusion that created 2080: **coordination is a cost-reducer, not
-a quality-improver** — it prevents agents colliding but does nothing about the
-real bottleneck of agentic development, which is the second-85% / last-20%
-completion problem. That problem is a *different product*. This is it.
+2080 surfaces the **second-85%** — the hidden, required-but-absent work a demo hides — on day 1.
+It attacks the problem from **two complementary directions**, plus a completion gate.
 
-## Current state
+**Origin insight** (`gap_enum.md` + `gap_review.md` — the logout-button thesis test): a competent
+first-pass gap list *itself has an invisible 20%*. Codex enumerated ~21 client-side gaps; the
+review added ~13 deeper server-side/SSO/teardown/operability ones a demo never surfaces. The core
+challenge 2080 must solve: **make the deep-half enumeration systematic, not dependent on a sharp
+reviewer noticing SSO is absent.** Both engines below are attempts at exactly that.
 
-- **Thesis captured** (`docs/THESIS.md`). No code yet — deliberately.
-- This is the stage where the rule is: **prove the thesis before building the
-  engine.** Don't build a gap-engine on faith.
+## The two engines
 
-## Next step (the one that matters)
+### 1. Prior-art transfer (Python pipeline — VALIDATED this session)
+*What did similar mature repos already have to add?* Mine their history, cluster, diff your repo.
 
-Run the thesis test on **one real feature**:
+`find_neighbors.py` (metatool: intent → discover+justify similar mature repos via gh REST API +
+gpt-5.5; maturity **measured** from commit-count/age) → harvest (`harvest-gather-*.py` / rally-flow
+flows) → `cluster_fixes.py` (LLM-abstract each commit→category-phrase via `fan`/gpt-5.5-low →
+embed all-MiniLM cached → DBSCAN eps=0.34/cosine → tiered categories; `substantive` flag drops slop)
+→ `checklists/<app-type>.json` (required=recurring / optional=project-specific, with day-1 tells) →
+`diff_target.py` (assess a target's coverage; sub-type-aware N/A; deterministic citation check).
 
-1. Pick a concrete feature in a real repo.
-2. On day 1, produce its "second-85% map" by hand or with a throwaway script:
-   enumerate the invisible-20% surface (failure modes, edges, integration
-   contracts, non-functional reqs) and the gap vs. what's built.
-3. Build the feature *with* the map visible, and observe: does the map collapse
-   the timeline vs. discovering the same work by hitting walls?
+### 2. Adaptive intent-derivation (`completeness.flow.js` — rally-flow consumer, self-falsifying)
+*What does this intent imply?* For the project-specific residual prior-art can't reach.
+Phases: Orient → Derive (3 parallel: corpus-priors / intent / integration-ops) → Search (eval
+dimensions vs the day-1 artifact, batched + looped) → **Refute** (loop-until-dry: "what dimension is
+unexamined?") → **Score** (recall vs a harvest answer key) → **Gate** (refuses "done" unless coverage
+holds; *with an answer key, requires recall ≥ 0.6 or it declares the adaptive-search claim
+falsified*). Cross-harness via rally-flow.
 
-If yes → design the engine. If no → the thesis is wrong; we learned it for one
-feature, not three months.
+## Key findings (hard-won)
 
-## Decisions on record
+- **Categories are app-type-relative; there is no universal checklist.** v1 = `ai-agent-tool`,
+  validated cross-author + cross-language (rally/Rust, build-loop/TS, voltagent/TS [diff author],
+  symphony/Elixir [OpenAI]). pirates (3d-game) fully disjoint; sweep (generic CLI) shared only the
+  generic layer. The **metatool generalizes per-domain** by building the neighbor set on demand.
+- **Recurrence ≈ 50% commit-weighted (measured, tuned)** — but that's **endpoint-convergence**
+  (how much mature tools' category sets overlap), NOT forward prediction. The forward number is the
+  **backtest: prior-art-diff predicts ~40% of engineering-debt** (the recurring infra-boundary
+  skeleton: telemetry, persistence, run-identity, retry, input-validation, secret-guard,
+  workspace-safety) and is **blind to product-direction + project-specific churn**.
+- **Prior-art-diff is a recurring-infra-boundary detector, not a roadmap oracle.** It surfaces the
+  predictable skeleton (~20% of all later work) on day 1; the rest needs engine #2 or is unpredictable.
+- **AI-authorship ≠ slop.** build-loop is 88% AI-co-authored and was the *richest* corpus.
+  Filtering by AI-trailer is counterproductive + low-recall (voltagent 0.6%). Slop is handled
+  structurally (recurrence) + a `substantive` flag in the abstraction pass.
+- **Naive ML failed; the hybrid works.** Embedding raw commits clusters by *project vocabulary*
+  (~88% noise). LLM-abstraction (commit→category-phrase) THEN embed+cluster gives real categories.
+- **Measured > guessed** everywhere: maturity (gh commit-count/age), recurrence (cluster metric),
+  eps (sweep knee 0.34, catch-all-free). Earlier ~55-70% recurrence figures were catch-all-inflated.
+- **Prompt-injection posture:** real surface (external repo text → LLM prompts) but bounded to
+  analysis-integrity — no LLM→action, stateless calls, human-reviewed. Safe while analysis-only +
+  human-approves-neighbors. An unattended "neighbor watch" would erode that — not built, not planned.
 
-- **Name:** `2080` — "the last 20% is the hardest."
-- **Separate from Rally.** Rally may later be useful substrate (fact ledger,
-  session dispatch) but is not the value; 2080's value is the gap engine.
-- **Ship-first scope:** the *known* invisible-20% categories + coverage, not the
-  unknown-unknowns research problem.
+## Stack
+Python + `uv` inline deps; `sentence-transformers` + `scikit-learn` DBSCAN (reused from
+`~/projects/tools/corrections/cluster_embedding.py`); `gpt-5.5` low via `fan` (provider
+`openai-codex`, ~10 parallel calls/run, ~cents); `gh` REST API (not `gh search` — that returned junk).
+rally-flow (`~/projects/rally-flow`, separate product) hosts `completeness.flow.js` and the JS
+validation spikes (harvest/prior-art-diff/backtest/recurrence flows) — superseded by the Python
+pipeline for harvest/cluster/diff; keep as historical or archive.
+
+## Current state — working, dogfooded
+The prior-art pipeline runs end-to-end and was dogfooded on 2080 itself — it found a **real gap:
+no retry on transient `fan`/`gh` calls** (which we empirically hit this session). The adaptive
+engine is built with a self-falsifying answer-key gate but its recall has not yet been measured.
+
+## The decisive next test (the harness already exists)
+**Run `completeness.flow.js` with a real answer key** (a harvested repo's later feat/fix work);
+check recall ≥ 0.6. This is the validity test for the *adaptive* half — the experiment repeatedly
+called "unbuilt" is in fact built, with falsification baked in. High recall → 2080 reaches the
+project-specific residual; low recall → 2080 leans on the prior-art ~40% skeleton.
+
+Other next steps: adversarial-verify pass for `diff_target` (catch prose-level over-claims); fix
+2080's own retry gap; thicken the corpus with more other-author neighbors; tune maturity thresholds
+(commit-count should override youth).
+
+## Files
+- `find_neighbors.py` — metatool: intent → justified neighbors (measured maturity)
+- `cluster_fixes.py` — LLM-abstract + embed + DBSCAN + tiered checklist emit (`--sweep`, `--emit-checklist`)
+- `diff_target.py` — target coverage diff (sub-type N/A, citation check)
+- `completeness.flow.js` — adaptive intent-derivation engine (run on rally-flow)
+- `checklists/ai-agent-tool.json` — the one validated app-type corpus (15 required + 20 optional)
+- `gap_enum.md` / `gap_review.md` — the logout thesis test (the origin insight)

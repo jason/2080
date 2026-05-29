@@ -1,0 +1,415 @@
+{
+  "app_type": "ai-agent-tool",
+  "scope_note": "Derived ONLY from ai-agent-tool repos ['agent-rally-point', 'build-loop', 'symphony', 'voltagent']. Categories are app-type-relative \u2014 this checklist does NOT transfer to other app types.",
+  "derived_from": [
+    "agent-rally-point",
+    "build-loop",
+    "symphony",
+    "voltagent"
+  ],
+  "commit_weighted_recurrence_pct": 46.7,
+  "required": [
+    {
+      "category": "task state telemetry",
+      "aliases": "task state telemetry / cost usage telemetry / decision telemetry",
+      "tier": "required",
+      "projects": [
+        "build-loop",
+        "voltagent"
+      ],
+      "recurrence_projects": 2,
+      "size": 8,
+      "day1_tell": "Run one task end-to-end and verify logs/metrics include state transitions, cost usage, and the decision reason for each branch taken."
+    },
+    {
+      "category": "configuration preservation",
+      "aliases": "configuration preservation / strict setup enforcement / deployment policy enforcement",
+      "tier": "required",
+      "projects": [
+        "agent-rally-point",
+        "build-loop"
+      ],
+      "recurrence_projects": 2,
+      "size": 4,
+      "day1_tell": "Deploy with a missing required config value and confirm setup/deployment fails before startup with a clear policy error."
+    },
+    {
+      "category": "global state preservation",
+      "aliases": "global state preservation / state persistence / feedback state persistence",
+      "tier": "required",
+      "projects": [
+        "voltagent",
+        "symphony"
+      ],
+      "recurrence_projects": 2,
+      "size": 4,
+      "day1_tell": "Restart the service after updating global/feedback state and confirm the state is restored exactly from persistence."
+    },
+    {
+      "category": "input validation",
+      "aliases": "input validation / execution validation / message validation",
+      "tier": "required",
+      "projects": [
+        "build-loop",
+        "voltagent"
+      ],
+      "recurrence_projects": 2,
+      "size": 3,
+      "day1_tell": "Submit an invalid message containing a wrong type and unsafe payload and confirm validation rejects it before execution."
+    },
+    {
+      "category": "scaffolding option support",
+      "aliases": "scaffolding option support / setup scaffolding",
+      "tier": "required",
+      "projects": [
+        "build-loop",
+        "voltagent"
+      ],
+      "recurrence_projects": 2,
+      "size": 3,
+      "day1_tell": "Run the project scaffolder with each documented option and confirm the generated files reflect the selected options."
+    },
+    {
+      "category": "quality gate hooks",
+      "aliases": "quality gate hooks / quality gate wiring",
+      "tier": "required",
+      "projects": [
+        "agent-rally-point",
+        "build-loop"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Introduce a failing lint/test quality gate and confirm the configured hook blocks the commit/build."
+    },
+    {
+      "category": "data synchronization",
+      "aliases": "data synchronization / cache synchronization",
+      "tier": "required",
+      "projects": [
+        "agent-rally-point",
+        "build-loop"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Update source data, invalidate the cache, and confirm synchronized consumers observe the new value exactly once."
+    },
+    {
+      "category": "remote event support",
+      "aliases": "remote event support / event type support",
+      "tier": "required",
+      "projects": [
+        "agent-rally-point",
+        "voltagent"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Publish each supported remote event type and confirm the receiver routes and handles each type correctly."
+    },
+    {
+      "category": "diagnostic commands",
+      "aliases": "diagnostic commands / diagnostic logging",
+      "tier": "required",
+      "projects": [
+        "agent-rally-point",
+        "build-loop"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Run the diagnostic command after a forced error and confirm it prints relevant IDs, state, and log pointers."
+    },
+    {
+      "category": "workflow hardening",
+      "aliases": "workflow hardening / workflow lint hardening",
+      "tier": "required",
+      "projects": [
+        "agent-rally-point",
+        "symphony"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Commit a workflow file with a known unsafe pattern and confirm workflow linting fails with a hard error."
+    },
+    {
+      "category": "status display",
+      "aliases": "status display / status reporting",
+      "tier": "required",
+      "projects": [
+        "agent-rally-point",
+        "voltagent"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Run the status command during queued, running, failed, and completed work and confirm each state is reported accurately."
+    },
+    {
+      "category": "identifier normalization",
+      "aliases": "identifier normalization / identifier canonicalization",
+      "tier": "required",
+      "projects": [
+        "agent-rally-point",
+        "voltagent"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Submit equivalent identifiers with different case/separators and confirm they canonicalize to one stable ID."
+    },
+    {
+      "category": "license provenance",
+      "aliases": "license provenance",
+      "tier": "required",
+      "projects": [
+        "agent-rally-point",
+        "build-loop"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Build the artifact and confirm its license/provenance report lists every bundled dependency with license and source."
+    },
+    {
+      "category": "checkpoint read unification",
+      "aliases": "checkpoint read unification / checkpoint persistence",
+      "tier": "required",
+      "projects": [
+        "build-loop",
+        "voltagent"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Write a checkpoint through one path and read it through all supported checkpoint readers, confirming identical content."
+    },
+    {
+      "category": "retry transient failure",
+      "aliases": "retry transient failure / retry preservation",
+      "tier": "required",
+      "projects": [
+        "voltagent",
+        "symphony"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Inject a transient network failure and confirm the operation retries without losing the original request context."
+    }
+  ],
+  "optional": [
+    {
+      "category": "metadata preservation",
+      "aliases": "metadata preservation / message metadata persistence / failure metadata preservation",
+      "tier": "optional",
+      "projects": [
+        "voltagent"
+      ],
+      "recurrence_projects": 1,
+      "size": 7,
+      "day1_tell": "Force a message-processing failure with custom metadata attached and confirm the persisted failure record retains the original metadata unchanged."
+    },
+    {
+      "category": "coordination gating",
+      "aliases": "coordination gating / coordination isolation / coordination facts",
+      "tier": "optional",
+      "projects": [
+        "agent-rally-point"
+      ],
+      "recurrence_projects": 1,
+      "size": 4,
+      "day1_tell": "Start two coordinators against the same work item and confirm only the gated coordinator proceeds while the other records the blocking coordination fact."
+    },
+    {
+      "category": "schema compatibility support",
+      "aliases": "schema compatibility support / schema compatibility handling / schema compatibility",
+      "tier": "optional",
+      "projects": [
+        "voltagent"
+      ],
+      "recurrence_projects": 1,
+      "size": 3,
+      "day1_tell": "Load data written with the previous schema version and confirm the current code migrates or reads it without data loss."
+    },
+    {
+      "category": "stale-base gating",
+      "aliases": "stale-base gating / stale-base detection",
+      "tier": "optional",
+      "projects": [
+        "agent-rally-point"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Attempt to merge/apply changes from a stale base revision and confirm the system blocks it with a stale-base error."
+    },
+    {
+      "category": "query migration",
+      "aliases": "query migration / candidate query migration",
+      "tier": "optional",
+      "projects": [
+        "agent-rally-point"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Run the query migration tool on a legacy candidate query and confirm it produces the expected new query form with equivalent results."
+    },
+    {
+      "category": "handoff validation relaxation",
+      "aliases": "handoff validation relaxation / handoff payload validation",
+      "tier": "optional",
+      "projects": [
+        "build-loop"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Send a handoff payload with optional fields omitted and confirm relaxed validation accepts it while still rejecting malformed required fields."
+    },
+    {
+      "category": "leadership lease integration",
+      "aliases": "leadership lease integration / lease-based leadership",
+      "tier": "optional",
+      "projects": [
+        "build-loop"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Start two leaders with the same lease backend and confirm only the valid lease holder performs leadership actions."
+    },
+    {
+      "category": "path resolution",
+      "aliases": "path resolution / resolution routing",
+      "tier": "optional",
+      "projects": [
+        "build-loop"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Resolve relative, absolute, symlinked, and workspace-root paths and confirm each routes to the intended target safely."
+    },
+    {
+      "category": "deployment verification gate",
+      "aliases": "deployment verification gate / deployment verification",
+      "tier": "optional",
+      "projects": [
+        "build-loop"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Deploy a build that fails verification and confirm the deployment gate prevents promotion."
+    },
+    {
+      "category": "agent definition",
+      "aliases": "agent definition",
+      "tier": "optional",
+      "projects": [
+        "build-loop"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Load every agent definition and confirm required fields, tools, prompts, and permissions validate successfully."
+    },
+    {
+      "category": "configuration schema",
+      "aliases": "configuration schema",
+      "tier": "optional",
+      "projects": [
+        "build-loop"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Validate the default configuration against the published schema and confirm invalid extra or mistyped fields are rejected."
+    },
+    {
+      "category": "schema factory export",
+      "aliases": "schema factory export",
+      "tier": "optional",
+      "projects": [
+        "voltagent"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Import the package's schema factory from its public entrypoint and confirm it creates the expected schema object."
+    },
+    {
+      "category": "stream metadata forwarding",
+      "aliases": "stream metadata forwarding / metadata streaming",
+      "tier": "optional",
+      "projects": [
+        "voltagent"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Stream a response with metadata on each chunk and confirm downstream consumers receive the forwarded metadata intact."
+    },
+    {
+      "category": "stale data cleanup",
+      "aliases": "stale data cleanup / orphan data cleanup",
+      "tier": "optional",
+      "projects": [
+        "voltagent"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Create orphaned/stale records, run cleanup, and confirm only unreachable stale data is deleted."
+    },
+    {
+      "category": "stream lifecycle guarding",
+      "aliases": "stream lifecycle guarding / stream lock avoidance",
+      "tier": "optional",
+      "projects": [
+        "voltagent"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Open, close, cancel, and error a stream while holding locks and confirm lifecycle guards release locks in every path."
+    },
+    {
+      "category": "duplicate persistence prevention",
+      "aliases": "duplicate persistence prevention",
+      "tier": "optional",
+      "projects": [
+        "voltagent"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Replay the same persistence event twice and confirm only one durable record is created."
+    },
+    {
+      "category": "deduplication stabilization",
+      "aliases": "deduplication stabilization / upsert deduplication",
+      "tier": "optional",
+      "projects": [
+        "voltagent"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Upsert duplicate logical records in different orders and confirm the final stored record is stable and deduplicated."
+    },
+    {
+      "category": "tool routing preservation",
+      "aliases": "tool routing preservation / tool routing refactor",
+      "tier": "optional",
+      "projects": [
+        "voltagent"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Invoke each tool through the routing layer and confirm it reaches the same tool implementation as before the refactor."
+    },
+    {
+      "category": "execution context primitives",
+      "aliases": "execution context primitives / execution context exposure",
+      "tier": "optional",
+      "projects": [
+        "voltagent"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Run a task and confirm execution context exposes request ID, workspace, user, cancellation, and deadline primitives."
+    },
+    {
+      "category": "workspace context",
+      "aliases": "workspace context / workspace isolation",
+      "tier": "optional",
+      "projects": [
+        "voltagent"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Run two workspaces with similarly named files and confirm each operation reads/writes only within its own workspace."
+    }
+  ]
+}
