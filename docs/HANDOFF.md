@@ -51,19 +51,23 @@ targets OUTSIDE both spine pools (dexto/goose/cline — no leakage):
 - **NULL control:** judge the same items against an adjacent-domain spine. Default synthetic 3d-game;
   better = a *real mined* spine via `--null-spine` (tmux+zellij → `terminal-multiplexer.features.json`).
 
-**Result (strict 2-judge, n=3, tmux/zellij null):** robustness lift **0.23**, scope lift **0.44**.
-- null ≈ 0.04 (robustness) / 0.09 (scope) — non-zero for the right reason (multiplexers share generic
+**Result (strict 2-judge, n=3, tmux/zellij null, SUB-TYPE-MATCHED spines):**
+robustness lift **0.44**, scope lift **0.42** — symmetric.
+- null ≈ 0.01 (robustness) / 0.07 (scope) — non-zero for the right reason (multiplexers share generic
   plugins/config/session features) → the control is sensitive, not vacuous.
-- **Stable across nulls:** vs the 3d-game null, lift was 0.27 / 0.47 — moved only ~0.03–0.04.
-- **Strict + control ≈ halves the naive numbers** (lenient was 0.54 / 0.72): leniency inflated recall ~2×.
-- **Scope ≫ robustness, all three runs** — feature-surface mine is the stronger half; robustness is
-  partly hampered by its spine being mined from a DIFFERENT sub-type (coordination tools, not agent-CLIs).
-- ML lift is a weak conservative confirmer (~0.11 robustness; ~noise for scope) — the strict LLM judge
+- **Stable across nulls:** scope lift was 0.47 (3d-game) / 0.44 (tmux-zellij) — moved ~0.03.
+- **Strict + control ≈ halves the lenient numbers** (lenient was 0.54 / 0.72): leniency inflated ~2×.
+- **Spine sub-type match is LOAD-BEARING (measured).** With a robustness spine mined from coordination
+  tools (rally/build-loop/voltagent/symphony — wrong sub-type for agent-CLIs), robustness lift was only
+  **0.23**. Re-mining it from agent-CLI neighbors (aider/OI/gptme → `ai-agent-cli.robustness.json`)
+  **doubled it to 0.44**. So a mismatched spine roughly halves recall — the app-type-relativity thesis,
+  now empirical, not asserted. The two engines are then symmetric (~0.43 each).
+- ML lift is a weak conservative confirmer (~0.17 robustness; ~noise for scope) — the strict LLM judge
   is the primary instrument.
 
-Honest headline: **2080 surfaces a measured ~¼ of robustness and ~½ of scope of a project's second-85%
-on day 1** (strict, controlled, n=3). Open confound: re-mine a robustness spine from agent-CLI neighbors
-(same sub-type) — the change most likely to raise the robustness number.
+Honest headline: **2080 surfaces a measured ~40–45% of a project's second-85% on day 1** (both layers,
+strict, controlled, n=3) — *provided the spine matches the target's sub-type*. Next rigor steps if
+wanted: more targets + repeats for a variance bound; a same-sub-type scope spine sanity check.
 
 Below is the session-1 framing (still accurate; the above refines "what completeness means").
 
@@ -157,7 +161,8 @@ Other next steps: adversarial-verify pass for `diff_target` (catch prose-level o
 - `measure.py` — **controlled recall measurement**: ML + strict-fan judges, recall LIFT over a null spine (`--null-spine`)
 - `checklists/terminal-multiplexer.features.json` — the real adjacent-domain NULL control (tmux+zellij)
 - `completeness.flow.js` — adaptive intent-derivation engine (run on rally-flow, `--harness fan`)
-- `checklists/ai-agent-tool.json` — robustness spine (recurring-fix lens; 15 required + 20 optional)
+- `checklists/ai-agent-tool.json` — robustness spine, COORDINATION sub-type (rally/build-loop/voltagent/symphony)
+- `checklists/ai-agent-cli.robustness.json` — robustness spine, agent-CLI sub-type (aider/OI/gptme) — the matched one
 - `checklists/ai-agent-tool.features.json` — scope spine for ai-agent-tool (feature lens; aider/OI/gptme)
 - `checklists/ai-codebase-gap-analysis.features.json` — **2080's OWN scope spine** (5 neighbors; the dogfood)
 - `gap_enum.md` / `gap_review.md` — the logout thesis test (the origin insight)

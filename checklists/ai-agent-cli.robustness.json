@@ -1,0 +1,508 @@
+{
+  "app_type": "ai-agent-cli",
+  "scope_note": "Derived ONLY from ai-agent-cli repos ['aider', 'gptme', 'open-interpreter']. Categories are app-type-relative \u2014 this checklist does NOT transfer to other app types.",
+  "derived_from": [
+    "aider",
+    "gptme",
+    "open-interpreter"
+  ],
+  "commit_weighted_recurrence_pct": 77.3,
+  "required": [
+    {
+      "category": "error handling improvement",
+      "aliases": "error handling improvement / exception classification / error classification expansion",
+      "tier": "required",
+      "projects": [
+        "aider",
+        "open-interpreter"
+      ],
+      "recurrence_projects": 2,
+      "size": 12,
+      "day1_tell": "Trigger three distinct failures (bad input, missing file, upstream 500) and confirm each is classified into a specific documented error type rather than a generic exception."
+    },
+    {
+      "category": "command error reporting",
+      "aliases": "command error reporting / command bug fix / command parsing fix",
+      "tier": "required",
+      "projects": [
+        "aider",
+        "open-interpreter"
+      ],
+      "recurrence_projects": 2,
+      "size": 12,
+      "day1_tell": "Run the command with a malformed flag and confirm it reports the exact parsing error, exits nonzero, and does not crash."
+    },
+    {
+      "category": "prompt initialization fix",
+      "aliases": "prompt initialization fix / prompt behavior update / prompt display fix",
+      "tier": "required",
+      "projects": [
+        "aider",
+        "open-interpreter",
+        "gptme"
+      ],
+      "recurrence_projects": 3,
+      "size": 5,
+      "day1_tell": "Start a fresh session with no saved prompt config and confirm the prompt initializes once and renders the expected default text."
+    },
+    {
+      "category": "provider integration",
+      "aliases": "provider integration / provider configuration / provider configuration fix",
+      "tier": "required",
+      "projects": [
+        "aider",
+        "open-interpreter",
+        "gptme"
+      ],
+      "recurrence_projects": 3,
+      "size": 5,
+      "day1_tell": "Configure a known provider with valid credentials and confirm a smoke request uses that provider endpoint and succeeds."
+    },
+    {
+      "category": "usage metrics tracking",
+      "aliases": "usage metrics tracking / usage analytics events / usage event telemetry",
+      "tier": "required",
+      "projects": [
+        "aider",
+        "open-interpreter",
+        "gptme"
+      ],
+      "recurrence_projects": 3,
+      "size": 5,
+      "day1_tell": "Perform one tracked user action and confirm exactly one usage event with action name, timestamp, and project/session id is emitted."
+    },
+    {
+      "category": "resource import fix",
+      "aliases": "resource import fix / import path fix / module import fix",
+      "tier": "required",
+      "projects": [
+        "aider",
+        "open-interpreter"
+      ],
+      "recurrence_projects": 2,
+      "size": 5,
+      "day1_tell": "Import the affected module from a clean checkout using the documented package path and confirm no ImportError occurs."
+    },
+    {
+      "category": "configuration data loading",
+      "aliases": "configuration data loading / missing configuration handling / configuration loading fix",
+      "tier": "required",
+      "projects": [
+        "aider",
+        "open-interpreter"
+      ],
+      "recurrence_projects": 2,
+      "size": 5,
+      "day1_tell": "Start with the configuration file missing and confirm defaults load plus a clear warning is shown instead of a crash."
+    },
+    {
+      "category": "platform compatibility fix",
+      "aliases": "platform compatibility fix / test compatibility fix / platform test compatibility",
+      "tier": "required",
+      "projects": [
+        "aider",
+        "open-interpreter"
+      ],
+      "recurrence_projects": 2,
+      "size": 5,
+      "day1_tell": "Run the relevant test on Linux, macOS, and Windows or simulated path separators and confirm it passes without platform-specific assumptions."
+    },
+    {
+      "category": "type initialization fix",
+      "aliases": "type initialization fix / variable initialization fix / type handling fix",
+      "tier": "required",
+      "projects": [
+        "open-interpreter",
+        "gptme"
+      ],
+      "recurrence_projects": 2,
+      "size": 5,
+      "day1_tell": "Instantiate the type with minimal inputs and confirm all fields have valid initialized values before first use."
+    },
+    {
+      "category": "optional dependency handling",
+      "aliases": "optional dependency handling / dependency availability check / dependency guidance",
+      "tier": "required",
+      "projects": [
+        "aider",
+        "open-interpreter",
+        "gptme"
+      ],
+      "recurrence_projects": 3,
+      "size": 4,
+      "day1_tell": "Uninstall the optional dependency, run the feature entry point, and confirm it reports install guidance while core functionality still works."
+    },
+    {
+      "category": "animation state persistence",
+      "aliases": "animation state persistence / branch state persistence / input state persistence",
+      "tier": "required",
+      "projects": [
+        "aider",
+        "gptme"
+      ],
+      "recurrence_projects": 2,
+      "size": 4,
+      "day1_tell": "Change animation/branch/input state, navigate away and back, and confirm the prior state is restored."
+    },
+    {
+      "category": "model configuration",
+      "aliases": "model configuration / model settings update / model catalog update",
+      "tier": "required",
+      "projects": [
+        "aider",
+        "gptme"
+      ],
+      "recurrence_projects": 2,
+      "size": 4,
+      "day1_tell": "Load the model catalog/settings and confirm the new or changed model appears with the expected context window, pricing, and capability flags."
+    },
+    {
+      "category": "retry method usage",
+      "aliases": "retry method usage / rate limiting / retry on rate limit",
+      "tier": "required",
+      "projects": [
+        "aider",
+        "open-interpreter"
+      ],
+      "recurrence_projects": 2,
+      "size": 3,
+      "day1_tell": "Mock a 429 rate-limit response followed by success and confirm the request is retried with backoff and eventually succeeds."
+    },
+    {
+      "category": "message construction fix",
+      "aliases": "message construction fix / message layout fix / message styling",
+      "tier": "required",
+      "projects": [
+        "aider",
+        "gptme"
+      ],
+      "recurrence_projects": 2,
+      "size": 3,
+      "day1_tell": "Render a message containing multiline text, code, and emphasis and confirm layout/styling remains aligned and readable."
+    },
+    {
+      "category": "warning deduplication",
+      "aliases": "warning deduplication / parameter deduplication",
+      "tier": "required",
+      "projects": [
+        "aider",
+        "gptme"
+      ],
+      "recurrence_projects": 2,
+      "size": 3,
+      "day1_tell": "Pass duplicate warnings or parameters from two sources and confirm only one final warning/parameter entry is emitted."
+    },
+    {
+      "category": "path completion filtering",
+      "aliases": "path completion filtering / path generation / path completion improvement",
+      "tier": "required",
+      "projects": [
+        "aider",
+        "gptme"
+      ],
+      "recurrence_projects": 2,
+      "size": 3,
+      "day1_tell": "Request path completion for a partial path and confirm only existing matching paths are returned, excluding hidden or invalid entries as configured."
+    },
+    {
+      "category": "environment variable ordering",
+      "aliases": "environment variable ordering / environment variable merging / environment variable configuration",
+      "tier": "required",
+      "projects": [
+        "open-interpreter",
+        "gptme"
+      ],
+      "recurrence_projects": 2,
+      "size": 3,
+      "day1_tell": "Set the same environment variable in defaults, config, and process env and confirm the documented precedence order wins after merging."
+    },
+    {
+      "category": "api key validation",
+      "aliases": "api key validation / input validation / api input validation",
+      "tier": "required",
+      "projects": [
+        "open-interpreter",
+        "gptme"
+      ],
+      "recurrence_projects": 2,
+      "size": 3,
+      "day1_tell": "Submit empty, malformed, and valid API keys and confirm invalid keys are rejected with clear errors while the valid key is accepted."
+    },
+    {
+      "category": "script context enrichment",
+      "aliases": "script context enrichment / prompt context enrichment",
+      "tier": "required",
+      "projects": [
+        "aider",
+        "gptme"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Generate a script prompt for a sample file and confirm the added context fields are present and accurately populated."
+    },
+    {
+      "category": "metadata retrieval",
+      "aliases": "metadata retrieval / retrieval result processing",
+      "tier": "required",
+      "projects": [
+        "aider",
+        "gptme"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Perform a retrieval query and confirm each result includes expected metadata such as source id, score, and location."
+    },
+    {
+      "category": "failure fallback handling",
+      "aliases": "failure fallback handling / terminal fallback handling",
+      "tier": "required",
+      "projects": [
+        "aider",
+        "gptme"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Force the primary terminal capability to fail and confirm the fallback path activates with a usable degraded display."
+    },
+    {
+      "category": "permission error handling",
+      "aliases": "permission error handling / permission failure handling",
+      "tier": "required",
+      "projects": [
+        "aider",
+        "gptme"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Attempt to read or write a file without permission and confirm a clear permission error is returned without data loss or crash."
+    },
+    {
+      "category": "visual pattern styling",
+      "aliases": "visual pattern styling / visual interface styling",
+      "tier": "required",
+      "projects": [
+        "aider",
+        "gptme"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Open the visual interface and confirm the updated pattern/style is applied consistently across normal, hover, and selected states."
+    },
+    {
+      "category": "null header handling",
+      "aliases": "null header handling / null handling fix",
+      "tier": "required",
+      "projects": [
+        "aider",
+        "open-interpreter"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Send a request or parse input with a null/missing header and confirm it is handled safely with default behavior or a clear validation error."
+    },
+    {
+      "category": "file encoding fix",
+      "aliases": "file encoding fix / encoding error handling",
+      "tier": "required",
+      "projects": [
+        "aider",
+        "open-interpreter"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Read a file containing non-UTF-8 bytes and confirm the system either decodes with the configured fallback or reports an encoding error clearly."
+    },
+    {
+      "category": "metadata inclusion",
+      "aliases": "metadata inclusion / metadata field support",
+      "tier": "required",
+      "projects": [
+        "aider",
+        "gptme"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Create or fetch an item with optional metadata fields and confirm those fields are persisted and returned in the response."
+    },
+    {
+      "category": "interface implementation work",
+      "aliases": "interface implementation work / interface addition",
+      "tier": "required",
+      "projects": [
+        "open-interpreter",
+        "gptme"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Instantiate a class through the new interface and confirm all required methods can be called with expected results."
+    },
+    {
+      "category": "configuration file selection",
+      "aliases": "configuration file selection / configuration file inclusion",
+      "tier": "required",
+      "projects": [
+        "open-interpreter",
+        "gptme"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Provide multiple config files including one excluded and one selected file and confirm only the intended file is loaded."
+    }
+  ],
+  "optional": [
+    {
+      "category": "model compatibility fix",
+      "aliases": "model compatibility fix / model behavior fix / local model compatibility",
+      "tier": "optional",
+      "projects": [
+        "open-interpreter"
+      ],
+      "recurrence_projects": 1,
+      "size": 3,
+      "day1_tell": "Run a local model through a minimal chat request and confirm formatting, stop tokens, and response parsing work without provider-specific failures."
+    },
+    {
+      "category": "tool calling fix",
+      "aliases": "tool calling fix / tool invocation fixes",
+      "tier": "optional",
+      "projects": [
+        "open-interpreter"
+      ],
+      "recurrence_projects": 1,
+      "size": 3,
+      "day1_tell": "Ask the model to call a simple test tool and confirm the tool name, arguments, execution, and returned result are handled correctly."
+    },
+    {
+      "category": "installer dependency fix",
+      "aliases": "installer dependency fix / installer environment fix / installer repair",
+      "tier": "optional",
+      "projects": [
+        "open-interpreter"
+      ],
+      "recurrence_projects": 1,
+      "size": 3,
+      "day1_tell": "Run the installer in a clean environment and confirm all declared dependencies are installed and the installed CLI/app starts successfully."
+    },
+    {
+      "category": "evaluation scenario addition",
+      "aliases": "evaluation scenario addition",
+      "tier": "optional",
+      "projects": [
+        "gptme"
+      ],
+      "recurrence_projects": 1,
+      "size": 3,
+      "day1_tell": "Run the evaluation suite and confirm the new scenario is discoverable, executable, and reports pass/fail metrics."
+    },
+    {
+      "category": "syntax tag support",
+      "aliases": "syntax tag support / syntax query support",
+      "tier": "optional",
+      "projects": [
+        "aider"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Open a file using the new syntax tag/query and confirm highlighting or parsing captures the expected nodes."
+    },
+    {
+      "category": "chart layout adjustment",
+      "aliases": "chart layout adjustment / chart axis improvement",
+      "tier": "optional",
+      "projects": [
+        "aider"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Render a chart with long labels and extreme values and confirm axes, labels, and plot area do not overlap or truncate incorrectly."
+    },
+    {
+      "category": "api compatibility fix",
+      "aliases": "api compatibility fix / api compatibility fixes",
+      "tier": "optional",
+      "projects": [
+        "open-interpreter"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Call the API using the previously supported request/response shape and confirm it remains accepted or is translated compatibly."
+    },
+    {
+      "category": "interrupt handling fix",
+      "aliases": "interrupt handling fix / interruption handling fix",
+      "tier": "optional",
+      "projects": [
+        "open-interpreter"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Interrupt a long-running operation with Ctrl-C or cancellation and confirm cleanup runs and the process exits gracefully."
+    },
+    {
+      "category": "output hallucination mitigation",
+      "aliases": "output hallucination mitigation",
+      "tier": "optional",
+      "projects": [
+        "open-interpreter"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Ask for output constrained to provided source facts and confirm unsupported claims are omitted or marked unknown."
+    },
+    {
+      "category": "missing resource handling",
+      "aliases": "missing resource handling",
+      "tier": "optional",
+      "projects": [
+        "gptme"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Remove the referenced resource file and confirm startup reports the missing resource clearly instead of failing obscurely."
+    },
+    {
+      "category": "test environment gating",
+      "aliases": "test environment gating / test environment cleanup",
+      "tier": "optional",
+      "projects": [
+        "gptme"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Run tests without the required external service credentials and confirm those tests are skipped or gated rather than failing."
+    },
+    {
+      "category": "temporary resource cleanup",
+      "aliases": "temporary resource cleanup / session resource cleanup",
+      "tier": "optional",
+      "projects": [
+        "gptme"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Create a temporary/session resource, end the session, and confirm the resource is deleted or closed."
+    },
+    {
+      "category": "conversation state editing",
+      "aliases": "conversation state editing / conversation management",
+      "tier": "optional",
+      "projects": [
+        "gptme"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Edit a prior conversation turn and confirm subsequent conversation state is rebuilt from the edited history."
+    },
+    {
+      "category": "directive transformation fix",
+      "aliases": "directive transformation fix / directive transformation reliability",
+      "tier": "optional",
+      "projects": [
+        "gptme"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Transform a directive containing nested or edge-case syntax and confirm the output preserves intended semantics without dropping content."
+    }
+  ]
+}
