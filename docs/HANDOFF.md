@@ -37,6 +37,34 @@ feat/fix as answer key). It reframed everything.
   multi-language, supply-chain on a prior-art/LLM tool) now mark `na_by_design`, so the gate doesn't
   fire on capabilities that are a different engine's job.
 
+### Controlled measurement — `measure.py` (the numbers, finally trustworthy)
+
+A bare recall number is uninterpretable: a lenient judge against a broad category list "matches"
+almost anything (an early run scored the supposed-zero `direction` layer at **0.87**). So `measure.py`
+reports **recall LIFT = recall(real spine) − recall(NULL spine)**, hybrid signal, per layer, across
+targets OUTSIDE both spine pools (dexto/goose/cline — no leakage):
+- **ML (deterministic):** abstract each answer-key item → phrase (`abstract_via_fan`), embed (all-MiniLM),
+  recall = frac within cosine threshold of the spine. (Raw-subject embedding fails — vocabulary mismatch,
+  the exact `cluster_fixes` lesson; abstraction first is mandatory.)
+- **fan (conceptual):** J STRICT single-best-match judges ("name the ONE category this is a direct
+  INSTANCE of, or null"), parallel via `fan`.
+- **NULL control:** judge the same items against an adjacent-domain spine. Default synthetic 3d-game;
+  better = a *real mined* spine via `--null-spine` (tmux+zellij → `terminal-multiplexer.features.json`).
+
+**Result (strict 2-judge, n=3, tmux/zellij null):** robustness lift **0.23**, scope lift **0.44**.
+- null ≈ 0.04 (robustness) / 0.09 (scope) — non-zero for the right reason (multiplexers share generic
+  plugins/config/session features) → the control is sensitive, not vacuous.
+- **Stable across nulls:** vs the 3d-game null, lift was 0.27 / 0.47 — moved only ~0.03–0.04.
+- **Strict + control ≈ halves the naive numbers** (lenient was 0.54 / 0.72): leniency inflated recall ~2×.
+- **Scope ≫ robustness, all three runs** — feature-surface mine is the stronger half; robustness is
+  partly hampered by its spine being mined from a DIFFERENT sub-type (coordination tools, not agent-CLIs).
+- ML lift is a weak conservative confirmer (~0.11 robustness; ~noise for scope) — the strict LLM judge
+  is the primary instrument.
+
+Honest headline: **2080 surfaces a measured ~¼ of robustness and ~½ of scope of a project's second-85%
+on day 1** (strict, controlled, n=3). Open confound: re-mine a robustness spine from agent-CLI neighbors
+(same sub-type) — the change most likely to raise the robustness number.
+
 Below is the session-1 framing (still accurate; the above refines "what completeness means").
 
 ---
@@ -126,6 +154,8 @@ Other next steps: adversarial-verify pass for `diff_target` (catch prose-level o
 - `feature_mine.py` — **feature-surface lens** → scope spine (README + `feat:` → convergent capability spine; `--lens` is the extension seam)
 - `diff_target.py` — target coverage diff; importable `assess_target()`; N/A now covers cross-mechanism
 - `check.py` — **keystone gate**: `2080 check <target> --spine <checklist>` → blocks (exit 3) on required gaps; CI-ready
+- `measure.py` — **controlled recall measurement**: ML + strict-fan judges, recall LIFT over a null spine (`--null-spine`)
+- `checklists/terminal-multiplexer.features.json` — the real adjacent-domain NULL control (tmux+zellij)
 - `completeness.flow.js` — adaptive intent-derivation engine (run on rally-flow, `--harness fan`)
 - `checklists/ai-agent-tool.json` — robustness spine (recurring-fix lens; 15 required + 20 optional)
 - `checklists/ai-agent-tool.features.json` — scope spine for ai-agent-tool (feature lens; aider/OI/gptme)

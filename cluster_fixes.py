@@ -290,4 +290,5 @@ def main():
     sys.exit(EXIT_OK)
 
 
-main()
+if __name__ == "__main__":  # guard so measure.py can `from cluster_fixes import embed`
+    main()

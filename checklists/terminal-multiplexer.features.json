@@ -1,0 +1,168 @@
+{
+  "app_type": "terminal-multiplexer",
+  "lens": "feature-surface",
+  "axis": "SCOPE",
+  "scope_note": "SCOPE-completeness spine for terminal-multiplexer, mined via the feature-surface lens from the FEATURE surface of ['tmux', 'zellij']. Complements the robustness spine (cluster_fixes.py). Does NOT predict project-specific product direction \u2014 that is strategy, not completeness.",
+  "derived_from": [
+    "tmux",
+    "zellij"
+  ],
+  "required": [
+    {
+      "category": "terminal multiplexing",
+      "what": "Create, access, and control multiple terminal panes/sessions from one screen.",
+      "projects": [
+        "tmux",
+        "zellij"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Start the product, split the screen into at least two terminal panes, run different commands in each, and switch control between them."
+    },
+    {
+      "category": "detach and reattach",
+      "what": "Keep sessions running in the background and reconnect later, preserving state.",
+      "projects": [
+        "tmux",
+        "zellij"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Start a long-running command in a session, detach from the product, reattach later, and confirm the command and terminal state are still present."
+    },
+    {
+      "category": "tabs and panes",
+      "what": "Organize work into tabs and panes, including splitting, selecting, resizing, and moving focus.",
+      "projects": [
+        "tmux",
+        "zellij"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Create two tabs, split one tab into multiple panes, resize a pane, move focus between panes, and confirm each action works."
+    },
+    {
+      "category": "mouse support",
+      "what": "Use mouse input for selection, pane interaction, and terminal mouse tracking.",
+      "projects": [
+        "tmux",
+        "zellij"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Enable mouse mode, click to focus a pane, drag-select terminal text, and run a mouse-aware app to confirm mouse tracking works."
+    }
+  ],
+  "optional": [
+    {
+      "category": "layouts",
+      "what": "Define, apply, and change pane/tab layouts, including runtime layout changes.",
+      "projects": [
+        "zellij"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Apply a predefined layout, then change the pane layout while the session is running and confirm panes rearrange without restarting."
+    },
+    {
+      "category": "copy and clipboard",
+      "what": "Support terminal selection/copy workflows and clipboard integration such as OSC 52.",
+      "projects": [
+        "zellij"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Select text in a pane, copy it using the product workflow, paste it outside the terminal, and verify OSC 52 clipboard copy works if supported by the terminal."
+    },
+    {
+      "category": "theming and colors",
+      "what": "Customize visual appearance with themes and per-pane foreground/background colors.",
+      "projects": [
+        "zellij"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Change the active theme and set a pane-specific foreground or background color, then confirm the visual changes appear immediately or after reload."
+    },
+    {
+      "category": "status and UI bars",
+      "what": "Provide interactive UI surfaces such as compact bars, tooltips, release notes, and resize hints.",
+      "projects": [
+        "zellij"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Open the UI/status bar and confirm it shows interactive elements such as pane hints, resize hints, tooltips, release notes, or compact status controls."
+    },
+    {
+      "category": "pane actions",
+      "what": "Perform pane-level operations such as stacking, bulk selection, replacing panes, pinning floating panes, and changing pane coordinates.",
+      "projects": [
+        "zellij"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Use pane commands to stack or bulk-select panes, replace one pane with another command, pin a floating pane, or change a pane\u2019s coordinates."
+    },
+    {
+      "category": "session sharing",
+      "what": "Expose terminal sessions through a web client/server for browser-based access.",
+      "projects": [
+        "zellij"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Start the product\u2019s web/server mode, open the advertised URL in a browser, and confirm the existing terminal session is accessible and interactive."
+    },
+    {
+      "category": "plugins",
+      "what": "Extend the multiplexer through plugins with events, permissions, host/cache folders, and environment metadata.",
+      "projects": [
+        "zellij"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Install or enable a sample plugin, trigger one of its events, and confirm it receives documented metadata such as permissions, host/cache paths, or environment values."
+    },
+    {
+      "category": "configuration",
+      "what": "Configure behavior, themes, layouts, paths, and runtime options through documented config interfaces.",
+      "projects": [
+        "zellij"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Edit the documented configuration file or settings interface to change a keybinding, theme, layout, or path, reload the product, and confirm the change takes effect."
+    },
+    {
+      "category": "terminal protocol support",
+      "what": "Handle advanced terminal features such as multiline hyperlinks, DA1 capability reporting, and mouse AnyEvent tracking.",
+      "projects": [
+        "zellij"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Run terminal feature tests for multiline hyperlinks, DA1 capability reporting, and AnyEvent mouse tracking, and confirm the product passes or exposes the expected sequences."
+    },
+    {
+      "category": "screen capture and inspection",
+      "what": "Dump or inspect pane screen contents, including targeting by pane ID.",
+      "projects": [
+        "zellij"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Use the product\u2019s command/API to dump or inspect the visible contents of a specific pane by pane ID and confirm the captured text matches the pane."
+    },
+    {
+      "category": "cross-platform terminal operation",
+      "what": "Run as a native terminal multiplexer across Unix-like operating systems.",
+      "projects": [
+        "tmux"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Install and run the product natively on a Unix-like OS, create a session, split a pane, and execute shell commands without requiring a browser-only environment."
+    }
+  ]
+}
