@@ -11,15 +11,17 @@ each by exposing a primitive 2080 already has:
                   above --threshold. The blocking logic is lens-agnostic.
   REPORTING     ← human gap report + --json verdict over the same assessment.
   CI/CD         ← the exit code IS the integration: `2080 check . --spine X` in a CI step fails the
-                  build when the second-85% isn't closed. (No workflow ships yet — this makes 2080
-                  CI-READY, which is not the same as having CI.)
+                  build when the second-85% isn't closed. The assessment is SPLITTABLE from the gate:
+                  --save-assessment persists the (LLM, ~cents, ~1-2 min) assess_target result; later
+                  --from-assessment re-gates on it deterministically — fast, free, CI/hook-safe.
+                  hooks/stop_gate.sh and .github/workflows/2080-gate.yml ride that path.
 
 na_by_design categories never block (a SAST feature isn't this tool's job). Only genuinely-applicable
 required gaps count.
 
 Usage:
   check.py <target-repo> --spine <checklist.json> [--threshold N] [--fail-on gap|partial]
-           [--json] [--yes]
+           [--save-assessment FILE] [--from-assessment FILE] [--json] [--yes]
 Exit codes: 0 PASS (gate open) | 1 USAGE/ERR | 2 NOT_FOUND | 3 GATED (required gaps remain)
 """
 from __future__ import annotations
@@ -33,10 +35,19 @@ EXIT_GATED = 3  # mirrors rally-flow's gate() exit code: completion refused
 
 
 def capability_map():
-    return {"tool": "2080-check", "version": "0.1",
-            "args": "<target-repo> --spine <checklist.json> [--threshold N] [--fail-on gap|partial] [--json] [--yes]",
+    return {"tool": "2080-check", "version": "0.2",
+            "args": "<target-repo> --spine <checklist.json> [--threshold N] [--fail-on gap|partial] "
+                    "[--save-assessment FILE] [--from-assessment FILE] [--json] [--yes]",
             "fail_on": ["gap", "partial"],
+            "assessment": {"--save-assessment": "after the live LLM assess, write the raw assessment JSON to FILE",
+                           "--from-assessment": "skip the LLM: load a saved assessment and gate on it (deterministic)"},
             "exit_codes": {"0": "pass (gate open)", "1": "usage/err", "2": "not_found", "3": "gated (required gaps remain)"}}
+
+
+def die(msg, code, as_json):
+    """Errors go to stderr; structured {ok:false,...} when --json so agents never parse prose."""
+    print(json.dumps({"ok": False, "error": msg, "exit_code": code}) if as_json else msg, file=sys.stderr)
+    sys.exit(code)
 
 
 def evaluate(result, fail_on):
@@ -49,10 +60,13 @@ def evaluate(result, fail_on):
             continue
         required_total += 1
         if c.get("status") in block_statuses:
-            blocking.append({"category": c["category"], "status": c["status"],
-                             "reasoning": c.get("reasoning", ""),
-                             "day1_tell": c.get("day1_tell", ""),
-                             "citation_unverified": bool(c.get("citation_unverified"))})
+            entry = {"category": c["category"], "status": c["status"],
+                     "reasoning": c.get("reasoning", ""),
+                     "day1_tell": c.get("day1_tell", ""),
+                     "citation_unverified": bool(c.get("citation_unverified"))}
+            if c.get("fix_sites"):  # defensive: only some assessments carry fix-site suggestions
+                entry["fix_sites"] = c["fix_sites"]
+            blocking.append(entry)
     return blocking, required_total
 
 
@@ -63,6 +77,10 @@ def main():
     ap.add_argument("--threshold", type=int, default=0, help="max applicable required gaps allowed before the gate blocks")
     ap.add_argument("--fail-on", choices=["gap", "partial"], default="partial",
                     help="'gap' blocks only on full gaps; 'partial' (default) also blocks on partials")
+    ap.add_argument("--save-assessment", metavar="FILE",
+                    help="after the live assess, write the raw assessment JSON to FILE (re-gate later without an LLM)")
+    ap.add_argument("--from-assessment", metavar="FILE",
+                    help="skip assess_target/LLM: load a saved assessment and run the same gate (deterministic, CI/hook-safe)")
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--yes", "-y", action="store_true", help="accepted for agentic use; check is read-only")
     a = ap.parse_args()
@@ -72,18 +90,31 @@ def main():
             print(json.dumps(capability_map())); sys.exit(EXIT_OK)
         print(capability_map()["args"], file=sys.stderr); sys.exit(EXIT_ERR)
     if not a.spine:
-        print("--spine <checklist.json> is required", file=sys.stderr); sys.exit(EXIT_ERR)
+        die("--spine <checklist.json> is required", EXIT_ERR, a.json)
 
     spine_path = Path(a.spine)
     if not spine_path.exists():
-        print(f"spine not found: {a.spine}", file=sys.stderr); sys.exit(EXIT_NOT_FOUND)
+        die(f"spine not found: {a.spine}", EXIT_NOT_FOUND, a.json)
     if not Path(a.target).exists():
-        print(f"target not found: {a.target}", file=sys.stderr); sys.exit(EXIT_NOT_FOUND)
+        die(f"target not found: {a.target}", EXIT_NOT_FOUND, a.json)
 
     cl = json.loads(spine_path.read_text())
-    result = assess_target(a.target, cl)
-    if not result:
-        print("assessment failed (could not parse model output)", file=sys.stderr); sys.exit(EXIT_ERR)
+    if a.from_assessment:
+        asmt_path = Path(a.from_assessment)
+        if not asmt_path.exists():
+            die(f"assessment not found: {a.from_assessment} (generate with --save-assessment)", EXIT_NOT_FOUND, a.json)
+        try:
+            result = json.loads(asmt_path.read_text())
+        except Exception as e:
+            die(f"assessment unreadable: {a.from_assessment}: {e}", EXIT_ERR, a.json)
+        if not isinstance(result, dict) or not isinstance(result.get("categories"), list):
+            die(f"invalid assessment (no 'categories' list): {a.from_assessment}", EXIT_ERR, a.json)
+    else:
+        result = assess_target(a.target, cl)
+        if not result:
+            die("assessment failed (could not parse model output)", EXIT_ERR, a.json)
+        if a.save_assessment:
+            Path(a.save_assessment).write_text(json.dumps(result, indent=2) + "\n")
 
     blocking, required_total = evaluate(result, a.fail_on)
     over = max(0, len(blocking) - a.threshold)
@@ -94,7 +125,7 @@ def main():
         "target": a.target,
         "spine": str(spine_path),
         "app_type": cl.get("app_type"),
-        "sub_type": result["sub_type"],
+        "sub_type": result.get("sub_type", "?"),
         "required_total": required_total,
         "blocking_count": len(blocking),
         "threshold": a.threshold,
@@ -108,7 +139,7 @@ def main():
 
     head = "🚫 GATED" if gated else "✅ PASS"
     print(f"{head} — {a.target} vs {cl.get('app_type')} spine ({spine_path.name})")
-    print(f"sub_type: {result['sub_type']}")
+    print(f"sub_type: {result.get('sub_type', '?')}")
     print(f"required: {required_total} | blocking (applicable required {a.fail_on}s): {len(blocking)} "
           f"| threshold: {a.threshold}\n")
     if blocking:
@@ -121,6 +152,8 @@ def main():
                 print(f"        ↳ {g['reasoning'][:140]}")
             if g["day1_tell"]:
                 print(f"        check: {g['day1_tell'][:120]}")
+            if g.get("fix_sites"):
+                print(f"        fix at: {', '.join(str(s) for s in g['fix_sites'][:3])[:140]}")
     else:
         print("No applicable required gaps remain — the second-85% is closed for this spine.")
     sys.exit(EXIT_GATED if gated else EXIT_OK)
