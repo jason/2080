@@ -29,9 +29,32 @@ tests green on the merged tree:
 (provider-selection, BYOK, PR-integration, enterprise-secrets, reporting) are now emitted as a task
 queue with fix sites — close them with `emit.py --target . --spine checklists/ai-codebase-gap-analysis.features.json --format md`.
 
-**In flight at handoff:** (a) precision-validation workflow (adversarial refuters over diff_target
-verdicts — gate trust depends on precision, only recall is measured so far); (b) deep-research
-prior-art survey (MSR/ICSE/LLM-era) on the cross-repo-convergence-as-completeness-predictor framing.
+### Precision measurement (session 3, later): THE GATE IS BLIND ON LARGE REPOS
+
+Adversarial refutation (2 independent lenses per verdict, FP only when both refute with ≥med
+confidence) over diff_target verdicts:
+
+- **Blocking-verdict precision on goose: 0.083** — 22 of 24 required gap/partial verdicts were
+  false positives, most refuted with HIGH confidence by both lenses (goose has a typed error
+  taxonomy, clap error reporting, layered config, 30+ providers... all called "gap").
+- **Root cause (visible in refuter evidence): evidence starvation in `gather_evidence()`** —
+  first 80 files from `git ls-files` (alphabetical → `.github/` first) + 13KB source excerpt.
+  On a 10-crate Rust workspace the assessor literally judged a CI helper script as "the app"
+  (one verdict's reasoning says "the script..."). Small repos are fine: 2080's own sampled
+  covered verdicts stood 4/4; goose's "Model/provider support: covered" stood. cline's
+  "command error reporting: covered" had fabricated reasoning (1 of 6 covered samples false).
+- **Implication:** recall-lift numbers (measure.py, which judges answer-key items against spine
+  categories, no diff_target involved) are NOT invalidated. But `check.py`/`diff_target` verdicts
+  on any real-sized repo are currently untrustworthy — **fix evidence gathering before the live
+  thesis test**. Direction: category-aware retrieval (grep keywords from category/day1_tell
+  across the full tree, feed matched snippets) and/or a two-pass file-selection step; drop the
+  alphabetical-80 cap. 41 of 65 gap/partial verdicts went unchecked (cap) — re-run after the fix.
+
+**Prior-art survey: VERIFIED** (103 agents, 22 confirmed / 3 killed claims) → `docs/PRIOR-ART.md`.
+Verdict: **partially novel** — novel on the prediction target (forward completeness spine), with
+named adjacent lineages to cite (CROSSMINER, CPDP, JIT-SDP/Tabassum TSE 2022 premise validation,
+Levin & Yehudai, Fujitsu patent US10521224). Key methodological debt it surfaced: re-run measure.py
+lift against a MATTER-style *generic* checklist baseline, not just the adjacent-domain null.
 
 Research gaps identified for the feature/bug-fix layers (not yet built): target-side JIT defect
 signals (churn×category), issue-tracker lens, temporal ordering of categories (when gaps bite),

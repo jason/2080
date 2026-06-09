@@ -1,63 +1,86 @@
 # Prior-art survey — cross-repo convergence mining as a forward completeness predictor
 
-_Status: **INTERIM / UNVERIFIED** (2026-06-09). Deep-research run completed search + fetch
-(5 angles, 20 sources, 98 claims extracted, top 25 selected) but the adversarial-verification
-phase was killed by a session rate limit — every claim below is a single-pass extraction from
-a fetched source, not a verified finding. Re-run verification via the workflow resume before
-citing any of this externally._
+_Status: **VERIFIED** (2026-06-09). Deep-research run: 5 angles, 21 sources fetched, 102 claims
+extracted, 25 adversarially verified (3 refuters per claim) → 22 confirmed, 3 killed, synthesized
+to 8 findings. Verdicts below cite vote counts._
 
-## Provisional novelty verdict: **likely novel on the exact framing**
+## Novelty verdict: **PARTIALLY NOVEL** (medium confidence)
 
-No surveyed work matches 2080's core: mining *recurring fix/feature categories across mature
-same-app-type neighbors* and using that convergent category spine as a *forward predictor of a
-new project's remaining required work* (completeness). The components have prior art; the
-composition and the prediction target do not appear to.
+No published work was found that uses cross-repo recurring fix/feature-category convergence as a
+**forward predictor of a new project's remaining/required work**. 2080's novel dimension is the
+*prediction target* (a day-1 completeness spine), not its mechanisms — every component has strong
+adjacent prior art that any writeup must cite and position against.
 
-Key negative signal: a 2026 survey of LLMs in Mining Software Repositories (85 primary studies,
-2017–2025; arxiv.org/html/2604.00787v1) reportedly contains no work with this framing, and notes
-forward *prediction* is among the least-populated MSR application types (classification 42.4% and
-generation 28.2% dominate).
+"Confirmed novel" cannot be issued: two parts of the question produced no surviving verified
+claims — (a) 2023–2026 LLM-era agentic completeness / spec-coverage / definition-of-done tooling,
+and (b) commercial "what will this project still need" products. Those need a dedicated pass
+(see Open questions). The verdict is an absence-of-evidence conclusion bounded by the surveyed
+lineages.
 
-## Nearest neighbors (closest 5)
+## Closest works (verified)
 
-1. **Cross-Project Defect Prediction (CPDP)** — predicts *defect-proneness of existing modules*
-   in a target project from other projects' metrics; never remaining work / feature scope.
-   Useful: the field formalizes 2080's day-1 constraint as **"strict CPDP"** (no target-history
-   training data) — adopt the strict/mixed/MPDP taxonomy to position 2080's evaluation setting.
-   (Mapping study of 50 publications 2002–2015: arxiv.org/pdf/1705.06429)
-2. **Cross-project just-in-time defect prediction (CP-JIT-SDP)** — same *cold-start motivation*
-   (new project, no history), different target (defect-inducing commits). Reported result:
-   cross-project data improved early-stage G-mean by up to ~54 points over within-project-only —
-   evidence that neighbor-repo history carries forward-predictive signal, 2080's core premise.
-   (researchgate.net/publication/358513763)
-3. **CROSSMINER (EMSE 2021)** — cross-project mining for *artifact recommendation during
-   implementation* (libraries, snippets, similar projects), not completeness prediction.
-   (link.springer.com/article/10.1007/s10664-021-09963-7)
-4. **MATTER / trivial-baseline critique (arxiv.org/pdf/2302.00394)** — under effort-aware
-   evaluation, most recent defect predictors fail to beat a trivial size-based baseline (ONE);
-   a benchmark of 26 CPDP approaches (arxiv.org/pdf/1801.04107) similarly found "flag everything"
-   beat all 26 under cost metrics. Lesson: lift claims are illusory without null/trivial controls.
-   2080's null-spine recall-lift design is aligned with this — keep it mandatory.
-5. **LLM commit classification** — exists but sparse (4 of 36 LLM-MSR classification studies
-   target commits) and descriptive: e.g. 680k+ commits across 100k Hugging Face repos classified
-   into a *fixed* taxonomy (arxiv.org/pdf/2411.09645), not open-vocabulary abstraction feeding a
-   forward predictor. 2080's abstract-then-cluster (open categories) differs.
+1. **CROSSMINER** (Di Rocco et al., EMSE 2021) — architecturally closest: dedicated
+   "cross-project miner" layer over OSS repos. Outputs are *artifacts* (similar projects,
+   library recommendations via CrossRec, API snippets, README tags), reactive and IDE-integrated —
+   not an abstracted remaining-work checklist. Verifiers specifically probed CrossRec as a
+   counter-candidate; the distinction held (9-0). Full-text greps for completeness/remaining-work/
+   checklist: zero hits.
+2. **CPDP** (Herbold's EMSE mapping study; W-BDA+ 2024) — shares 2080's exact cold-start
+   motivation verbatim ("lack of data... in the early stage of new software projects") but is
+   strictly module-level binary defect classification over existing code (6-0). Adopt its
+   **"strict CPDP"** framing: no target-history data in training — 2080's day-1 setting.
+3. **JIT-SDP / CP-JIT-SDP** (ACM CSUR 2022 survey, 67 studies; Tabassum, Minku & Feng TSE 2022) —
+   nearest methodological neighbor (12-0). **Tabassum TSE 2022 empirically validates 2080's core
+   premise**: cross-project commit data improves early-stage prediction on new projects (G-mean
+   up to +53.89 absolute). Caveats: "up to" best case; only 2 of 4 CP approaches beat
+   within-project; sources weren't type-matched neighbors; target is defect-proneness. The
+   premise validation is analogical, not direct.
+4. **Levin & Yehudai** (PROMISE 2017) — nearest prior art for the commit-abstraction step:
+   project-agnostic classification of commits into corrective/perfective/adaptive (76% acc
+   cross-project), but 3 *fixed* classes vs 2080's mined open categories, and retrospective
+   characterization, never a day-1 spine (9-0). (A claim that their classifier was
+   keyword-matching-only was REFUTED 0-3 — they used ML over commit content; don't repeat it.)
+5. **US Patent 10,521,224** (Fujitsu, granted 2019) — patented prior art for the
+   neighbor-selection step: similarity scoring between subject and candidate projects for
+   cross-project learning, via BM25 over static source features (9-0). No commit-history mining,
+   no category clustering; downstream use is defect identification in an existing project.
+   2080's convergence mining and completeness gating are outside the granted claims — but
+   family continuations were NOT surveyed; freedom-to-operate is not established.
+6. **Repo2Vec** (2021) — repo-embedding similarity (93% precision) usable for neighbor
+   identification; no commit analysis, no forward prediction (3-0).
 
-## Steal list (methods / eval protocols)
+## Steal list — evaluation methodology (12-0, the load-bearing findings)
 
-- **Strict-CPDP framing** for the measurement writeup: 2080 evaluates under "strict" conditions
-  (no target history in the spine). Name it that.
-- **CP-JIT-SDP evaluation template**: many projects (Commit Guru–style harvesting), strict
-  chronological ordering by author timestamp, and a **verification-latency waiting period**
-  before labeling work "not needed" (a category absent for 6 months ≠ never needed).
-- **Effort-aware lift metrics**: recall@20%-inspection-effort and Popt (PLOS ONE
-  10.1371/journal.pone.0211359) — adapt as "recall at top-N spine categories," which matches how
-  a team actually consumes the checklist.
-- **Trivial baseline discipline (MATTER)**: alongside the null-spine control, add a trivial
-  baseline (e.g. a generic "any software project" checklist) — beat both before claiming lift.
+1. **Trivial/null baselines are mandatory and often win.** Herbold 2018 (26 CPDP approaches):
+   "trivially assuming everything as defective is on average better than CPDP under cost
+   considerations" — independently replicated by Zhou et al.'s ManualDown (TOSEM 2018, the
+   peer-reviewed anchor; Herbold 2018 itself is a non-peer-reviewed preprint). For 2080: the
+   spine must beat a generic "every project needs error handling" checklist, not just the
+   adjacent-domain null spine. measure.py's lift (0.23→0.44) should be re-run against a
+   ONE-style generic baseline under matched effort.
+2. **Metric choice can completely reorder rankings.** Cost-metric rankings were uncorrelated
+   (Kendall's τ = −0.047) with AUC/F1/G/MCC rankings. 2080 must justify raw recall vs
+   recall-lift vs effort-weighted coverage as *the* metric, or report several.
+3. **MATTER (2023)** is a directly stealable protocol template: one simple unsupervised global
+   baseline (ONE), SQA-effort-aligned thresholds, unified core indicators.
+4. **CP-JIT-SDP evaluation template**: many projects, strict chronological ordering, and a
+   **verification-latency waiting period** before labeling (a category unaddressed for 6 months
+   ≠ never needed).
 
-## Open verification TODO
+## Open questions (next passes if pursued)
 
-Resume the deep-research workflow's verify phase (resumeFromRunId wf_17982ec7-5af; search/fetch
-results are cached) to adversarially check the 25 claims, especially the two load-bearing ones:
-the 2026 LLM-MSR survey's coverage claim, and the strict-CPDP taxonomy mapping.
+- LLM-era (2023–2026) agentic completeness tooling: do spec-coverage checkers / DoD gates /
+  LLM-generated project checklists (Devin/SWE-agent/OpenHands ecosystems) anticipate the framing?
+- Requirements-mining literature (app-store feature mining, cross-project issue mining, NFR
+  extraction) — possibly a closer neighbor than CPDP/JIT-SDP for "recurring category spine as
+  required scope."
+- Patent family continuations of US10521224 (and IBM/Microsoft filings) for freedom-to-operate.
+- Can 2080's recall-lift survive a MATTER-style generic-checklist control? The CPDP track record
+  says this is a real risk, not a formality.
+
+## Killed claims (excluded — do not reuse)
+
+- "Levin & Yehudai classify by keyword matching" (0-3).
+- "Herbold's survey: 50 publications, all numeric-metric features" (1-2 — overgeneralized).
+- "Herbold 2018 is the canonical benchmark protocol" (0-3 — it's an ICSE-rejected preprint;
+  its baseline finding survives via Zhou et al. TOSEM 2018).
