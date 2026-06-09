@@ -1,0 +1,1713 @@
+{
+  "app_type": "telegram-llm-bot",
+  "scope_note": "Derived ONLY from ai-agent-tool repos ['AstrBot', 'ChatGPT-Telegram-Bot', 'LangBot', 'nekro-agent']. Categories are app-type-relative \u2014 this checklist does NOT transfer to other app types.",
+  "derived_from": [
+    "AstrBot",
+    "ChatGPT-Telegram-Bot",
+    "LangBot",
+    "nekro-agent"
+  ],
+  "commit_weighted_recurrence_pct": 88.7,
+  "required": [
+    {
+      "category": "empty response handling",
+      "aliases": "empty response handling / dependency fix / identifier parsing fix",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 4,
+      "size": 334,
+      "day1_tell": "Call the dependency-backed parser with an empty HTTP 200 body and identifiers containing dashes/underscores; confirm it returns a controlled empty result and parses identifiers without crashing."
+    },
+    {
+      "category": "api compatibility fix",
+      "aliases": "api compatibility fix / provider integration / module import fix",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 4,
+      "size": 45,
+      "day1_tell": "Import the module in a clean environment and make one request through the documented provider API; confirm no import errors and the old API shape still works."
+    },
+    {
+      "category": "environment configuration",
+      "aliases": "environment configuration / default configuration / default configuration update",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 4,
+      "size": 24,
+      "day1_tell": "Start with no environment variables or config file; confirm documented defaults are applied and can be overridden by env vars."
+    },
+    {
+      "category": "localization updates",
+      "aliases": "localization updates / localization display fix / language localization support",
+      "tier": "required",
+      "projects": [
+        "LangBot",
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "size": 18,
+      "day1_tell": "Switch UI locale to a newly updated language and open the affected screen; confirm translated labels render correctly without fallback keys."
+    },
+    {
+      "category": "hot reload fix",
+      "aliases": "hot reload fix / plugin reload fix / plugin invocation fix",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 4,
+      "size": 17,
+      "day1_tell": "Edit and reload a plugin while the app is running, then invoke it; confirm the new code runs once without stale state or reload errors."
+    },
+    {
+      "category": "deployment scripting",
+      "aliases": "deployment scripting / deployment documentation / deployment manifest update",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 4,
+      "size": 16,
+      "day1_tell": "Run the deployment script against a fresh checkout and apply the manifest; confirm the documented deployment reaches healthy status."
+    },
+    {
+      "category": "request format fix",
+      "aliases": "request format fix / payload compatibility / payload immutability",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 3,
+      "size": 15,
+      "day1_tell": "Send both legacy and new request payload formats, then inspect the original payload object after handling; confirm compatibility and no mutation."
+    },
+    {
+      "category": "resource cleanup",
+      "aliases": "resource cleanup / file handle cleanup / temporary resource cleanup",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 4,
+      "size": 12,
+      "day1_tell": "Run the operation 100 times while tracking open file descriptors/temp files; confirm handles and temp resources return to baseline."
+    },
+    {
+      "category": "streaming persistence optimization",
+      "aliases": "streaming persistence optimization / streaming response throttling / streaming invocation support",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 4,
+      "size": 11,
+      "day1_tell": "Stream a long response, interrupt midway, then resume/check persistence; confirm chunks are saved correctly and throttling prevents flooding."
+    },
+    {
+      "category": "file format support",
+      "aliases": "file format support / document format support / audio input support",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 3,
+      "size": 10,
+      "day1_tell": "Upload one supported file/audio/document format sample; confirm it is accepted, parsed, and represented in the expected internal form."
+    },
+    {
+      "category": "proxy support",
+      "aliases": "proxy support / connection shutdown cleanup / proxy dependency support",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "size": 10,
+      "day1_tell": "Route traffic through an HTTP proxy, then shut down the client; confirm proxy is used and all connections close cleanly."
+    },
+    {
+      "category": "adapter integration",
+      "aliases": "adapter integration / adapter configuration / protocol support",
+      "tier": "required",
+      "projects": [
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 10,
+      "day1_tell": "Configure the adapter with a sample endpoint and send a protocol-level request; confirm it translates and returns the expected response."
+    },
+    {
+      "category": "action visibility fix",
+      "aliases": "action visibility fix / status badge visibility / status indicator fix",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "size": 9,
+      "day1_tell": "Trigger an action/status transition that should show a badge or indicator; confirm it is visible in the UI."
+    },
+    {
+      "category": "permission fix",
+      "aliases": "permission fix / permission management / command permission hardening",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 7,
+      "day1_tell": "Attempt the protected command as an unauthorized user and an authorized user; confirm denial and success respectively."
+    },
+    {
+      "category": "path traversal prevention",
+      "aliases": "path traversal prevention / path restriction / path validation",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "size": 7,
+      "day1_tell": "Request a file path containing '../' and an absolute path outside the allowed root; confirm both are rejected."
+    },
+    {
+      "category": "credential normalization",
+      "aliases": "credential normalization / credential autofill / credential configuration",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 4,
+      "size": 7,
+      "day1_tell": "Enter credentials with extra spaces/case variation or autofill; confirm they normalize and save in the expected config fields."
+    },
+    {
+      "category": "default model update",
+      "aliases": "default model update / model dependency update / model catalog update",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 2,
+      "size": 7,
+      "day1_tell": "Open the model catalog or dependency lock; confirm the new default model/version is present and selected by default."
+    },
+    {
+      "category": "performance optimization",
+      "aliases": "performance optimization / rendering performance optimization / frontend asset optimization",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "size": 7,
+      "day1_tell": "Load the largest expected page/view and record render time and bundle size; confirm they meet the stated optimization target."
+    },
+    {
+      "category": "configuration persistence",
+      "aliases": "configuration persistence / plugin lifecycle cleanup / plugin configuration persistence",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 4,
+      "size": 6,
+      "day1_tell": "Change a plugin setting, restart the app, unload/reload the plugin; confirm the setting persists and lifecycle cleanup runs once."
+    },
+    {
+      "category": "platform compatibility fix",
+      "aliases": "platform compatibility fix / platform integration / capability compatibility fix",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "size": 6,
+      "day1_tell": "Run the feature on each supported platform/runtime target; confirm capability detection and integration behave consistently."
+    },
+    {
+      "category": "sandbox support",
+      "aliases": "sandbox support / sandbox platform adaptation / sandbox feature work",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 4,
+      "size": 6,
+      "day1_tell": "Execute the feature inside the sandboxed platform profile; confirm restricted APIs are adapted or gracefully disabled."
+    },
+    {
+      "category": "path resolution",
+      "aliases": "path resolution / cached path resolution / path correction",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 6,
+      "day1_tell": "Resolve the same relative, symlinked, and cached path twice; confirm the corrected canonical path is returned each time."
+    },
+    {
+      "category": "lazy dependency loading",
+      "aliases": "lazy dependency loading / dependency loading hardening / deferred dependency loading",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "size": 6,
+      "day1_tell": "Start the app without the optional dependency installed and avoid the feature; confirm startup succeeds, then invoking the feature reports a clear dependency error."
+    },
+    {
+      "category": "log display improvement",
+      "aliases": "log display improvement / log display cleanup / log display optimization",
+      "tier": "required",
+      "projects": [
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 6,
+      "day1_tell": "Generate multiline/wrapped logs and open the log viewer; confirm entries are readable, deduplicated/cleaned, and performant."
+    },
+    {
+      "category": "navigation entries",
+      "aliases": "navigation entries / navigation update / navigation links",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "size": 5,
+      "day1_tell": "Open the navigation menu/sidebar; confirm the new or updated entry links to the correct route."
+    },
+    {
+      "category": "context compression",
+      "aliases": "context compression / context compression fallback / context persistence",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "size": 5,
+      "day1_tell": "Create a conversation exceeding context limits; confirm compression runs, fallback works on failure, and compressed context persists."
+    },
+    {
+      "category": "search provider integration",
+      "aliases": "search provider integration / web search integration / hybrid search support",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 4,
+      "size": 5,
+      "day1_tell": "Issue a query requiring web/search-provider results; confirm provider results are fetched, merged, and cited/returned."
+    },
+    {
+      "category": "container build fix",
+      "aliases": "container build fix / container image fix / container image build",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 5,
+      "day1_tell": "Build the container image from scratch with no cache; confirm the image builds and starts successfully."
+    },
+    {
+      "category": "tool invocation fix",
+      "aliases": "tool invocation fix / method invocation fix / tool request compatibility",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 2,
+      "size": 5,
+      "day1_tell": "Invoke the tool/method using both old and new request shapes; confirm parameters map correctly and execution succeeds."
+    },
+    {
+      "category": "pagination size change",
+      "aliases": "pagination size change / pagination parameter fix / responsive pagination",
+      "tier": "required",
+      "projects": [
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 5,
+      "day1_tell": "Request paginated data with boundary sizes 1, default, max, and oversized; confirm size parameters are honored or clamped responsively."
+    },
+    {
+      "category": "metadata description support",
+      "aliases": "metadata description support / metadata display / version metadata display",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "size": 4,
+      "day1_tell": "Open an item with description and version metadata; confirm both fields display exactly as stored."
+    },
+    {
+      "category": "dependency addition",
+      "aliases": "dependency addition / dependency modularization",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 3,
+      "size": 4,
+      "day1_tell": "Install from a clean lockfile and import the modularized dependency path; confirm dependency resolution and runtime import succeed."
+    },
+    {
+      "category": "mode disable toggle",
+      "aliases": "mode disable toggle / streaming mode toggle / streaming mode fix",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "size": 4,
+      "day1_tell": "Toggle streaming mode off and on, then send a request; confirm non-streaming and streaming responses follow the selected mode."
+    },
+    {
+      "category": "multimodal token counting",
+      "aliases": "multimodal token counting / document token counting / token calculation fix",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 2,
+      "size": 4,
+      "day1_tell": "Submit text, document, and multimodal image inputs; confirm token counts match the model tokenizer expectations."
+    },
+    {
+      "category": "translation key addition",
+      "aliases": "translation key addition / translation additions / translation correction",
+      "tier": "required",
+      "projects": [
+        "LangBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 2,
+      "size": 4,
+      "day1_tell": "Open screens containing the added/corrected translations in each locale; confirm the displayed text is localized and not raw keys."
+    },
+    {
+      "category": "feedback event handling",
+      "aliases": "feedback event handling / event state handling / event handling refactor",
+      "tier": "required",
+      "projects": [
+        "LangBot",
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "size": 4,
+      "day1_tell": "Fire the feedback/event twice rapidly and once after state reset; confirm state transitions are correct and handlers are not duplicated."
+    },
+    {
+      "category": "preset selection",
+      "aliases": "preset selection / preset management / configuration preset selector",
+      "tier": "required",
+      "projects": [
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 4,
+      "day1_tell": "Select a preset, save, reload the page/app; confirm the chosen preset remains active and applies its configuration."
+    },
+    {
+      "category": "parameter compatibility",
+      "aliases": "parameter compatibility / parameter type support / test parameter support",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "size": 3,
+      "day1_tell": "Call the API/test runner with string, number, boolean, and null parameter variants; confirm supported types are accepted and validated."
+    },
+    {
+      "category": "invalid parameter removal",
+      "aliases": "invalid parameter removal / invalid command removal / parameter removal",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 3,
+      "day1_tell": "Pass the removed parameter/command; confirm it is ignored or rejected with the documented error and no longer appears in help."
+    },
+    {
+      "category": "argument handling fix",
+      "aliases": "argument handling fix / argument handling / argument key handling",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 3,
+      "size": 3,
+      "day1_tell": "Invoke the command with missing, duplicate, and renamed argument keys; confirm parsing maps or rejects them correctly."
+    },
+    {
+      "category": "update progress tracking",
+      "aliases": "update progress tracking / plugin update tracking / plugin update detection",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "size": 3,
+      "day1_tell": "Install an old plugin version, trigger update check, then update; confirm progress and detection status change accurately."
+    },
+    {
+      "category": "internationalization support",
+      "aliases": "internationalization support / internationalization enhancement",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 2,
+      "size": 3,
+      "day1_tell": "Switch app language/region and load plural/date/number text; confirm i18n formatting and translations apply."
+    },
+    {
+      "category": "download type handling",
+      "aliases": "download type handling / file download handling / file download routing",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 3,
+      "day1_tell": "Download files with each supported content type and route; confirm correct filename, MIME type, and handler path."
+    },
+    {
+      "category": "input state preservation",
+      "aliases": "input state preservation / state preservation / input state locking",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "size": 3,
+      "day1_tell": "Type input, trigger a state-changing action, then return focus; confirm the input content and locked state are preserved."
+    },
+    {
+      "category": "ui component addition",
+      "aliases": "ui component addition / ui component simplification / component simplification",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "size": 3,
+      "day1_tell": "Render the new/simplified component with minimal and full props; confirm it displays correctly without console errors."
+    },
+    {
+      "category": "api fallback handling",
+      "aliases": "api fallback handling / environment override handling / environment fallback handling",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 3,
+      "size": 3,
+      "day1_tell": "Unset the primary API config and set only fallback/env override values; confirm the fallback endpoint/key is used."
+    },
+    {
+      "category": "compressed image recognition",
+      "aliases": "compressed image recognition / image compression",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 2,
+      "size": 3,
+      "day1_tell": "Upload a large image that requires compression; confirm it is compressed under limit and still recognized correctly."
+    },
+    {
+      "category": "plugin identifier validation",
+      "aliases": "plugin identifier validation / identifier format validation / identifier validation compatibility",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "size": 3,
+      "day1_tell": "Create plugin IDs with valid, invalid, legacy, and edge-case formats; confirm validation accepts only compatible valid IDs."
+    },
+    {
+      "category": "migration test automation",
+      "aliases": "migration test automation / service configuration migration / configuration auto migration",
+      "tier": "required",
+      "projects": [
+        "LangBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 2,
+      "size": 3,
+      "day1_tell": "Run automated migration tests from the previous config version; confirm service config is migrated without manual changes."
+    },
+    {
+      "category": "user access blocking",
+      "aliases": "user access blocking / blocked user handling / user blocking",
+      "tier": "required",
+      "projects": [
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 3,
+      "day1_tell": "Block a user, then attempt login/API/action as that user; confirm access is denied everywhere."
+    },
+    {
+      "category": "panel state fix",
+      "aliases": "panel state fix / panel expansion fix",
+      "tier": "required",
+      "projects": [
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 3,
+      "day1_tell": "Expand/collapse the panel, navigate away, and return; confirm panel state matches expected behavior."
+    },
+    {
+      "category": "document prompt enhancement",
+      "aliases": "document prompt enhancement / autocomplete prompt enhancement / autocomplete disabling",
+      "tier": "required",
+      "projects": [
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 3,
+      "day1_tell": "Trigger autocomplete/document prompt with enabled and disabled settings; confirm prompt enhancement appears only when enabled."
+    },
+    {
+      "category": "task interface",
+      "aliases": "task interface / task handling integration",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Create, update, and complete a task through the task interface; confirm state and integration callbacks fire."
+    },
+    {
+      "category": "adapter resolution fix",
+      "aliases": "adapter resolution fix / adapter bug fix",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Resolve an adapter for a known provider and a missing provider; confirm correct adapter selection and clear error."
+    },
+    {
+      "category": "dynamic model discovery",
+      "aliases": "dynamic model discovery / model discovery support",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Connect to a provider with dynamically available models; confirm discovered models appear without hardcoding."
+    },
+    {
+      "category": "configuration template optimization",
+      "aliases": "configuration template optimization / configuration loading optimization",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Load a large configuration template and measure startup/load time; confirm optimized loading and identical config output."
+    },
+    {
+      "category": "recording behavior fix",
+      "aliases": "recording behavior fix / feedback recording fix",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Submit feedback with recording enabled/disabled; confirm records are created only in the intended mode."
+    },
+    {
+      "category": "webhook field passthrough",
+      "aliases": "webhook field passthrough / webhook configuration",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Send a webhook payload with extra configured fields; confirm fields pass through unchanged to the receiver."
+    },
+    {
+      "category": "capability indicator display",
+      "aliases": "capability indicator display / capability display indicators",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Open model/provider list with known capabilities; confirm capability indicators match the capability data."
+    },
+    {
+      "category": "duplicate display fix",
+      "aliases": "duplicate display fix",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Load data containing duplicate names/messages; confirm each intended item appears once."
+    },
+    {
+      "category": "filename sanitization",
+      "aliases": "filename sanitization / name sanitization",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Upload or create a file named '../../bad:name?.txt'; confirm stored filename is sanitized and safe."
+    },
+    {
+      "category": "fallback request routing",
+      "aliases": "fallback request routing / route fallback fix",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Request an unknown route that should fallback; confirm fallback handler serves the expected page/response."
+    },
+    {
+      "category": "navigation interface enhancement",
+      "aliases": "navigation interface enhancement / navigation view redesign",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Open the redesigned navigation view on desktop and mobile widths; confirm links remain accessible and correct."
+    },
+    {
+      "category": "password policy validation",
+      "aliases": "password policy validation / password policy toggle",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Toggle password policy enforcement and try weak/strong passwords; confirm validation follows the toggle."
+    },
+    {
+      "category": "quota failure resilience",
+      "aliases": "quota failure resilience / quota error handling",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Simulate quota exceeded from the provider; confirm graceful error handling and no retry storm."
+    },
+    {
+      "category": "model addition optimization",
+      "aliases": "model addition optimization / model support addition",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Add a new model through the supported flow; confirm it appears once with correct defaults and no slowdown."
+    },
+    {
+      "category": "state reset fix",
+      "aliases": "state reset fix",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Perform an action, reset state, then repeat; confirm previous state does not leak into the second run."
+    },
+    {
+      "category": "readiness cleanup handling",
+      "aliases": "readiness cleanup handling / configuration cleanup",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Fail readiness/config validation once, fix config, and restart; confirm cleanup removes stale readiness artifacts."
+    },
+    {
+      "category": "background command execution",
+      "aliases": "background command execution / background handler execution",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Start a long command in background and continue using the app; confirm completion/error is reported asynchronously."
+    },
+    {
+      "category": "input composition handling",
+      "aliases": "input composition handling / composition input handling",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Enter text using an IME composition sequence and press Enter mid-composition; confirm it does not submit prematurely."
+    },
+    {
+      "category": "image size reduction",
+      "aliases": "image size reduction / image management enhancement",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Upload oversized images in batch; confirm size reduction/management keeps them under configured limits."
+    },
+    {
+      "category": "message deduplication",
+      "aliases": "message deduplication / stream deduplication",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Replay a stream with duplicate chunk IDs/content; confirm final message contains each chunk once."
+    },
+    {
+      "category": "clipboard utility fix",
+      "aliases": "clipboard utility fix / clipboard compatibility fix",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Copy text using the clipboard utility in supported browsers/platforms; confirm fallback works where native API is unavailable."
+    },
+    {
+      "category": "filter type support",
+      "aliases": "filter type support / multi-filter support",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Apply multiple filter types together; confirm results satisfy all selected filters."
+    },
+    {
+      "category": "fallback robustness",
+      "aliases": "fallback robustness / response robustness",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Force malformed/partial upstream responses; confirm fallback robustness returns a controlled error or partial result."
+    },
+    {
+      "category": "response content filtering",
+      "aliases": "response content filtering / response filtering",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Return a response containing blocked content and allowed content; confirm filtering removes only the disallowed parts."
+    },
+    {
+      "category": "collapsible settings ui",
+      "aliases": "collapsible settings ui / collapsible interface component",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Open settings, collapse/expand sections, and reload; confirm collapsible UI works and state is sensible."
+    },
+    {
+      "category": "scroll event handling",
+      "aliases": "scroll event handling / scroll behavior fix",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Scroll rapidly to top/bottom during content updates; confirm no jumpiness and handlers fire correctly."
+    },
+    {
+      "category": "configuration synchronization",
+      "aliases": "configuration synchronization / plugin synchronization",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Change plugin config on one instance/session and sync; confirm another session receives the same configuration."
+    },
+    {
+      "category": "empty-state shortcut",
+      "aliases": "empty-state shortcut / empty state action",
+      "tier": "required",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Open an empty state and activate its shortcut/action; confirm it performs the intended first-step action."
+    },
+    {
+      "category": "json output handling",
+      "aliases": "json output handling / json parse handling",
+      "tier": "required",
+      "projects": [
+        "LangBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Return valid JSON, invalid JSON, and JSON inside code fences; confirm parser/output handling succeeds or errors clearly."
+    },
+    {
+      "category": "media handling fix",
+      "aliases": "media handling fix / media delivery fix",
+      "tier": "required",
+      "projects": [
+        "LangBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Send media through the affected delivery path; confirm it arrives with correct metadata and renderability."
+    },
+    {
+      "category": "timestamp parsing fix",
+      "aliases": "timestamp parsing fix",
+      "tier": "required",
+      "projects": [
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Parse timestamps with timezone, no timezone, and invalid formats; confirm correct normalization or validation error."
+    },
+    {
+      "category": "configuration precedence",
+      "aliases": "configuration precedence",
+      "tier": "required",
+      "projects": [
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Set the same option in defaults, config file, env var, and CLI flag; confirm documented precedence wins."
+    },
+    {
+      "category": "interface refinement",
+      "aliases": "interface refinement / interface interaction simplification",
+      "tier": "required",
+      "projects": [
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Complete the refined interaction flow with keyboard and mouse; confirm fewer steps and no broken controls."
+    },
+    {
+      "category": "undefined value handling",
+      "aliases": "undefined value handling / undefined value fix",
+      "tier": "required",
+      "projects": [
+        "LangBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Pass undefined/null/missing values into the affected path; confirm defaults or validation prevent crashes."
+    },
+    {
+      "category": "forward message support",
+      "aliases": "forward message support / message callback support",
+      "tier": "required",
+      "projects": [
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Forward a message and verify callback invocation; confirm forwarded content and callback payload are correct."
+    },
+    {
+      "category": "usage limitation enforcement",
+      "aliases": "usage limitation enforcement / usage policy hardening",
+      "tier": "required",
+      "projects": [
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Exceed a configured usage limit; confirm further usage is blocked and policy error is returned."
+    },
+    {
+      "category": "emoji support",
+      "aliases": "emoji support / emoji response handling",
+      "tier": "required",
+      "projects": [
+        "LangBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Send and receive messages containing emoji and skin-tone/ZWJ sequences; confirm they preserve correctly."
+    },
+    {
+      "category": "threaded messaging",
+      "aliases": "threaded messaging / threaded reply fix",
+      "tier": "required",
+      "projects": [
+        "LangBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Reply inside an existing thread; confirm the message attaches to the correct thread and parent."
+    },
+    {
+      "category": "query telemetry",
+      "aliases": "query telemetry / service telemetry",
+      "tier": "required",
+      "projects": [
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Execute a query and inspect telemetry output; confirm service/query metadata is emitted without sensitive content."
+    },
+    {
+      "category": "endpoint versioning",
+      "aliases": "endpoint versioning / versioning support",
+      "tier": "required",
+      "projects": [
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Call v1 and v2 endpoints with version headers/paths; confirm each routes to the correct behavior."
+    },
+    {
+      "category": "streaming parse recovery",
+      "aliases": "streaming parse recovery / stream parsing robustness",
+      "tier": "required",
+      "projects": [
+        "LangBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Stream malformed JSON chunks followed by valid chunks; confirm parser recovers and continues where possible."
+    },
+    {
+      "category": "model lookup fix",
+      "aliases": "model lookup fix / database lookup fix",
+      "tier": "required",
+      "projects": [
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Lookup an existing and nonexistent model in the database; confirm correct record or not-found behavior."
+    },
+    {
+      "category": "log level adjustment",
+      "aliases": "log level adjustment",
+      "tier": "required",
+      "projects": [
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Trigger the affected log message at debug/info/warn levels; confirm it emits at the adjusted level only."
+    },
+    {
+      "category": "task cancellation scoping",
+      "aliases": "task cancellation scoping / task cancellation",
+      "tier": "required",
+      "projects": [
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Start two cancellable tasks, cancel one scope; confirm only the scoped task is cancelled."
+    },
+    {
+      "category": "multi-image handling",
+      "aliases": "multi-image handling / self image handling",
+      "tier": "required",
+      "projects": [
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "size": 2,
+      "day1_tell": "Send multiple images including a self/reference image; confirm all images are associated and processed correctly."
+    }
+  ],
+  "optional": [
+    {
+      "category": "translation key coverage",
+      "aliases": "translation key coverage / translation coverage",
+      "tier": "optional",
+      "projects": [
+        "LangBot"
+      ],
+      "recurrence_projects": 1,
+      "size": 5,
+      "day1_tell": "Run the i18n missing-key checker for all locales; confirm no missing translation keys for the changed area."
+    },
+    {
+      "category": "development database config",
+      "aliases": "development database config / database startup config / development configuration",
+      "tier": "optional",
+      "projects": [
+        "nekro-agent"
+      ],
+      "recurrence_projects": 1,
+      "size": 4,
+      "day1_tell": "Start the development stack with the provided database config; confirm DB boots and the app connects without manual edits."
+    },
+    {
+      "category": "usage count display",
+      "aliases": "usage count display / usage statistics command / usage statistics dashboard",
+      "tier": "optional",
+      "projects": [
+        "AstrBot"
+      ],
+      "recurrence_projects": 1,
+      "size": 3,
+      "day1_tell": "Generate usage activity, then run the command/open dashboard; confirm counts match the recorded events."
+    },
+    {
+      "category": "usage metric correction",
+      "aliases": "usage metric correction / usage metric extraction / usage metric handling",
+      "tier": "optional",
+      "projects": [
+        "AstrBot"
+      ],
+      "recurrence_projects": 1,
+      "size": 3,
+      "day1_tell": "Replay a response with known usage metrics; confirm extracted prompt/completion/total values match the fixture."
+    },
+    {
+      "category": "websocket messaging",
+      "aliases": "websocket messaging / websocket client / websocket delivery fix",
+      "tier": "optional",
+      "projects": [
+        "LangBot"
+      ],
+      "recurrence_projects": 1,
+      "size": 3,
+      "day1_tell": "Send a websocket message from server to client and disconnect/reconnect; confirm delivery and no duplicate/lost messages."
+    },
+    {
+      "category": "configuration key rename",
+      "aliases": "configuration key rename / key mapping / configuration key mapping",
+      "tier": "optional",
+      "projects": [
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 1,
+      "size": 3,
+      "day1_tell": "Load config using the old key name and save it; confirm it maps to the new key and preserves value."
+    },
+    {
+      "category": "search algorithm fix",
+      "aliases": "search algorithm fix / api search fix / search functionality fix",
+      "tier": "optional",
+      "projects": [
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 1,
+      "size": 3,
+      "day1_tell": "Search for a known indexed item via API/UI; confirm the corrected algorithm returns it in expected ranking."
+    },
+    {
+      "category": "code block segmentation",
+      "aliases": "code block segmentation / semantic code segmentation",
+      "tier": "optional",
+      "projects": [
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 1,
+      "size": 3,
+      "day1_tell": "Feed code with functions, comments, and long blocks into segmentation; confirm chunks split on semantic boundaries."
+    },
+    {
+      "category": "reasoning display fix",
+      "aliases": "reasoning display fix / reasoning content fix",
+      "tier": "optional",
+      "projects": [
+        "AstrBot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Process a response containing reasoning content and final answer; confirm reasoning displays or hides according to policy without corruption."
+    },
+    {
+      "category": "command suggestion support",
+      "aliases": "command suggestion support / command suggestion feature",
+      "tier": "optional",
+      "projects": [
+        "AstrBot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Type a command prefix; confirm relevant command suggestions appear and selecting one inserts/runs it."
+    },
+    {
+      "category": "qr registration flow",
+      "aliases": "qr registration flow / qr configuration flow",
+      "tier": "optional",
+      "projects": [
+        "AstrBot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Complete registration using a generated QR code; confirm scanned config registers successfully."
+    },
+    {
+      "category": "preference state persistence",
+      "aliases": "preference state persistence / preference persistence",
+      "tier": "optional",
+      "projects": [
+        "AstrBot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Change a user preference, reload, and sign back in; confirm preference persists."
+    },
+    {
+      "category": "attachment event handling",
+      "aliases": "attachment event handling / attachment handling",
+      "tier": "optional",
+      "projects": [
+        "AstrBot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Attach, remove, and submit a file while listening for events; confirm attachment events match actual state."
+    },
+    {
+      "category": "default removal",
+      "aliases": "default removal / default behavior removal",
+      "tier": "optional",
+      "projects": [
+        "AstrBot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Start with no explicit setting for the removed default; confirm the old default behavior no longer occurs."
+    },
+    {
+      "category": "encoding error handling",
+      "aliases": "encoding error handling / encoding fallback",
+      "tier": "optional",
+      "projects": [
+        "AstrBot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Load text encoded as UTF-8 and invalid bytes/legacy encoding; confirm fallback avoids crashes and reports replacement."
+    },
+    {
+      "category": "syntax highlighting",
+      "aliases": "syntax highlighting / syntax highlighting change",
+      "tier": "optional",
+      "projects": [
+        "AstrBot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Render code blocks in several languages; confirm syntax highlighting matches language tags and degrades gracefully."
+    },
+    {
+      "category": "display readability styling",
+      "aliases": "display readability styling / code readability styling",
+      "tier": "optional",
+      "projects": [
+        "AstrBot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Open long code and prose content in light/dark themes; confirm readability styling keeps contrast and wrapping acceptable."
+    },
+    {
+      "category": "message truncation guard",
+      "aliases": "message truncation guard",
+      "tier": "optional",
+      "projects": [
+        "AstrBot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Send a message longer than the configured limit; confirm it is truncated or rejected safely with notice."
+    },
+    {
+      "category": "migration assertion update",
+      "aliases": "migration assertion update / migration existence check",
+      "tier": "optional",
+      "projects": [
+        "LangBot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Run migrations when the target migration already exists and when missing; confirm assertions handle both cases correctly."
+    },
+    {
+      "category": "ui label correction",
+      "aliases": "ui label correction / display label fix",
+      "tier": "optional",
+      "projects": [
+        "LangBot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Open the affected UI label in all relevant states; confirm corrected display text appears."
+    },
+    {
+      "category": "oauth service extraction",
+      "aliases": "oauth service extraction / oauth service integration",
+      "tier": "optional",
+      "projects": [
+        "LangBot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Complete OAuth login/refresh using the extracted service; confirm tokens are stored and refreshed correctly."
+    },
+    {
+      "category": "model initialization handling",
+      "aliases": "model initialization handling / model initialization refactor",
+      "tier": "optional",
+      "projects": [
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Initialize a model with valid, missing, and bad config; confirm clear initialization success/failure states."
+    },
+    {
+      "category": "inline mode fix",
+      "aliases": "inline mode fix",
+      "tier": "optional",
+      "projects": [
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Use inline mode in the target editor/input; confirm inline suggestions/actions appear at the cursor and commit correctly."
+    },
+    {
+      "category": "model option filtering",
+      "aliases": "model option filtering / model filtering support",
+      "tier": "optional",
+      "projects": [
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Apply model filters for capability/provider/status; confirm only matching models remain selectable."
+    },
+    {
+      "category": "generated image display",
+      "aliases": "generated image display",
+      "tier": "optional",
+      "projects": [
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Generate an image and open the result view; confirm image displays with correct dimensions and download link."
+    },
+    {
+      "category": "command availability fix",
+      "aliases": "command availability fix",
+      "tier": "optional",
+      "projects": [
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Check command availability before and after enabling its prerequisite; confirm it appears only when usable."
+    },
+    {
+      "category": "paired message deletion",
+      "aliases": "paired message deletion",
+      "tier": "optional",
+      "projects": [
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Delete one message from a paired user/assistant exchange; confirm its paired counterpart is handled as specified."
+    },
+    {
+      "category": "request body cleanup",
+      "aliases": "request body cleanup / request body correction",
+      "tier": "optional",
+      "projects": [
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Inspect outgoing request body for the affected call; confirm obsolete/incorrect fields are absent and required fields present."
+    },
+    {
+      "category": "model list display",
+      "aliases": "model list display / model display fix",
+      "tier": "optional",
+      "projects": [
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Open the model list with long names and metadata; confirm each model displays once with correct labels."
+    },
+    {
+      "category": "model parameter propagation",
+      "aliases": "model parameter propagation / parameter propagation",
+      "tier": "optional",
+      "projects": [
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Set model parameters in UI/config and send a request; confirm outgoing request contains the same parameter values."
+    },
+    {
+      "category": "segmentation algorithm fix",
+      "aliases": "segmentation algorithm fix / text segmentation fix",
+      "tier": "optional",
+      "projects": [
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Segment text containing paragraphs, lists, and very long sentences; confirm boundaries and max lengths are correct."
+    },
+    {
+      "category": "response attribute handling",
+      "aliases": "response attribute handling / response format handling",
+      "tier": "optional",
+      "projects": [
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Process responses with optional/missing/renamed attributes; confirm response format handling maps them correctly."
+    },
+    {
+      "category": "language setting fix",
+      "aliases": "language setting fix",
+      "tier": "optional",
+      "projects": [
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Change language setting, restart, and open localized UI; confirm selected language persists and applies."
+    },
+    {
+      "category": "tuple unpacking fix",
+      "aliases": "tuple unpacking fix",
+      "tier": "optional",
+      "projects": [
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Run the function with tuples of expected and edge-case lengths; confirm unpacking does not throw unexpectedly."
+    },
+    {
+      "category": "localized prompt fix",
+      "aliases": "localized prompt fix / localized prompt refresh",
+      "tier": "optional",
+      "projects": [
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Switch locale and regenerate the prompt; confirm localized prompt text refreshes immediately."
+    },
+    {
+      "category": "text length handling",
+      "aliases": "text length handling / long text handling",
+      "tier": "optional",
+      "projects": [
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Submit text at, below, and above the length limit; confirm long text is handled without truncation bugs."
+    },
+    {
+      "category": "image recognition fix",
+      "aliases": "image recognition fix",
+      "tier": "optional",
+      "projects": [
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Upload a known test image and ask for recognition; confirm expected objects/text are detected."
+    },
+    {
+      "category": "race condition locking",
+      "aliases": "race condition locking",
+      "tier": "optional",
+      "projects": [
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Run concurrent updates against the shared state 100 times; confirm locking prevents inconsistent results."
+    },
+    {
+      "category": "model response fix",
+      "aliases": "model response fix",
+      "tier": "optional",
+      "projects": [
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Replay a model response fixture with edge-case fields; confirm final parsed response matches expected output."
+    },
+    {
+      "category": "event stream abstraction",
+      "aliases": "event stream abstraction / event stream handling",
+      "tier": "optional",
+      "projects": [
+        "nekro-agent"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Subscribe to the event stream and emit start/chunk/end/error events; confirm abstraction delivers ordered events."
+    },
+    {
+      "category": "job management",
+      "aliases": "job management / skill management",
+      "tier": "optional",
+      "projects": [
+        "nekro-agent"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Create, list, update, and delete a job/skill; confirm lifecycle state is correct."
+    },
+    {
+      "category": "dynamic capability management",
+      "aliases": "dynamic capability management / repository capability management",
+      "tier": "optional",
+      "projects": [
+        "nekro-agent"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Add/remove repository capabilities at runtime; confirm capability registry updates without restart."
+    },
+    {
+      "category": "resolver improvement",
+      "aliases": "resolver improvement / resolver fix",
+      "tier": "optional",
+      "projects": [
+        "nekro-agent"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Resolve identifiers with normal, ambiguous, and missing inputs; confirm resolver returns correct target or clear error."
+    },
+    {
+      "category": "editor bug fix",
+      "aliases": "editor bug fix / editor entry fix",
+      "tier": "optional",
+      "projects": [
+        "nekro-agent"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Open editor entry, edit/save/cancel; confirm the bugged editor path now preserves content correctly."
+    },
+    {
+      "category": "history filtering",
+      "aliases": "history filtering / history navigation",
+      "tier": "optional",
+      "projects": [
+        "nekro-agent"
+      ],
+      "recurrence_projects": 1,
+      "size": 2,
+      "day1_tell": "Navigate history with filters applied; confirm only matching history entries appear and navigation skips filtered-out items."
+    }
+  ]
+}

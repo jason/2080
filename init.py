@@ -41,11 +41,11 @@ REPO_RE = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\Z")  # also blocks ../ pa
 
 
 def capability_map():
-    return {"tool": "2080-init", "version": "0.1",
+    return {"tool": "2080-init", "version": "0.2",
             "args": '<target-dir | "intent string"> [--intent S] [--max-neighbors N] '
                     '[--neighbors owner/repo,...] [--app-type T] [--max-commits N] '
-                    '[--skip-robustness] [--skip-scope] [--dry-run] [--json] [--yes]',
-            "exit_codes": {"0": "ok", "1": "usage/err/declined", "2": "not_found",
+                    '[--skip-robustness] [--skip-scope] [--dry-run] [--force] [--json] [--yes]',
+            "exit_codes": {"0": "ok", "1": "usage/err/declined/would-overwrite", "2": "not_found",
                            "3": "empty (no neighbors or no commits)"}}
 
 
@@ -178,6 +178,7 @@ def main():
     ap.add_argument("--skip-robustness", action="store_true", help="skip the cluster_fixes robustness mine")
     ap.add_argument("--skip-scope", action="store_true", help="skip the feature_mine scope mine")
     ap.add_argument("--dry-run", action="store_true", help="print the full plan; NO network/LLM, NO writes")
+    ap.add_argument("--force", action="store_true", help="overwrite existing spine files for this app-type")
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--yes", "-y", action="store_true", help="proceed without confirmation (required for writes in --json mode)")
     a = ap.parse_args()
@@ -242,6 +243,15 @@ def main():
         app_type, sub_type = a.app_type or found.get("app_type") or slug(intent), found.get("sub_type")
         if not neighbors:
             fail("find_neighbors returned no neighbors — refine the intent or pass --neighbors", EXIT_EMPTY, a.json)
+
+    # ── overwrite guard: a colliding app_type label would silently clobber a different sub-type's
+    # spine (sub-type match is load-bearing; an LLM-classified label is not unique). Refuse early.
+    rob_guard, feat_guard = spine_paths(app_type)
+    clobber = [str(p) for p, skip in ((rob_guard, a.skip_robustness), (feat_guard, a.skip_scope))
+               if not skip and p.exists()]
+    if clobber and not a.force:
+        fail(f"refusing to overwrite existing spine(s) for app_type '{app_type}': {', '.join(clobber)} "
+             f"— pass --app-type <more-specific-label> (recommended) or --force", EXIT_ERR, a.json)
 
     listing = "\n".join(f"  {n['repo']}  [{(n.get('maturity') or {}).get('label')}: "
                         f"{(n.get('maturity') or {}).get('commits')} commits] — {n.get('why_valuable', '')[:90]}"

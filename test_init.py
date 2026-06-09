@@ -168,6 +168,22 @@ class TestCLISurface(unittest.TestCase):
             self.assertIn("check.py", plan["next"])
             self.assertEqual(os.listdir(cache), [])  # zero writes
 
+    def test_existing_spine_is_not_silently_overwritten(self):
+        # intent: an LLM-classified app_type label is not unique — the first live
+        # init run labeled a telegram-bot mine "ai-agent-tool" and silently
+        # clobbered the aider/OI/gptme scope spine. The guard must refuse before
+        # any clone/mine spend unless --force.
+        with tempfile.TemporaryDirectory() as cache:
+            r = run_cli("an ai agent cli", "--neighbors", "sst/opencode",
+                        "--app-type", "ai-agent-cli",  # collides with the committed spine
+                        "--json", "--yes", env_extra={"CACHE_2080": cache})
+            self.assertEqual(r.returncode, 1)
+            err = json.loads(r.stderr.strip().splitlines()[-1])
+            self.assertFalse(err["ok"])
+            self.assertIn("refusing to overwrite", err["error"])
+            self.assertIn("--force", err["error"])
+            self.assertEqual(os.listdir(cache), [])  # guard fired before any network spend
+
     def test_dry_run_with_neighbor_override_names_concrete_paths(self):
         # intent: with --neighbors the plan must show the exact clone dirs and
         # spine paths the live run would write, so a human can audit before --yes.

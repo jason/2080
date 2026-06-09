@@ -50,6 +50,24 @@ confidence) over diff_target verdicts:
   across the full tree, feed matched snippets) and/or a two-pass file-selection step; drop the
   alphabetical-80 cap. 41 of 65 gap/partial verdicts went unchecked (cap) — re-run after the fix.
 
+### init.py live-verified end-to-end (session 3, later still)
+
+First full live run (intent: telegram-LLM-bot): discovery → 4 high-maturity neighbors
+(AstrBot 4778c, LangBot 3581c, ChatGPT-Telegram-Bot 1163c, nekro-agent 879c) → clones →
+harvests (500c each) → both mines. Output: `checklists/telegram-llm-bot.{robustness,features}.json`
+(97 required robustness categories @ 68.3% recurrence; 17 convergent scope capabilities) — the
+spine-library seed, pointable at the VIP bot for a real-project dogfood.
+
+Two findings from the run:
+- **Bug found + fixed:** find_neighbors classified the intent as `ai-agent-tool`, silently
+  overwriting the aider/OI/gptme scope spine of that name. Restored from git; outputs renamed
+  to `telegram-llm-bot.*`. init.py now refuses to overwrite existing spines without `--force`
+  (exit 1, suggests `--app-type`; test added, 13/13 green).
+- **Quality caveat:** the robustness spine's top cluster is a 334-commit catch-all
+  ("empty response handling / dependency fix / identifier parsing fix") spanning all 4 neighbors —
+  the known catch-all inflation shape. Re-tune eps or split that cluster before trusting the
+  97-category count; the scope spine looks clean.
+
 **Prior-art survey: VERIFIED** (103 agents, 22 confirmed / 3 killed claims) → `docs/PRIOR-ART.md`.
 Verdict: **partially novel** — novel on the prediction target (forward completeness spine), with
 named adjacent lineages to cite (CROSSMINER, CPDP, JIT-SDP/Tabassum TSE 2022 premise validation,

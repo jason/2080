@@ -1,0 +1,249 @@
+{
+  "app_type": "telegram-llm-bot",
+  "lens": "feature-surface",
+  "axis": "SCOPE",
+  "scope_note": "SCOPE-completeness spine for ai-agent-tool, mined via the feature-surface lens from the FEATURE surface of ['AstrBot', 'ChatGPT-Telegram-Bot', 'LangBot', 'nekro-agent']. Complements the robustness spine (cluster_fixes.py). Does NOT predict project-specific product direction \u2014 that is strategy, not completeness.",
+  "derived_from": [
+    "AstrBot",
+    "ChatGPT-Telegram-Bot",
+    "LangBot",
+    "nekro-agent"
+  ],
+  "required": [
+    {
+      "category": "Multi-channel adapters",
+      "what": "Connect agents to IM/chat platforms such as Telegram, Slack, Discord, WeChat/WeCom/Feishu/Lark/DingTalk/QQ/Matrix/email via adapters.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 4,
+      "tier": "required",
+      "day1_tell": "Open the adapter/integrations settings and confirm at least one IM/chat adapter such as Slack, Telegram, Discord, WeChat/Feishu/Lark, Matrix, or email can be configured."
+    },
+    {
+      "category": "Adapter onboarding flows",
+      "what": "User-facing QR-code, one-click app creation, login/session handling, or multi-instance setup for chat adapters.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Start adding a chat adapter and confirm the onboarding flow provides QR login, one-click app creation, session login, or multi-instance setup."
+    },
+    {
+      "category": "LLM provider/model management",
+      "what": "Configure, scan, select, and display models/providers, including OpenAI-compatible APIs and provider-specific presets/capabilities.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 4,
+      "tier": "required",
+      "day1_tell": "Open model/provider settings, add or view an OpenAI-compatible provider, scan/list available models, and switch the selected model."
+    },
+    {
+      "category": "Agent command system",
+      "what": "Expose bot commands and user-invoked actions, including command registration, naming, permissions, and rich command output.",
+      "projects": [
+        "AstrBot",
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Open the bot command/action configuration and confirm commands can be registered with names and invoked by a user to produce command output."
+    },
+    {
+      "category": "Tool/function permissions",
+      "what": "Manage access control for tools, commands, or function calls at user/group/admin level.",
+      "projects": [
+        "AstrBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Open tool or command permissions and confirm access can be granted or denied by user, group, or admin role."
+    },
+    {
+      "category": "Plugin marketplace/extensions",
+      "what": "Install, browse, render, or manage plugins/extensions, including plugin pages, sidebars, cards, and marketplace metadata.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Open the plugin/extensions area and confirm plugins can be browsed or installed with visible cards, pages, or marketplace metadata."
+    },
+    {
+      "category": "Embedded plugin Web UI",
+      "what": "Allow plugins/extensions to contribute web pages or iframe-rendered UI inside the admin console.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Install or open a plugin and confirm it contributes an embedded page or iframe-rendered UI inside the admin console."
+    },
+    {
+      "category": "Admin dashboard",
+      "what": "Provide a web console for configuration, navigation, runtime visibility, account settings, and operational controls.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Open the web admin console and confirm it provides navigation for configuration, runtime/status visibility, account settings, or operational controls."
+    },
+    {
+      "category": "Dashboard auth/account security",
+      "what": "Support dashboard login, password setup/change, 2FA, account center, or authenticated internal APIs.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Log into the dashboard and confirm it supports authenticated access plus password setup/change, 2FA, account center, or protected internal APIs."
+    },
+    {
+      "category": "Knowledge base / document QA",
+      "what": "Ingest documents for retrieval, chunking, validation, vector search, or document question-answering.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Upload a document to the knowledge base and confirm it is ingested for chunking, validation, vector search, or document QA."
+    },
+    {
+      "category": "Memory/context management",
+      "what": "Maintain, compress, recall, rebuild, or expose conversational memory and context state.",
+      "projects": [
+        "AstrBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Run a multi-turn chat, then inspect memory/context controls and confirm conversation state can be recalled, compressed, rebuilt, or displayed."
+    },
+    {
+      "category": "Sandbox / agent runtime execution",
+      "what": "Run agent tasks in sandboxed or workspace runtimes with session lifecycle, timeout, and runtime-state visibility.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Start an agent task and confirm it runs inside a sandbox/workspace runtime with visible session lifecycle, timeout, or runtime state."
+    },
+    {
+      "category": "Streaming responses",
+      "what": "Stream AI/search responses or markdown output smoothly to the user interface or chat surface.",
+      "projects": [
+        "AstrBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Send a prompt and confirm the response streams incrementally to the web UI or chat surface instead of appearing only after completion."
+    },
+    {
+      "category": "Rich message handling",
+      "what": "Parse, normalize, display, and send rich message chains including media, cards, JSON messages, mentions, images, and markdown.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 4,
+      "tier": "required",
+      "day1_tell": "Send or receive a rich message containing an image, mention, card, markdown, media, or JSON payload and confirm it is parsed and displayed correctly."
+    },
+    {
+      "category": "Internationalization/localization",
+      "what": "Expose multilingual README/UI/localized messages across supported languages.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Switch the UI language or open localized docs/messages and confirm multiple languages are available."
+    },
+    {
+      "category": "UI personalization and navigation",
+      "what": "Improve sidebar/menu routing, document titles, icons, themes, auto-scroll, direct access buttons, and visual separators.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Use the UI navigation and confirm it includes personalization or navigation aids such as themes, icons, sidebar routing, document titles, auto-scroll, direct access buttons, or visual separators."
+    },
+    {
+      "category": "Deployment/configuration ergonomics",
+      "what": "Support Docker/env-based setup, initial passwords from environment, auto-deploy, and configurable runtime options.",
+      "projects": [
+        "AstrBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Deploy from Docker or environment configuration and confirm initial password, runtime options, or auto-deploy behavior can be controlled via environment variables."
+    }
+  ],
+  "optional": [
+    {
+      "category": "Search-augmented answers",
+      "what": "Use web/search engines or search-enabled GPT flows to answer with external information.",
+      "projects": [
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Ask a question requiring current external information and confirm the product uses a web/search engine or search-enabled GPT flow in the answer."
+    },
+    {
+      "category": "Chat/channel management",
+      "what": "Manage chat channels, channel detail pages, observer modes, deletion/preview flows, and per-channel navigation.",
+      "projects": [
+        "nekro-agent"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Open channel management and confirm chat channels have detail pages or controls for observer mode, deletion, preview, or per-channel navigation."
+    },
+    {
+      "category": "Workspace management",
+      "what": "Provide agent workspaces with overview tabs, resource centers, prompt composition, memory state, and running status.",
+      "projects": [
+        "nekro-agent"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Open an agent workspace and confirm it shows overview tabs, resource center, prompt composition, memory state, or running status."
+    }
+  ]
+}
