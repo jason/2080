@@ -1,0 +1,7 @@
+{
+  "spine": "checklists/ai-codebase-gap-analysis.features.json",
+  "threshold": 0,
+  "fail_on": "partial",
+  "mode": "assessment",
+  "assessment": ".2080-assessment.json"
+}

@@ -29,3 +29,18 @@ feature-surface → scope; future: integration/threat/operability). `check.py` i
 `2080 check <target> --spine <checklist>` runs the diff, blocks (exit 3) on applicable required gaps,
 and is CI-ready. 2080 was run against its own feature spine and closed 3 of the gaps it found.
 See [`docs/HANDOFF.md`](docs/HANDOFF.md) for the full arc and findings.
+
+## The loop
+
+2080 is no longer just a report — it's a closed loop from day-1 map to enforced gate:
+
+```
+init.py <target|intent>     # acquire matched spines: find neighbors → clone → harvest → mine
+check.py <target> --spine S --save-assessment A   # LLM gate run; gaps carry fix_sites (file-level anchors)
+emit.py --verdict V         # blocking gaps → agent work queue (acceptance = day-1 tell, verify_cmd per task)
+hooks/stop_gate.sh          # Claude Code Stop hook: agent can't claim "done" while the gate is closed
+.github/workflows/2080-gate.yml  # CI gate over the committed assessment (no LLM needed in CI)
+```
+
+`check.py --from-assessment` re-gates deterministically (no LLM) from a saved assessment, which is
+what the hook and CI consume. See [`docs/INTEGRATIONS.md`](docs/INTEGRATIONS.md).

@@ -1,6 +1,41 @@
 # 2080 — Handoff
 
-_Last updated: 2026-05-29 (session 2)_
+_Last updated: 2026-06-09 (session 3)_
+
+## ⏩ Session-3 update: the loop closed (visibility → enforcement → work queue)
+
+Four lanes built in parallel (workflow, worktree-isolated) and merged; all 37 deterministic
+tests green on the merged tree:
+
+- **`emit.py`** — gap → agent work queue. Consumes a `check.py --json` verdict (file/stdin) or runs
+  live; each blocking gap becomes a task spec: stable slug id, `acceptance` = the day1_tell verbatim,
+  evidence (passes through `fix_sites`), and a `verify_cmd`. `--format md` renders an
+  acceptance-checklist backlog. This is the day-1 work queue an implementing agent consumes.
+- **`init.py`** — one-command matched-spine acquisition: intent (or target README) → `find_neighbors`
+  → idempotent blob-less clones (`~/.cache/2080/`) → harvest JSONs → `cluster_fixes` (robustness
+  spine) + `feature_mine` (scope spine) → `checklists/`. Consent before spend (`--yes`), `--dry-run`,
+  `--neighbors` override, `--max-commits` cost cap. **Full live mine not yet run end-to-end** —
+  stage seams individually tested.
+- **Gate integrations** — `check.py --save-assessment/--from-assessment` splits the LLM assessment
+  from the deterministic gate (offline re-gate verified byte-identical to live). On top:
+  `hooks/stop_gate.sh` (Claude Code Stop hook; exit 2 + gap report when gated, **fails open** on all
+  error paths) and `.github/workflows/2080-gate.yml` (CI over the committed `.2080-assessment.json`;
+  dormant, no remote). `docs/INTEGRATIONS.md` documents both. `.2080.json` now live in this repo.
+- **`diff_target.py` evidence** — every gap/partial now carries `fix_sites` (1-3 `{file, what}`
+  anchors from the real fileset, deterministically validated like cited_files; hallucinated paths
+  dropped + flagged `fix_sites_unverified`). Verified live: 2080's own gaps got real anchors.
+
+**Dogfood state:** live gate on 2080 itself = 5 blocking of 14 required (was 6). The remaining gaps
+(provider-selection, BYOK, PR-integration, enterprise-secrets, reporting) are now emitted as a task
+queue with fix sites — close them with `emit.py --target . --spine checklists/ai-codebase-gap-analysis.features.json --format md`.
+
+**In flight at handoff:** (a) precision-validation workflow (adversarial refuters over diff_target
+verdicts — gate trust depends on precision, only recall is measured so far); (b) deep-research
+prior-art survey (MSR/ICSE/LLM-era) on the cross-repo-convergence-as-completeness-predictor framing.
+
+Research gaps identified for the feature/bug-fix layers (not yet built): target-side JIT defect
+signals (churn×category), issue-tracker lens, temporal ordering of categories (when gaps bite),
+SZZ fix→origin linkage, severity weighting of clusters.
 
 ## ⏩ Session-2 update: completeness is THREE layers (the backtest ran)
 

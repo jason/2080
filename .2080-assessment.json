@@ -1,0 +1,272 @@
+{
+  "sub_type": "LLM-based codebase completeness/gap-analysis CLI",
+  "app_type": "ai-codebase-gap-analysis",
+  "categories": [
+    {
+      "category": "AI code review",
+      "what": "Generate PR/code review summaries, high-level feedback, and line-level suggestions on code changes.",
+      "projects": [
+        "kodus",
+        "codegpt",
+        "sourcery"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Open a test pull request and confirm the product generates a review summary plus at least one line-level suggestion on the diff.",
+      "status": "na_by_design",
+      "reasoning": "Line-level pull-request code review is a different SAST/code-review product mechanism than this target's checklist-driven completeness gap gate.",
+      "citation_unverified": false
+    },
+    {
+      "category": "Model/provider choice",
+      "what": "Let users choose or configure LLM providers/models, including OpenAI-compatible endpoints and major hosted providers.",
+      "projects": [
+        "kodus",
+        "codegpt",
+        "sourcery"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Open model/provider settings and confirm you can select or configure at least two LLM providers or models, including an OpenAI-compatible endpoint.",
+      "status": "partial",
+      "reasoning": "The mining flow exposes model/provider/reasoning options for LLM abstraction, but the main check gate evidence does not show configurable provider/model selection for assessments.",
+      "citation_unverified": false,
+      "fix_sites": [
+        {
+          "file": "check.py",
+          "what": "Add --model, --provider, and --openai-compatible-base-url options and pass them through to assess_target."
+        },
+        {
+          "file": "diff_target.py",
+          "what": "Accept provider/model configuration for the LLM assessment path."
+        }
+      ],
+      "fix_sites_unverified": false
+    },
+    {
+      "category": "Bring-your-own-key cost control",
+      "what": "Support user-managed API keys/credentials so teams control provider spend and access.",
+      "projects": [
+        "kodus",
+        "codegpt"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Add a user-managed API key in settings and run a review confirming the request uses that configured key.",
+      "status": "gap",
+      "reasoning": "No evidence shows user-managed API key configuration or verification that analysis uses a configured key.",
+      "citation_unverified": false,
+      "fix_sites": [
+        {
+          "file": ".2080.json.example",
+          "what": "Document a local config shape for provider credentials or environment variable references."
+        },
+        {
+          "file": "check.py",
+          "what": "Load credential configuration from .2080.json or environment and report which configured provider path is used without exposing secrets."
+        }
+      ],
+      "fix_sites_unverified": false
+    },
+    {
+      "category": "CLI developer workflow",
+      "what": "Expose review, commit, hook, or local analysis capabilities through command-line tooling.",
+      "projects": [
+        "kodus",
+        "codegpt",
+        "sourcery",
+        "semgrep"
+      ],
+      "recurrence_projects": 4,
+      "tier": "required",
+      "day1_tell": "Install the CLI and run a local review or analysis command against a repository.",
+      "status": "covered",
+      "reasoning": "The product is explicitly a CLI-style workflow with commands such as `2080 check <target> --spine <checklist>` and `check.py <target-repo> --spine <checklist.json>`.",
+      "citation_unverified": false
+    },
+    {
+      "category": "Git/PR platform integration",
+      "what": "Connect to source-control platforms and review pull requests or code scanning results in developer workflows.",
+      "projects": [
+        "kodus",
+        "sourcery",
+        "semgrep",
+        "sonarqube"
+      ],
+      "recurrence_projects": 4,
+      "tier": "required",
+      "day1_tell": "Connect a GitHub/GitLab/Bitbucket repository and confirm the product can access and review an open pull request.",
+      "status": "partial",
+      "reasoning": "A GitHub Actions gate exists, but there is no evidence of connecting to GitHub/GitLab/Bitbucket and reviewing an open pull request through the platform API.",
+      "citation_unverified": false,
+      "fix_sites": [
+        {
+          "file": "check.py",
+          "what": "Add optional PR metadata inputs so reports can annotate a pull request when run in CI."
+        },
+        {
+          "file": ".github/workflows/2080-gate.yml",
+          "what": "Extend the workflow example to run on pull_request events and upload or comment the JSON report."
+        }
+      ],
+      "fix_sites_unverified": false
+    },
+    {
+      "category": "Custom rules and configuration",
+      "what": "Allow teams to tune analysis with rules, configs, prompts, quality gates, or review settings.",
+      "projects": [
+        "kodus",
+        "codegpt",
+        "sourcery",
+        "semgrep",
+        "sonarqube"
+      ],
+      "recurrence_projects": 5,
+      "tier": "required",
+      "day1_tell": "Create or edit a custom rule/config file and confirm it changes the review output on a test repository.",
+      "status": "covered",
+      "reasoning": "Custom rules are represented by user-supplied spines/checklists via `--spine`, and the README states that the checklist is the rule set.",
+      "citation_unverified": false
+    },
+    {
+      "category": "Static code scanning",
+      "what": "Analyze code for defects, smells, security issues, or policy violations beyond LLM-generated feedback.",
+      "projects": [
+        "semgrep",
+        "sonarqube"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Run a scan on a repository with a known lint/security/code-smell issue and confirm the product reports it outside of generic LLM prose.",
+      "status": "na_by_design",
+      "reasoning": "Static lint/security/code-smell scanning outside LLM prose is a different SAST/linter mechanism than this gap-analysis engine.",
+      "citation_unverified": false
+    },
+    {
+      "category": "Quality gates",
+      "what": "Block or flag changes based on defined code quality/security thresholds.",
+      "projects": [
+        "sourcery",
+        "semgrep",
+        "sonarqube"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Configure a quality threshold, run it on a failing change, and confirm the product marks the change as failed or blocked.",
+      "status": "covered",
+      "reasoning": "`check.py` implements a CI-ready quality gate with `--threshold`, `--fail-on`, and exit code 3 when required gaps remain.",
+      "citation_unverified": false
+    },
+    {
+      "category": "Security and supply-chain analysis",
+      "what": "Detect security issues and dependency/supply-chain risks, including SBOM-oriented capabilities.",
+      "projects": [
+        "semgrep",
+        "sonarqube"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Scan a project with a known vulnerable dependency and confirm the product reports the dependency or supply-chain risk.",
+      "status": "na_by_design",
+      "reasoning": "Dependency and supply-chain vulnerability scanning is a different scanner mechanism than this checklist/LLM completeness tool.",
+      "citation_unverified": false
+    },
+    {
+      "category": "Multi-language analysis",
+      "what": "Support parsing and analysis across multiple programming languages and language versions.",
+      "projects": [
+        "semgrep",
+        "sonarqube"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Run analysis on a repository containing at least two programming languages and confirm both are parsed or reported on.",
+      "status": "na_by_design",
+      "reasoning": "Multi-language parsing is structurally a parser/static-analysis concern, while this target assesses repository evidence against a checklist rather than parsing languages.",
+      "citation_unverified": false
+    },
+    {
+      "category": "Self-hosted deployment",
+      "what": "Offer deployable/self-managed options for teams needing control over infrastructure, data, or compliance.",
+      "projects": [
+        "kodus",
+        "sonarqube"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Find and follow the self-hosted deployment instructions, then confirm the service starts in your own environment.",
+      "status": "na_by_design",
+      "reasoning": "The target is a local CLI/pipeline tool rather than a hosted service requiring self-hosted deployment instructions.",
+      "citation_unverified": false
+    },
+    {
+      "category": "Enterprise auth and secrets",
+      "what": "Support secure credential handling, SSO, vault-backed secrets, or OS credential storage.",
+      "projects": [
+        "kodus",
+        "codegpt",
+        "sonarqube"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Configure SSO, vault-backed secrets, or OS credential storage and confirm credentials are not stored as plain text in the app.",
+      "status": "gap",
+      "reasoning": "There is no evidence of SSO, vault-backed secrets, OS credential storage, or documented secret handling for provider keys.",
+      "citation_unverified": false,
+      "fix_sites": [
+        {
+          "file": "docs/INTEGRATIONS.md",
+          "what": "Document supported secret-handling patterns for CI and local use, including environment variables and vault/secret-store examples."
+        },
+        {
+          "file": ".2080.json.example",
+          "what": "Show non-plaintext secret references rather than literal API keys."
+        }
+      ],
+      "fix_sites_unverified": false
+    },
+    {
+      "category": "CI/CD integration",
+      "what": "Run analysis or reviews automatically from CI pipelines, GitHub Actions, agents, or pre-commit hooks.",
+      "projects": [
+        "codegpt",
+        "sourcery",
+        "semgrep",
+        "sonarqube"
+      ],
+      "recurrence_projects": 4,
+      "tier": "required",
+      "day1_tell": "Add the product to a CI pipeline or GitHub Action and confirm it runs automatically on a commit or pull request.",
+      "status": "covered",
+      "reasoning": "The README describes CI readiness, and the repository includes a GitHub workflow plus hook path for deterministic gating from saved assessments.",
+      "citation_unverified": false
+    },
+    {
+      "category": "Usage and scan reporting",
+      "what": "Surface review outcomes, token/usage data, scan results, project health, or contributor/license visibility.",
+      "projects": [
+        "kodus",
+        "codegpt",
+        "semgrep",
+        "sonarqube"
+      ],
+      "recurrence_projects": 4,
+      "tier": "required",
+      "day1_tell": "Open the reporting/dashboard area and confirm it shows review results, scan findings, usage, or project health metrics.",
+      "status": "partial",
+      "reasoning": "The gate can emit a human gap report and `--json` verdict, but there is no evidence of a dashboard or accumulated usage/project health reporting.",
+      "citation_unverified": false,
+      "fix_sites": [
+        {
+          "file": "check.py",
+          "what": "Add an option to write a stable report artifact containing verdict, blocking gaps, and summary metrics."
+        },
+        {
+          "file": "emit.py",
+          "what": "Extend report emission to produce reusable JSON/Markdown summaries for CI artifacts or dashboards."
+        }
+      ],
+      "fix_sites_unverified": false
+    }
+  ]
+}

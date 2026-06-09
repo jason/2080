@@ -153,7 +153,11 @@ def main():
             if g["day1_tell"]:
                 print(f"        check: {g['day1_tell'][:120]}")
             if g.get("fix_sites"):
-                print(f"        fix at: {', '.join(str(s) for s in g['fix_sites'][:3])[:140]}")
+                for s in g["fix_sites"][:3]:
+                    if isinstance(s, dict):
+                        print(f"        fix @ {s.get('file', '?')}: {str(s.get('what', ''))[:110]}")
+                    else:
+                        print(f"        fix @ {str(s)[:120]}")
     else:
         print("No applicable required gaps remain — the second-85% is closed for this spine.")
     sys.exit(EXIT_GATED if gated else EXIT_OK)
