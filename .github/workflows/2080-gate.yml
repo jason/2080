@@ -1,0 +1,35 @@
+# 2080 completeness gate — CI half of the save/refresh-assessment workflow (docs/INTEGRATIONS.md).
+#
+# Deterministic and LLM-free: it re-gates `check.py --from-assessment` on the COMMITTED assessment
+# (.2080-assessment.json, produced locally with --save-assessment). If the config or assessment is
+# not committed, the gate logs a notice and passes — the workflow ships dormant until opted into.
+# Live LLM mode in CI (fan/Codex auth) is deliberately out of scope; see docs/INTEGRATIONS.md.
+name: 2080-gate
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+
+      - name: 2080 completeness gate (from committed assessment)
+        run: |
+          if [ ! -f .2080.json ] || [ ! -f .2080-assessment.json ]; then
+            echo "::notice title=2080 gate::no committed assessment (.2080.json + .2080-assessment.json) — gate skipped"
+            exit 0
+          fi
+          SPINE=$(uv run python -c "import json; print(json.load(open('.2080.json')).get('spine', ''))")
+          THRESHOLD=$(uv run python -c "import json; print(json.load(open('.2080.json')).get('threshold', 0))")
+          FAIL_ON=$(uv run python -c "import json; print(json.load(open('.2080.json')).get('fail_on', 'partial'))")
+          if [ -z "$SPINE" ] || [ ! -f "$SPINE" ]; then
+            echo "::warning title=2080 gate::.2080.json names spine '$SPINE' but it is not in the repo — gate skipped"
+            exit 0
+          fi
+          # exit 3 (GATED) fails the build; that exit code IS the integration
+          uv run python check.py . --spine "$SPINE" --from-assessment .2080-assessment.json \
+            --threshold "$THRESHOLD" --fail-on "$FAIL_ON" --json
