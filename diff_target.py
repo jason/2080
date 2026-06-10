@@ -14,19 +14,112 @@ at a file that doesn't exist is dropped and the category flagged fix_sites_unver
 Usage: diff_target.py <target-repo> <checklist.json> [--json] [--yes]
 Exit codes: 0 OK | 1 usage/err | 2 not_found
 """
-import argparse, json, subprocess, sys
+import argparse, json, re, subprocess, sys
+from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from mine_common import fan_call, extract_json, EXIT_OK, EXIT_ERR, EXIT_NOT_FOUND  # shared mine substrate
 
+SRC_EXT = (".py", ".ts", ".rs", ".ex", ".go", ".js")
+# words that name the CHANGE rather than the capability — useless as search terms
+KEYWORD_STOP = {"fix", "fixes", "fixed", "update", "updates", "updated", "improvement", "improve",
+                "support", "supports", "handling", "handle", "management", "manage", "change",
+                "changes", "addition", "feature", "features", "issue", "behavior", "enhancement",
+                "integration", "general", "misc", "with", "from", "into", "this", "that", "data"}
+# evidence candidates: real source/docs/config only — vendored blobs, lockfiles and minified
+# bundles match every keyword and buried the true evidence on goose (tokens.json, pnpm-lock.yaml)
+EVIDENCE_EXT = SRC_EXT + (".tsx", ".jsx", ".exs", ".java", ".kt", ".swift", ".rb", ".php",
+                          ".c", ".cc", ".cpp", ".h", ".sh", ".md", ".toml", ".yaml", ".yml")
+EVIDENCE_EXCLUDE = re.compile(r"(^|/)(node_modules|vendor|third_party|dist|build|assets)/"
+                              r"|lock\b|\.lock\b|\.min\.|\.snap$|_data/", re.I)
+
+
+def evidence_candidate(path):
+    """Is this file usable as verdict evidence? Pure — testable without a repo."""
+    return path.endswith(EVIDENCE_EXT) and not EVIDENCE_EXCLUDE.search(path)
+
 
 def capability_map():
-    return {"tool": "2080-diff-target", "version": "0.2",
+    return {"tool": "2080-diff-target", "version": "0.3",
             "args": "<target-repo> <checklist.json> [--json] [--yes]",
             "exit_codes": {"0": "ok", "1": "usage/err", "2": "not_found"}}
 
 
-def gather_evidence(repo):
+def category_keywords(cat):
+    """Deterministic search terms for a category: domain words from category + aliases,
+    minus change-words (fix/update/...) that would match every commit-shaped string."""
+    aliases = cat.get("aliases", "")
+    if isinstance(aliases, list):
+        aliases = " ".join(aliases)
+    words = re.findall(r"[a-zA-Z][a-zA-Z_-]{3,}", f"{cat.get('category', '')} {aliases}".lower())
+    seen, out = set(), []
+    for w in words:
+        if w in KEYWORD_STOP or w in seen:
+            continue
+        seen.add(w); out.append(w)
+    return out[:6]
+
+
+def rank_evidence_files(kw_hits, nfiles, top=6):
+    """Rank files by how many distinct category keywords they match. A keyword hitting >40%
+    of the repo is too generic to discriminate and is dropped. Pure — testable without git."""
+    score = Counter()
+    for kw, hits in kw_hits.items():
+        if nfiles and len(hits) > 0.4 * nfiles:
+            continue
+        for f in hits:
+            score[f] += 1
+    return [f for f, _ in score.most_common(top)]
+
+
+def build_dir_map(files, top=40):
+    """Directory → file-count summary (depth ≤2). The model sees the SHAPE of the repo
+    instead of an alphabetical file dump that starts at .github/."""
+    c = Counter()
+    for f in files:
+        d = f.rsplit("/", 1)[0] if "/" in f else "."
+        c["/".join(d.split("/")[:2])] += 1
+    return "\n".join(f"{d}/ ({n} files)" for d, n in c.most_common(top))
+
+
+def _grep_files(repo, kw):
+    r = subprocess.run(["git", "-C", repo, "grep", "-ilI", "--untracked", "-e", kw],
+                       capture_output=True, text=True)
+    return kw, set(f for f in r.stdout.split("\n") if f)
+
+
+def prime_keyword_cache(repo, cats, allowed):
+    """One parallel grep pass for every unique keyword across all categories (greps release
+    the GIL in subprocesses; serial was 136s on goose, this is the wall-clock fix). Hits are
+    pre-filtered to evidence candidates so junk never reaches the ranking."""
+    kws = sorted({k for c in cats for k in category_keywords(c)})
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        return {kw: hits & allowed for kw, hits in ex.map(lambda k: _grep_files(repo, k), kws)}
+
+
+def category_evidence(repo, cat, nfiles, cache, char_budget):
+    """Evidence for ONE category: top keyword-matching files + a few matched lines.
+    'NO matching files' is itself load-bearing — a genuine absence signal."""
+    kws = category_keywords(cat)
+    if not kws:
+        return "(no searchable keywords)"
+    top = rank_evidence_files({k: cache.get(k, set()) for k in kws}, nfiles)
+    if not top:
+        return f"keyword search ({', '.join(kws)}): NO matching files anywhere in the repo"
+    out = ["files: " + ", ".join(top)]
+    r = subprocess.run(["git", "-C", repo, "grep", "-inI", "--untracked"]
+                       + [x for k in kws for x in ("-e", k)] + ["--"] + top[:3],
+                       capture_output=True, text=True)
+    out += [ln[:200] for ln in r.stdout.splitlines()[:6]]
+    return "\n".join(out)[:char_budget]
+
+
+def gather_evidence(repo, cats=None):
+    """Scale-aware evidence: full fileset (citation validation), dir map + entry-point excerpts
+    (orientation), and per-category keyword-search evidence (the verdict grounding).
+    Replaces the old first-80-files-alphabetical + 13KB excerpt, which starved the assessor on
+    large repos (measured: 0.083 precision on goose — it judged a .github helper as 'the app')."""
     p = Path(repo)
     readme = ""
     for n in ("README.md", "readme.md", "README"):
@@ -34,15 +127,31 @@ def gather_evidence(repo):
             readme = (p / n).read_text(errors="ignore")[:2500]; break
     # tracked AND untracked-not-ignored — an uncommitted target still has real source
     files = [f for f in subprocess.run(["git", "-C", repo, "ls-files", "--cached", "--others", "--exclude-standard"],
-                                        capture_output=True, text=True).stdout.split("\n") if f][:80]
+                                        capture_output=True, text=True).stdout.split("\n") if f]
+    in_git = bool(files)
+    if not in_git:  # non-git dir: orientation still works; grep evidence is skipped
+        files = sorted(str(x.relative_to(p)) for x in p.rglob("*") if x.is_file())[:400]
+    # entry-point-ish source first: shallow, not dot-dirs, main/cli/app/server-shaped names
+    def src_rank(f):
+        return ("/." in f or f.startswith("."), f.count("/"),
+                0 if re.search(r"(main|cli|app|server|index|lib)\.", f) else 1, f)
     src = ""
-    for f in files:
-        if f.endswith((".py", ".ts", ".rs", ".ex", ".go", ".js")) and len(src) < 13000:
-            try:
-                src += f"\n# === {f} ===\n" + (p / f).read_text(errors="ignore")[:4500]
-            except Exception:
-                pass
-    return {"readme": readme, "files": files, "source_excerpt": src[:15000]}
+    for f in sorted((f for f in files if f.endswith(SRC_EXT)), key=src_rank)[:6]:
+        if len(src) >= 9000:
+            break
+        try:
+            src += f"\n# === {f} ===\n" + (p / f).read_text(errors="ignore")[:2500]
+        except Exception:
+            pass
+    cat_ev = {}
+    if cats and in_git:
+        allowed = {f for f in files if evidence_candidate(f)}
+        cache = prime_keyword_cache(repo, cats, allowed)
+        budget = max(350, 26000 // max(1, len(cats)))
+        for i, c in enumerate(cats):
+            cat_ev[i] = category_evidence(repo, c, len(allowed), cache, budget)
+    return {"readme": readme, "files": files, "dir_map": build_dir_map(files),
+            "source_excerpt": src[:10000], "category_evidence": cat_ev}
 
 
 def validate_fix_sites(sites, fileset):
@@ -81,19 +190,23 @@ def assess_target(target, cl):
     and on gap/partial: "fix_sites","fix_sites_unverified"}]}."""
     cats = [{**c, "tier": "required"} for c in cl.get("required", [])] + \
            [{**c, "tier": "optional"} for c in cl.get("optional", [])]
-    ev = gather_evidence(target)
+    ev = gather_evidence(target, cats)
 
     cat_listing = "\n".join(
-        f"{i+1}. [{c['tier']}] {c['category']} — day-1 tell: {c.get('day1_tell', '(none)')}"
+        f"{i+1}. [{c['tier']}] {c['category']} — day-1 tell: {c.get('day1_tell', '(none)')}\n"
+        f"   EVIDENCE: {ev['category_evidence'].get(i, '(none gathered)')}"
         for i, c in enumerate(cats))
 
     fileset = set(ev["files"])
-    out = extract_json(fan_call(
+    raw = fan_call(
         f"TARGET repo '{target}' (claimed app_type {cl.get('app_type')}). Evidence:\n"
         f"README:\n{ev['readme']}\n\n"
-        f"FILES — these are the ONLY files that exist; never cite a file outside this list:\n{json.dumps(ev['files'])}\n\n"
-        f"SOURCE:\n{ev['source_excerpt']}\n\n"
-        f"CHECKLIST — categories mature {cl.get('app_type')} repos had to add, each with a day-1 check:\n{cat_listing}\n\n"
+        f"REPO MAP (directory → file count; the repo's real shape and size):\n{ev['dir_map']}\n\n"
+        f"ENTRY-POINT SOURCE EXCERPTS:\n{ev['source_excerpt']}\n\n"
+        f"CHECKLIST — categories mature {cl.get('app_type')} repos had to add. Each includes EVIDENCE from a "
+        "deterministic keyword search across the ENTIRE repo (top matching files + matched lines). "
+        "'NO matching files' is a genuine absence signal; matched files are where the capability most likely "
+        f"lives — weigh them over impressions from the README:\n{cat_listing}\n\n"
         "STEP 1: in one short phrase, identify the TARGET's actual sub_type from the evidence.\n"
         "STEP 2: assess EACH category using ONLY the evidence: status = covered | partial | gap | na_by_design. "
         "Mark na_by_design when the category does not apply to THIS target, for either reason:\n"
@@ -103,15 +216,21 @@ def assess_target(target, cl):
         "target's. E.g. for a prior-art / LLM-based completeness tool, line-level code-review suggestions, "
         "static-analysis/AST scanning, multi-language parsers, and dependency/supply-chain scanners are a "
         "DIFFERENT mechanism (a SAST/linter engine), not this tool's job — mark those na_by_design, not gap.\n"
-        "For each: reasoning (1 sentence) and cited_files (files FROM THE LIST you based it on; [] if none; do NOT "
-        "invent filenames). For each gap or partial ONLY, also give fix_sites: 1-3 of "
-        '{"file": a file FROM THE LIST where the capability would naturally be added or extended, '
+        "For each: reasoning (1 sentence) and cited_files (file paths that APPEAR IN THE EVIDENCE/MAP above; "
+        "[] if none; do NOT invent filenames). For each gap or partial ONLY, also give fix_sites: 1-3 of "
+        '{"file": a file path FROM THE EVIDENCE where the capability would naturally be added or extended, '
         '"what": one concrete line of what to add there}; [] only when no existing file is a sensible anchor. '
         "Return ONLY JSON: "
         '{"sub_type":"...","assessments":[{"n":<num>,"status":"...","reasoning":"...","cited_files":[...],'
         '"fix_sites":[{"file":"...","what":"..."}]}]}',
-        max_tokens=max(4000, len(cats) * 150)))
+        max_tokens=max(4000, len(cats) * 150), timeout_ms=300000)
+    if raw is None:  # fan call itself failed (timeout/transport) — not a parse problem
+        print("assess_target: LLM call failed (fan returned no result)", file=sys.stderr)
+        return None
+    out = extract_json(raw)
     if not out:
+        Path("/tmp/2080-diff-raw.txt").write_text(raw)
+        print("assess_target: unparseable model output — raw saved to /tmp/2080-diff-raw.txt", file=sys.stderr)
         return None
 
     cats = apply_assessments(cats, out.get("assessments", []), fileset)

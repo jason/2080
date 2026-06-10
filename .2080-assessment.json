@@ -14,7 +14,7 @@
       "tier": "required",
       "day1_tell": "Open a test pull request and confirm the product generates a review summary plus at least one line-level suggestion on the diff.",
       "status": "na_by_design",
-      "reasoning": "Line-level pull-request code review is a different SAST/code-review product mechanism than this target's checklist-driven completeness gap gate.",
+      "reasoning": "Line-level AI pull-request review is a code-review product mechanism, while this target assesses checklist coverage and second-85% gaps rather than reviewing PR diffs.",
       "citation_unverified": false
     },
     {
@@ -29,16 +29,16 @@
       "tier": "required",
       "day1_tell": "Open model/provider settings and confirm you can select or configure at least two LLM providers or models, including an OpenAI-compatible endpoint.",
       "status": "partial",
-      "reasoning": "The mining flow exposes model/provider/reasoning options for LLM abstraction, but the main check gate evidence does not show configurable provider/model selection for assessments.",
+      "reasoning": "The mining tools expose model/provider CLI arguments, but evidence does not show user-facing configurable provider selection across the full product including OpenAI-compatible endpoints.",
       "citation_unverified": false,
       "fix_sites": [
         {
-          "file": "check.py",
-          "what": "Add --model, --provider, and --openai-compatible-base-url options and pass them through to assess_target."
+          "file": "mine_common.py",
+          "what": "Centralize provider/model configuration including OpenAI-compatible base URL support."
         },
         {
-          "file": "diff_target.py",
-          "what": "Accept provider/model configuration for the LLM assessment path."
+          "file": "check.py",
+          "what": "Expose provider/model options or document how assessment provider settings are selected."
         }
       ],
       "fix_sites_unverified": false
@@ -54,16 +54,16 @@
       "tier": "required",
       "day1_tell": "Add a user-managed API key in settings and run a review confirming the request uses that configured key.",
       "status": "gap",
-      "reasoning": "No evidence shows user-managed API key configuration or verification that analysis uses a configured key.",
+      "reasoning": "Evidence mentions cost caps and model usage, but no user-managed API key or BYOK request path is shown.",
       "citation_unverified": false,
       "fix_sites": [
         {
-          "file": ".2080.json.example",
-          "what": "Document a local config shape for provider credentials or environment variable references."
+          "file": "mine_common.py",
+          "what": "Add environment/config handling for user-supplied provider API keys and document precedence."
         },
         {
-          "file": "check.py",
-          "what": "Load credential configuration from .2080.json or environment and report which configured provider path is used without exposing secrets."
+          "file": "docs/HANDOFF.md",
+          "what": "Document BYOK setup and verification for LLM-backed assessment runs."
         }
       ],
       "fix_sites_unverified": false
@@ -81,7 +81,7 @@
       "tier": "required",
       "day1_tell": "Install the CLI and run a local review or analysis command against a repository.",
       "status": "covered",
-      "reasoning": "The product is explicitly a CLI-style workflow with commands such as `2080 check <target> --spine <checklist>` and `check.py <target-repo> --spine <checklist.json>`.",
+      "reasoning": "The repository provides CLI entry points such as check.py, diff_target.py, and mining commands for local repository analysis.",
       "citation_unverified": false
     },
     {
@@ -96,17 +96,17 @@
       "recurrence_projects": 4,
       "tier": "required",
       "day1_tell": "Connect a GitHub/GitLab/Bitbucket repository and confirm the product can access and review an open pull request.",
-      "status": "partial",
-      "reasoning": "A GitHub Actions gate exists, but there is no evidence of connecting to GitHub/GitLab/Bitbucket and reviewing an open pull request through the platform API.",
+      "status": "gap",
+      "reasoning": "No evidence shows GitHub/GitLab/Bitbucket repository connection or pull-request access/review integration.",
       "citation_unverified": false,
       "fix_sites": [
         {
           "file": "check.py",
-          "what": "Add optional PR metadata inputs so reports can annotate a pull request when run in CI."
+          "what": "Add or document a PR-mode adapter that can fetch changed files from a Git hosting provider before running the gate."
         },
         {
-          "file": ".github/workflows/2080-gate.yml",
-          "what": "Extend the workflow example to run on pull_request events and upload or comment the JSON report."
+          "file": "README.md",
+          "what": "Document supported Git/PR integration workflow or explicitly scope it out."
         }
       ],
       "fix_sites_unverified": false
@@ -125,7 +125,7 @@
       "tier": "required",
       "day1_tell": "Create or edit a custom rule/config file and confirm it changes the review output on a test repository.",
       "status": "covered",
-      "reasoning": "Custom rules are represented by user-supplied spines/checklists via `--spine`, and the README states that the checklist is the rule set.",
+      "reasoning": "The --spine checklist acts as the custom rule set and can be pointed at arbitrary checklists to change gate behavior.",
       "citation_unverified": false
     },
     {
@@ -139,7 +139,7 @@
       "tier": "required",
       "day1_tell": "Run a scan on a repository with a known lint/security/code-smell issue and confirm the product reports it outside of generic LLM prose.",
       "status": "na_by_design",
-      "reasoning": "Static lint/security/code-smell scanning outside LLM prose is a different SAST/linter mechanism than this gap-analysis engine.",
+      "reasoning": "Static lint/security/code-smell scanning is a SAST/linter engine mechanism, while this target uses LLM/checklist coverage assessment.",
       "citation_unverified": false
     },
     {
@@ -154,7 +154,7 @@
       "tier": "required",
       "day1_tell": "Configure a quality threshold, run it on a failing change, and confirm the product marks the change as failed or blocked.",
       "status": "covered",
-      "reasoning": "`check.py` implements a CI-ready quality gate with `--threshold`, `--fail-on`, and exit code 3 when required gaps remain.",
+      "reasoning": "check.py implements thresholded required-gap blocking with exit code 3, plus hook and CI-safe saved-assessment gating.",
       "citation_unverified": false
     },
     {
@@ -168,7 +168,7 @@
       "tier": "required",
       "day1_tell": "Scan a project with a known vulnerable dependency and confirm the product reports the dependency or supply-chain risk.",
       "status": "na_by_design",
-      "reasoning": "Dependency and supply-chain vulnerability scanning is a different scanner mechanism than this checklist/LLM completeness tool.",
+      "reasoning": "Dependency and supply-chain vulnerability scanning belongs to a SAST/SCA engine, not this LLM completeness-gap analysis tool.",
       "citation_unverified": false
     },
     {
@@ -182,7 +182,7 @@
       "tier": "required",
       "day1_tell": "Run analysis on a repository containing at least two programming languages and confirm both are parsed or reported on.",
       "status": "na_by_design",
-      "reasoning": "Multi-language parsing is structurally a parser/static-analysis concern, while this target assesses repository evidence against a checklist rather than parsing languages.",
+      "reasoning": "Parsing/reporting multiple programming languages is a static-analysis engine capability, not required for this checklist-based completeness assessor.",
       "citation_unverified": false
     },
     {
@@ -196,7 +196,7 @@
       "tier": "required",
       "day1_tell": "Find and follow the self-hosted deployment instructions, then confirm the service starts in your own environment.",
       "status": "na_by_design",
-      "reasoning": "The target is a local CLI/pipeline tool rather than a hosted service requiring self-hosted deployment instructions.",
+      "reasoning": "Self-hosted service deployment does not structurally apply to this CLI-oriented analysis pipeline rather than a hosted web service.",
       "citation_unverified": false
     },
     {
@@ -211,16 +211,16 @@
       "tier": "required",
       "day1_tell": "Configure SSO, vault-backed secrets, or OS credential storage and confirm credentials are not stored as plain text in the app.",
       "status": "gap",
-      "reasoning": "There is no evidence of SSO, vault-backed secrets, OS credential storage, or documented secret handling for provider keys.",
+      "reasoning": "Evidence mentions enterprise secrets as a known emitted gap but shows no SSO, vault, OS credential storage, or non-plaintext secret handling implementation.",
       "citation_unverified": false,
       "fix_sites": [
         {
-          "file": "docs/INTEGRATIONS.md",
-          "what": "Document supported secret-handling patterns for CI and local use, including environment variables and vault/secret-store examples."
+          "file": "mine_common.py",
+          "what": "Add support for reading provider credentials from OS keychain or external secret providers without persisting plaintext."
         },
         {
-          "file": ".2080.json.example",
-          "what": "Show non-plaintext secret references rather than literal API keys."
+          "file": "docs/HANDOFF.md",
+          "what": "Document enterprise secret-handling status and supported secure credential sources."
         }
       ],
       "fix_sites_unverified": false
@@ -238,7 +238,7 @@
       "tier": "required",
       "day1_tell": "Add the product to a CI pipeline or GitHub Action and confirm it runs automatically on a commit or pull request.",
       "status": "covered",
-      "reasoning": "The README describes CI readiness, and the repository includes a GitHub workflow plus hook path for deterministic gating from saved assessments.",
+      "reasoning": "The repository includes a GitHub Actions workflow for the 2080 gate and check.py explicitly supports deterministic CI gating from saved assessments.",
       "citation_unverified": false
     },
     {
@@ -253,20 +253,9 @@
       "recurrence_projects": 4,
       "tier": "required",
       "day1_tell": "Open the reporting/dashboard area and confirm it shows review results, scan findings, usage, or project health metrics.",
-      "status": "partial",
-      "reasoning": "The gate can emit a human gap report and `--json` verdict, but there is no evidence of a dashboard or accumulated usage/project health reporting.",
-      "citation_unverified": false,
-      "fix_sites": [
-        {
-          "file": "check.py",
-          "what": "Add an option to write a stable report artifact containing verdict, blocking gaps, and summary metrics."
-        },
-        {
-          "file": "emit.py",
-          "what": "Extend report emission to produce reusable JSON/Markdown summaries for CI artifacts or dashboards."
-        }
-      ],
-      "fix_sites_unverified": false
+      "status": "covered",
+      "reasoning": "check.py provides human and JSON gap reports, and related measurement/mining tools report assessment and clustering results.",
+      "citation_unverified": false
     }
   ]
 }

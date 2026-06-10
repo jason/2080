@@ -5,7 +5,8 @@ test_diff_evidence.py — deterministic tests for diff_target's fix_sites eviden
 No LLM calls: exercises validate_fix_sites / apply_assessments on synthetic assessments
 against a fake fileset. Run: python3 test_diff_evidence.py
 """
-from diff_target import validate_fix_sites, apply_assessments
+from diff_target import (validate_fix_sites, apply_assessments, category_keywords,
+                         rank_evidence_files, build_dir_map, evidence_candidate)
 
 FILESET = {"app.py", "cli.py", "store.py"}
 
@@ -60,6 +61,51 @@ def test_cited_files_validation_unchanged():
     cats = [{"category": "A", "tier": "required"}]
     out = apply_assessments(cats, [{"n": 1, "status": "covered", "cited_files": ["nope.py"]}], FILESET)
     assert out[0]["citation_unverified"] is True and out[0]["status"] == "covered"
+
+
+def test_category_keywords_keep_domain_words_drop_change_words():
+    # intent: searching a repo for "fix"/"improvement" matches everything and grounds nothing —
+    # the precision failure (0.083 on goose) came from ungrounded verdicts. Keywords must be
+    # the capability's domain words only, deduped across category + aliases.
+    kws = category_keywords({"category": "error handling improvement",
+                             "aliases": "error handling improvement / exception classification"})
+    assert kws == ["error", "exception", "classification"]
+
+
+def test_rank_evidence_drops_too_generic_keyword():
+    # intent: a keyword hitting most of the repo (e.g. "error" in a vendored lockfile world)
+    # would rank every file equally and bury the real evidence — it must be discarded.
+    hits = {"telemetry": {"src/obs.py"},
+            "config": {f"f{i}.py" for i in range(60)}}  # 60% of a 100-file repo
+    assert rank_evidence_files(hits, nfiles=100) == ["src/obs.py"]
+
+
+def test_rank_evidence_prefers_multi_keyword_files():
+    # intent: the file matching several of the category's terms is where the capability lives;
+    # ranking it below single-term matches would point the assessor at the wrong evidence.
+    hits = {"retry": {"net.py", "client.py"}, "backoff": {"client.py"}}
+    assert rank_evidence_files(hits, nfiles=100)[0] == "client.py"
+
+
+def test_dir_map_summarizes_shape_not_alphabetical_order():
+    # intent: the old first-80-alphabetical file list showed .github/ as "the app" on large
+    # repos; the dir map must rank directories by file count so the real source dominates.
+    files = [f"crates/core/src/m{i}.rs" for i in range(50)] + [".github/workflows/ci.yml", "README.md"]
+    m = build_dir_map(files)
+    assert m.splitlines()[0] == "crates/core/ (50 files)"
+    assert ".github" in m  # still visible, just not first
+
+
+def test_evidence_candidates_exclude_vendored_blobs():
+    # intent: on goose, pnpm-lock.yaml / mermaid.min.js / whisper_data tokens matched every
+    # keyword and outranked real source — verdicts grounded in junk evidence are the 0.083
+    # precision failure recurring in a new disguise. Blobs must never be evidence.
+    assert evidence_candidate("crates/goose-cli/src/session/mod.rs")
+    assert evidence_candidate("docs/error-handling.md")
+    assert not evidence_candidate("ui/pnpm-lock.yaml")
+    assert not evidence_candidate("templates/assets/mermaid.min.js")
+    assert not evidence_candidate("src/dictation/whisper_data/tokens.json")
+    assert not evidence_candidate("ui/node_modules/x/index.js")
 
 
 if __name__ == "__main__":
