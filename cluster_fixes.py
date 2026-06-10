@@ -21,6 +21,8 @@ from __future__ import annotations
 import argparse, hashlib, json, os, pickle, re, subprocess, sys
 from pathlib import Path
 
+from mine_common import fan_batch, fan_call
+
 CACHE_DIR = Path.home() / ".cache" / "2080-cluster-fixes"
 PHRASE_CACHE = CACHE_DIR / "phrases.json"
 EXIT_OK, EXIT_ERR, EXIT_NOT_FOUND, EXIT_EMPTY = 0, 1, 2, 3
@@ -114,19 +116,18 @@ def abstract_via_fan(items, model, provider, reasoning, batch_size=32):
                 "engineering work), true otherwise. Return ONLY JSON mapping each number (string) to "
                 '{"phrase": "...", "substantive": true|false}.\n\n' + listing
             )
-            calls.append({"id": str(bi), "provider": provider, "model": model, "reasoning": reasoning,
-                          "prompt": prompt, "maxTokens": max_tokens, "timeoutMs": 120000})
+            calls.append({"id": str(bi), "prompt": prompt, "maxTokens": max_tokens})
         print(f"fanning {len(calls)} parallel {model}({reasoning}) calls for {len(todo)} commits…", file=sys.stderr)
-        r = subprocess.run(["fan"], input=json.dumps({"calls": calls}), capture_output=True, text=True, timeout=600)
-        if not r.stdout:
-            print(f"fan failed: {r.stderr[:400]}", file=sys.stderr); sys.exit(EXIT_ERR)
-        results = json.loads(r.stdout).get("results", [])
+        try:
+            texts = fan_batch(calls, model, provider, reasoning, timeout_ms=120000)
+        except RuntimeError as e:
+            print(str(e)[:400], file=sys.stderr); sys.exit(EXIT_ERR)
         ok = 0
-        for res in results:
-            if not res.get("ok"):
+        for bid, text in texts.items():
+            if text is None:
                 continue
-            bi = int(res["id"]); batch = batches[bi]
-            mapping = _extract_json_obj(res.get("text", ""))
+            bi = int(bid); batch = batches[bi]
+            mapping = _extract_json_obj(text)
             for j, it in enumerate(batch):
                 e = mapping.get(str(j + 1)) or mapping.get(j + 1)
                 if isinstance(e, dict) and e.get("phrase"):
@@ -135,7 +136,7 @@ def abstract_via_fan(items, model, provider, reasoning, batch_size=32):
                 elif isinstance(e, str) and e.strip():
                     cache[_pkey(it["subject"])] = {"phrase": e.strip().lower(), "substantive": True}; ok += 1
         _save_phrases(cache)
-        print(f"  abstracted {ok}/{len(todo)} (fan results ok: {sum(1 for x in results if x.get('ok'))}/{len(results)})", file=sys.stderr)
+        print(f"  abstracted {ok}/{len(todo)} (fan results ok: {sum(1 for t in texts.values() if t is not None)}/{len(texts)})", file=sys.stderr)
     for it in items:
         c = cache.get(_pkey(it["subject"]))
         if isinstance(c, dict):
@@ -291,14 +292,12 @@ def main():
                   "inspection that reveals whether a project covers it (e.g. 'feed the parser a NUL byte + an "
                   "oversized line; confirm it rejects/quotes instead of panicking'). Return ONLY JSON "
                   "{number: check}.\n\n" + listing)
-        r = subprocess.run(["fan"], input=json.dumps({"calls": [{"id": "0", "provider": a.provider, "model": a.model,
-                            "reasoning": a.reasoning, "prompt": prompt, "maxTokens": max(2000, len(cats) * 60),
-                            "timeoutMs": 120000}]}), capture_output=True, text=True, timeout=300)
         tells = {}
         try:
-            res = json.loads(r.stdout)["results"][0]
-            if res.get("ok"):
-                tells = _extract_json_obj(res.get("text", ""))
+            text = fan_call(prompt, max_tokens=max(2000, len(cats) * 60),
+                            model=a.model, provider=a.provider, reasoning=a.reasoning, timeout_ms=120000)
+            if text:
+                tells = _extract_json_obj(text)
         except Exception:
             pass
         for i, c in enumerate(cats):

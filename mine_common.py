@@ -10,9 +10,16 @@ LLM-call + JSON-extraction substrate so each new lens is a config, not new plumb
 Reuses the `fan` parallel-LLM CLI (gpt-5.5-low via Codex OAuth) — the 2080-standard surface.
 """
 from __future__ import annotations
-import json, re, subprocess
+import json, os, re, subprocess, time
 
 EXIT_OK, EXIT_ERR, EXIT_NOT_FOUND, EXIT_EMPTY = 0, 1, 2, 3
+
+# fan has NO internal retry: a transient 429 becomes ok:false, which downstream means a silently
+# missing judge vote / assessment. Concurrency and retries are therefore coupled knobs: raising
+# concurrency without retries trades wall-time for data corruption. Defaults preserve fan's
+# historical behavior (4-wide, no retry); override via env after probing the provider's tolerance.
+FAN_CONCURRENCY = int(os.environ.get("FAN_CONCURRENCY", "4"))
+FAN_RETRIES = int(os.environ.get("FAN_RETRIES", "0"))
 
 
 def extract_json(text):
@@ -32,10 +39,9 @@ def extract_json(text):
     return None
 
 
-def fan_batch(calls, model="gpt-5.5", provider="openai-codex", reasoning="low", timeout_ms=180000):
-    """Run N prompts through one `fan` invocation (fan fans them out concurrently).
-    `calls` = [{"id": str, "prompt": str, "maxTokens"?: int}]. Returns {id: text|None} (None if !ok)."""
-    cfg = {"calls": [{"id": str(c["id"]), "provider": provider, "model": model, "reasoning": reasoning,
+def _fan_once(calls, model, provider, reasoning, timeout_ms, concurrency):
+    cfg = {"maxConcurrency": max(1, concurrency),
+           "calls": [{"id": str(c["id"]), "provider": provider, "model": model, "reasoning": reasoning,
                       "prompt": c["prompt"], "maxTokens": c.get("maxTokens", 3000), "timeoutMs": timeout_ms}
                      for c in calls]}
     r = subprocess.run(["fan"], input=json.dumps(cfg), capture_output=True, text=True,
@@ -45,6 +51,24 @@ def fan_batch(calls, model="gpt-5.5", provider="openai-codex", reasoning="low", 
     out = {}
     for res in json.loads(r.stdout).get("results", []):
         out[str(res.get("id"))] = res.get("text", "") if res.get("ok") else None
+    return out
+
+
+def fan_batch(calls, model="gpt-5.5", provider="openai-codex", reasoning="low", timeout_ms=180000,
+              concurrency=None, retries=None):
+    """Run N prompts through one `fan` invocation (fan fans them out concurrently).
+    `calls` = [{"id": str, "prompt": str, "maxTokens"?: int}]. Returns {id: text|None} (None if !ok).
+    Failed calls (transient 429s/timeouts) are retried up to `retries` times at HALF concurrency
+    with a short pause — the burst that caused them has drained by then."""
+    concurrency = FAN_CONCURRENCY if concurrency is None else concurrency
+    retries = FAN_RETRIES if retries is None else retries
+    out = _fan_once(calls, model, provider, reasoning, timeout_ms, concurrency)
+    for _ in range(retries):
+        failed = [c for c in calls if out.get(str(c["id"])) is None]
+        if not failed:
+            break
+        time.sleep(3)
+        out.update(_fan_once(failed, model, provider, reasoning, timeout_ms, max(1, concurrency // 2)))
     return out
 
 
