@@ -90,8 +90,10 @@ Two findings from the run:
   **FIXED (session 4):** eps sweep on the telegram corpus showed the knee is corpus-dependent —
   at the default 0.34: maxClust 334, silhouette 0.084; at **0.26**: maxClust 25, silhouette 0.525,
   recurring clusters 97→115. Re-emitted at eps 0.26: top clusters are now coherent (25-commit
-  error-handling, 17-commit timeout-handling). Lesson: run `--sweep` per new corpus; 0.34 stays
-  the default only for the corpus it was tuned on.
+  error-handling, 17-commit timeout-handling). **Lesson CODIFIED:** `--eps auto` is now
+  cluster_fixes' default — sweeps the grid and picks per-corpus via `pick_eps` (catch-all guard:
+  maxClust ≤5% of clustered; silhouette ≥0.3; maximize recurring clusters). Tested against the
+  real telegram sweep numbers; live auto run reproduces the 0.26 choice unattended.
 
 **Prior-art survey: VERIFIED** (103 agents, 22 confirmed / 3 killed claims) → `docs/PRIOR-ART.md`.
 Verdict: **partially novel** — novel on the prediction target (forward completeness spine), with

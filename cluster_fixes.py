@@ -146,13 +146,63 @@ def abstract_via_fan(items, model, provider, reasoning, batch_size=32):
             it["phrase"], it["substantive"] = it["subject"][:40].lower(), True
 
 
+EPS_GRID = (0.22, 0.26, 0.30, 0.34, 0.38, 0.42, 0.46)
+
+
+def sweep_stats(V, items, eps_grid=EPS_GRID, ms_grid=(2, 3)):
+    """DBSCAN metrics per (eps, min_samples) — shared by --sweep display and auto-eps."""
+    from sklearn.cluster import DBSCAN
+    from sklearn.metrics import silhouette_score
+    from collections import defaultdict
+    rows = []
+    for eps in eps_grid:
+        for ms in ms_grid:
+            lab = DBSCAN(eps=eps, min_samples=ms, metric="cosine").fit_predict(V)
+            mask = lab != -1
+            cl = defaultdict(list)
+            for it, l in zip(items, lab):
+                if l != -1:
+                    cl[l].append(it)
+            multi = [c for c in cl.values() if len({m["project"] for m in c}) >= 2]
+            tot = int(mask.sum())
+            try:
+                sil = silhouette_score(V[mask], lab[mask], metric="cosine") if len(cl) >= 2 and tot > len(cl) else float("nan")
+            except Exception:
+                sil = float("nan")
+            rows.append({"eps": eps, "ms": ms, "n_clusters": len(cl),
+                         "noise_pct": 100 * (~mask).sum() / max(1, len(lab)),
+                         "recur_clusters": len(multi),
+                         "recur_commit_pct": 100 * sum(len(c) for c in multi) / max(1, tot),
+                         "max_clust": max((len(c) for c in cl.values()), default=0),
+                         "clustered": tot, "silhouette": float(sil)})
+    return rows
+
+
+def pick_eps(rows):
+    """Deterministic corpus-tuned eps (pure; the codified lesson from the telegram catch-all:
+    the knee is corpus-dependent — 0.34 gave a coherent spine on the agent-tool corpus but a
+    334-commit catch-all on the telegram corpus). Rule: among ms=2 candidates, require
+    (a) no catch-all (largest cluster ≤5% of clustered commits) and (b) silhouette ≥0.3,
+    then maximize RECURRING cluster count (the spine's actual content); tie → higher silhouette.
+    Fallback: best silhouette at ms=2; final fallback 0.34."""
+    ms2 = [r for r in rows if r["ms"] == 2 and r["clustered"]]
+    ok = [r for r in ms2 if r["max_clust"] <= 0.05 * r["clustered"]
+          and not (r["silhouette"] != r["silhouette"]) and r["silhouette"] >= 0.3]
+    if ok:
+        return max(ok, key=lambda r: (r["recur_clusters"], r["silhouette"]))["eps"]
+    scored = [r for r in ms2 if not (r["silhouette"] != r["silhouette"])]
+    return max(scored, key=lambda r: r["silhouette"])["eps"] if scored else 0.34
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("files", nargs="*")
     ap.add_argument("--model", default="gpt-5.5")
     ap.add_argument("--provider", default="openai-codex")
     ap.add_argument("--reasoning", default="low")
-    ap.add_argument("--eps", type=float, default=0.34)  # tuned: knee — max distinct clusters, no catch-all merge
+    ap.add_argument("--eps", default="auto",
+                    help="DBSCAN eps, or 'auto' (default): sweep the grid and pick per-corpus — "
+                         "the knee is corpus-dependent (0.34 was right for agent-tools, 0.26 for telegram bots)")
     ap.add_argument("--min-samples", type=int, default=2)
     ap.add_argument("--batch", type=int, default=32, help="commits per fan call (≤~50; sweet spot 32-40)")
     ap.add_argument("--sweep", action="store_true", help="grid-sweep eps × min_samples and print metrics")
@@ -163,8 +213,8 @@ def main():
     a = ap.parse_args()
 
     if not a.files:
-        cap = {"tool": "cluster_fixes", "version": "0.2",
-               "args": "<harvest.json>... [--model][--provider][--reasoning][--eps][--min-samples][--no-abstract][--json]",
+        cap = {"tool": "cluster_fixes", "version": "0.3",
+               "args": "<harvest.json>... [--model][--provider][--reasoning][--eps auto|<float>][--min-samples][--no-abstract][--json]",
                "exit_codes": {"0": "ok", "1": "usage/err", "2": "not_found", "3": "empty"}}
         if a.json: print(json.dumps(cap)); sys.exit(EXIT_OK)
         print(cap["args"], file=sys.stderr); sys.exit(EXIT_ERR)
@@ -189,29 +239,21 @@ def main():
     from collections import Counter, defaultdict
 
     if a.sweep:
-        from sklearn.metrics import silhouette_score
         print(f"{'eps':>5} {'ms':>3} {'clusters':>8} {'noise%':>7} {'recurClust':>10} {'recurCommit%':>12} {'maxClust':>8} {'silhouette':>10}")
-        for eps in (0.22, 0.26, 0.30, 0.34, 0.38, 0.42, 0.46):
-            for ms in (2, 3):
-                lab = DBSCAN(eps=eps, min_samples=ms, metric="cosine").fit_predict(V)
-                mask = lab != -1
-                cl = defaultdict(list)
-                for it, l in zip(items, lab):
-                    if l != -1:
-                        cl[l].append(it)
-                nclust = len(cl)
-                multi = [c for c in cl.values() if len({m["project"] for m in c}) >= 2]
-                tot = int(mask.sum())
-                recur_commit = 100 * sum(len(c) for c in multi) / max(1, tot)
-                maxc = max((len(c) for c in cl.values()), default=0)
-                try:
-                    sil = silhouette_score(V[mask], lab[mask], metric="cosine") if nclust >= 2 and tot > nclust else float("nan")
-                except Exception:
-                    sil = float("nan")
-                print(f"{eps:>5} {ms:>3} {nclust:>8} {100*(~mask).sum()/len(lab):>6.1f} {len(multi):>10} {recur_commit:>11.1f} {maxc:>8} {sil:>10.3f}")
+        for r in sweep_stats(V, items):
+            print(f"{r['eps']:>5} {r['ms']:>3} {r['n_clusters']:>8} {r['noise_pct']:>6.1f} {r['recur_clusters']:>10} "
+                  f"{r['recur_commit_pct']:>11.1f} {r['max_clust']:>8} {r['silhouette']:>10.3f}")
         sys.exit(EXIT_OK)
 
-    labels = DBSCAN(eps=a.eps, min_samples=a.min_samples, metric="cosine").fit_predict(V)
+    if a.eps == "auto":
+        rows = sweep_stats(V, items)
+        eps = pick_eps(rows)
+        chosen = next(r for r in rows if r["eps"] == eps and r["ms"] == 2)
+        print(f"eps auto → {eps} (maxClust {chosen['max_clust']}/{chosen['clustered']} clustered, "
+              f"silhouette {chosen['silhouette']:.3f}, {chosen['recur_clusters']} recurring clusters)", file=sys.stderr)
+    else:
+        eps = float(a.eps)
+    labels = DBSCAN(eps=eps, min_samples=a.min_samples, metric="cosine").fit_predict(V)
 
     clusters = defaultdict(list)
     for it, lab in zip(items, labels):
