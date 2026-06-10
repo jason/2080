@@ -184,10 +184,113 @@ def apply_assessments(cats, assessments, fileset):
     return cats
 
 
+def clean_synonym_terms(terms, kws):
+    """Sanitize LLM-proposed search terms (pure): strings only, ≥3 chars, deduped, not already
+    among the original keywords (re-searching the same words proves nothing), capped at 8."""
+    seen, out = set(kws), []
+    for t in terms or []:
+        if not isinstance(t, str):
+            continue
+        t = t.strip()
+        k = t.lower()
+        if len(t) < 3 or k in seen:
+            continue
+        seen.add(k); out.append(t)
+    return out[:8]
+
+
+def merge_escalation(cats, idx_to_asmt, fileset):
+    """Apply re-assessments to escalated gap categories (pure). A flipped verdict keeps the
+    audit trail: escalated=True plus the original gap reasoning. Unflipped gaps also get
+    escalated=True — 'survived a synonym search' strengthens the verdict."""
+    for i, asmt in idx_to_asmt.items():
+        c = cats[i]
+        c["escalated"] = True
+        new = asmt.get("status")
+        if new in ("covered", "partial", "na_by_design") and new != c["status"]:
+            c["pre_escalation_reasoning"] = c.get("reasoning", "")
+            c["status"] = new
+            c["reasoning"] = asmt.get("reasoning", "")
+            bad = [f for f in (asmt.get("cited_files") or []) if f not in fileset]
+            c["citation_unverified"] = bool(bad)
+            if new == "partial":
+                c["fix_sites"], c["fix_sites_unverified"] = validate_fix_sites(asmt.get("fix_sites"), fileset)
+            else:
+                c.pop("fix_sites", None); c.pop("fix_sites_unverified", None)
+    return cats
+
+
+def escalate_gaps(target, cl, cats, ev, fileset):
+    """Second-opinion pass for GAP verdicts — the measured residual failure mode (precision run:
+    gap verdicts 1/4 correct vs partials 22/26; every false gap was vocabulary mismatch, e.g.
+    'optional dependency handling' implemented as ensure_peekaboo()).
+
+    The LLM only PROPOSES alternative search terms; evidence still comes from deterministic
+    git grep over the filtered fileset. A gap stands only if the synonym search is ALSO dry.
+    Cost: ≤2 extra fan calls, and only when gaps exist (they're rare post-evidence-fix)."""
+    gaps = [i for i, c in enumerate(cats) if c.get("status") == "gap"]
+    if not gaps or not ev["category_evidence"]:
+        return cats
+
+    listing = "\n".join(f"{i}: {cats[i]['category']} (aliases: {cats[i].get('aliases', '')})" for i in gaps)
+    raw = fan_call(
+        f"A repo of app_type {cl.get('app_type')} was judged MISSING these capabilities, but the search "
+        "used only the capability names — implementations often live under different vocabulary "
+        "(library names, function/symbol names, config keys, CLI tools).\n"
+        f"REPO MAP:\n{ev['dir_map'][:1500]}\n\nCAPABILITIES:\n{listing}\n\n"
+        "For EACH, propose 5-8 alternative search terms an implementation would actually contain "
+        "(concrete identifiers > concepts; match the repo's likely language/stack). "
+        'Return ONLY JSON: {"<index>": ["term", ...], ...}', max_tokens=200 * len(gaps) + 500)
+    syn = extract_json(raw) if raw else None
+    if not syn:
+        return cats  # escalation is best-effort; the original verdicts stand
+
+    allowed = {f for f in fileset if evidence_candidate(f)}
+    found = {}
+    for i in gaps:
+        terms = clean_synonym_terms(syn.get(str(i)), category_keywords(cats[i]))
+        if not terms:
+            cats[i]["escalated"] = True
+            continue
+        with ThreadPoolExecutor(max_workers=8) as ex:
+            hits = {kw: s & allowed for kw, s in ex.map(lambda t: _grep_files(target, t), terms)}
+        top = rank_evidence_files(hits, len(allowed))
+        if not top:
+            cats[i]["escalated"] = True  # synonym search also dry — the gap verdict is now stronger
+            continue
+        r = subprocess.run(["git", "-C", target, "grep", "-inI", "--untracked"]
+                           + [x for t in terms for x in ("-e", t)] + ["--"] + top[:3],
+                           capture_output=True, text=True)
+        found[i] = ("files: " + ", ".join(top) + "\n"
+                    + "\n".join(ln[:200] for ln in r.stdout.splitlines()[:6]))[:1800]
+    if not found:
+        return cats
+
+    relisting = "\n".join(
+        f"{i}. {cats[i]['category']} — day-1 tell: {cats[i].get('day1_tell', '(none)')}\n"
+        f"   prior verdict: gap ({cats[i].get('reasoning', '')[:140]})\n   NEW EVIDENCE (synonym search): {ev_}"
+        for i, ev_ in found.items())
+    raw = fan_call(
+        f"TARGET repo '{target}' (app_type {cl.get('app_type')}). These capabilities were judged GAP, but a "
+        "follow-up search under implementation vocabulary found the evidence below. Re-judge EACH using ONLY "
+        "this evidence: status = covered | partial | gap | na_by_design (keep gap if the evidence does not "
+        "actually demonstrate the capability — mentions are not implementations).\n"
+        f"{relisting}\n\n"
+        "Return ONLY JSON: {\"assessments\":[{\"n\":<index>,\"status\":\"...\",\"reasoning\":\"...\","
+        "\"cited_files\":[...],\"fix_sites\":[{\"file\":\"...\",\"what\":\"...\"}]}]}",
+        max_tokens=160 * len(found) + 500)
+    out = extract_json(raw) if raw else None
+    if not out:
+        return cats
+    idx_to_asmt = {a_["n"]: a_ for a_ in out.get("assessments", []) if a_.get("n") in found}
+    return merge_escalation(cats, idx_to_asmt, fileset)
+
+
 def assess_target(target, cl):
     """Assess a target repo against a checklist dict. Importable core (used by check.py).
     Returns {"sub_type", "app_type", "categories":[{...,"status","reasoning","citation_unverified",
-    and on gap/partial: "fix_sites","fix_sites_unverified"}]}."""
+    and on gap/partial: "fix_sites","fix_sites_unverified"}]}. GAP verdicts get a synonym-escalation
+    second pass before they're final (see escalate_gaps)."""
     cats = [{**c, "tier": "required"} for c in cl.get("required", [])] + \
            [{**c, "tier": "optional"} for c in cl.get("optional", [])]
     ev = gather_evidence(target, cats)
@@ -234,6 +337,7 @@ def assess_target(target, cl):
         return None
 
     cats = apply_assessments(cats, out.get("assessments", []), fileset)
+    cats = escalate_gaps(target, cl, cats, ev, fileset)
     return {"sub_type": out.get("sub_type", "?"), "app_type": cl.get("app_type"), "categories": cats}
 
 
@@ -287,6 +391,8 @@ def main():
         flag = " ⚠unverified-citation" if c.get("citation_unverified") else ""
         if c.get("fix_sites_unverified"):
             flag += " ⚠unverified-fix-sites"
+        if c.get("escalated"):
+            flag += " ↻escalated" if "pre_escalation_reasoning" in c else " ↻gap-survived-synonym-search"
         print(f"  {icon.get(c['status'],'?')} {c['status']:13} {c['category']}{flag}")
         if c["status"] in ("gap", "partial"):
             print(f"        ↳ {c['reasoning'][:140]}")

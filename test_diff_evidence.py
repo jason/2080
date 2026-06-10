@@ -6,7 +6,8 @@ No LLM calls: exercises validate_fix_sites / apply_assessments on synthetic asse
 against a fake fileset. Run: python3 test_diff_evidence.py
 """
 from diff_target import (validate_fix_sites, apply_assessments, category_keywords,
-                         rank_evidence_files, build_dir_map, evidence_candidate)
+                         rank_evidence_files, build_dir_map, evidence_candidate,
+                         clean_synonym_terms, merge_escalation)
 
 FILESET = {"app.py", "cli.py", "store.py"}
 
@@ -106,6 +107,37 @@ def test_evidence_candidates_exclude_vendored_blobs():
     assert not evidence_candidate("templates/assets/mermaid.min.js")
     assert not evidence_candidate("src/dictation/whisper_data/tokens.json")
     assert not evidence_candidate("ui/node_modules/x/index.js")
+
+
+def test_synonym_terms_exclude_retreads_and_junk():
+    # intent: re-searching the ORIGINAL keywords proves nothing (they already came up dry) and
+    # junk terms (non-strings, 2-char noise) waste greps — escalation must only search NEW vocabulary.
+    terms = clean_synonym_terms(["ensure_peekaboo", "Dependency", "ok", None, "brew install",
+                                 "ensure_peekaboo", "FilenameCompleter"],
+                                kws=["optional", "dependency"])
+    assert terms == ["ensure_peekaboo", "brew install", "FilenameCompleter"]
+
+
+def test_escalation_flip_keeps_audit_trail():
+    # intent: a gap flipped to covered by synonym evidence must keep its history (escalated flag +
+    # original reasoning) — silently rewriting verdicts would make the gate's decisions unauditable.
+    cats = [{"category": "optional dependency handling", "tier": "required", "status": "gap",
+             "reasoning": "no matches", "fix_sites": [], "fix_sites_unverified": False}]
+    out = merge_escalation(cats, {0: {"status": "covered", "reasoning": "ensure_peekaboo auto-installs",
+                                      "cited_files": ["src/mod.rs"]}}, {"src/mod.rs"})
+    c = out[0]
+    assert c["status"] == "covered" and c["escalated"] is True
+    assert c["pre_escalation_reasoning"] == "no matches"
+    assert "fix_sites" not in c  # covered categories don't carry fix anchors
+
+
+def test_escalation_cannot_worsen_or_invent_status():
+    # intent: the re-judge is only allowed to LIFT a gap (or mark it na) — a malformed or
+    # adversarial second answer must never corrupt a verdict into an unknown status.
+    cats = [{"category": "A", "tier": "required", "status": "gap", "reasoning": "r"}]
+    out = merge_escalation(cats, {0: {"status": "totally-bogus", "reasoning": "x"}}, set())
+    assert out[0]["status"] == "gap" and out[0]["escalated"] is True
+    assert "pre_escalation_reasoning" not in out[0]
 
 
 if __name__ == "__main__":
