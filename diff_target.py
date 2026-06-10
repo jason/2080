@@ -19,7 +19,7 @@ from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from mine_common import fan_call, extract_json, EXIT_OK, EXIT_ERR, EXIT_NOT_FOUND  # shared mine substrate
+from mine_common import fan_call, fan_batch, extract_json, EXIT_OK, EXIT_ERR, EXIT_NOT_FOUND  # shared mine substrate
 
 SRC_EXT = (".py", ".ts", ".rs", ".ex", ".go", ".js")
 # words that name the CHANGE rather than the capability — useless as search terms
@@ -41,7 +41,7 @@ def evidence_candidate(path):
 
 
 def capability_map():
-    return {"tool": "2080-diff-target", "version": "0.3",
+    return {"tool": "2080-diff-target", "version": "0.4",
             "args": "<target-repo> <checklist.json> [--json] [--yes]",
             "exit_codes": {"0": "ok", "1": "usage/err", "2": "not_found"}}
 
@@ -286,59 +286,111 @@ def escalate_gaps(target, cl, cats, ev, fileset):
     return merge_escalation(cats, idx_to_asmt, fileset)
 
 
+ASSESS_CHUNK = 40  # categories per fan call — a 194-cat spine in ONE call blew the output/timeout
+                   # ceiling (VIP dogfood); chunks also run concurrently (16-wide fan)
+
+
+def merge_chunk_assessments(chunk_outputs, chunk_size):
+    """Map per-chunk 1-based assessment indices back to global category numbers (pure).
+    chunk_outputs = [(chunk_index, out_dict_or_None, chunk_len)]. Out-of-range/duplicate ns are
+    dropped — a confused chunk must not corrupt another chunk's categories."""
+    merged, seen = [], set()
+    for ci, out, clen in chunk_outputs:
+        for a_ in (out or {}).get("assessments", []):
+            n = a_.get("n")
+            if isinstance(n, int) and 1 <= n <= clen:
+                g = ci * chunk_size + n
+                if g not in seen:
+                    seen.add(g)
+                    merged.append({**a_, "n": g})
+    return merged
+
+
+def infer_sub_type(target, cl, ev):
+    """One small call, BEFORE assessment: the target's sub_type is the lens every verdict must be
+    judged through (VIP dogfood: a 'personal Telegram LLM assistant' was gated on admin dashboards
+    and i18n — framework-product features its sub-type never needs)."""
+    raw = fan_call(
+        f"Repo '{target}'.\nREADME:\n{ev['readme']}\n\nREPO MAP:\n{ev['dir_map'][:1500]}\n\n"
+        f"ENTRY-POINT EXCERPTS:\n{ev['source_excerpt'][:3000]}\n\n"
+        f"The repo claims app_type {cl.get('app_type')}. In ONE short phrase, what is its actual SUB-TYPE — "
+        "including who it serves (personal/single-user tool vs multi-user product/framework/platform)? "
+        'Return ONLY JSON: {"sub_type":"..."}', max_tokens=200)
+    out = extract_json(raw) if raw else None
+    return (out or {}).get("sub_type") or "?"
+
+
 def assess_target(target, cl):
     """Assess a target repo against a checklist dict. Importable core (used by check.py).
     Returns {"sub_type", "app_type", "categories":[{...,"status","reasoning","citation_unverified",
-    and on gap/partial: "fix_sites","fix_sites_unverified"}]}. GAP verdicts get a synonym-escalation
-    second pass before they're final (see escalate_gaps)."""
+    and on gap/partial: "fix_sites","fix_sites_unverified"}]}. Sub_type is inferred FIRST and every
+    chunk judges against it; GAP verdicts get a synonym-escalation second pass (escalate_gaps)."""
     cats = [{**c, "tier": "required"} for c in cl.get("required", [])] + \
            [{**c, "tier": "optional"} for c in cl.get("optional", [])]
     ev = gather_evidence(target, cats)
-
-    cat_listing = "\n".join(
-        f"{i+1}. [{c['tier']}] {c['category']} — day-1 tell: {c.get('day1_tell', '(none)')}\n"
-        f"   EVIDENCE: {ev['category_evidence'].get(i, '(none gathered)')}"
-        for i, c in enumerate(cats))
-
     fileset = set(ev["files"])
-    raw = fan_call(
-        f"TARGET repo '{target}' (claimed app_type {cl.get('app_type')}). Evidence:\n"
+    sub_type = infer_sub_type(target, cl, ev)
+
+    preamble = (
+        f"TARGET repo '{target}' (claimed app_type {cl.get('app_type')}; inferred sub_type: {sub_type}). Evidence:\n"
         f"README:\n{ev['readme']}\n\n"
         f"REPO MAP (directory → file count; the repo's real shape and size):\n{ev['dir_map']}\n\n"
-        f"ENTRY-POINT SOURCE EXCERPTS:\n{ev['source_excerpt']}\n\n"
-        f"CHECKLIST — categories mature {cl.get('app_type')} repos had to add. Each includes EVIDENCE from a "
-        "deterministic keyword search across the ENTIRE repo (top matching files + matched lines). "
-        "'NO matching files' is a genuine absence signal; matched files are where the capability most likely "
-        f"lives — weigh them over impressions from the README:\n{cat_listing}\n\n"
-        "STEP 1: in one short phrase, identify the TARGET's actual sub_type from the evidence.\n"
-        "STEP 2: assess EACH category using ONLY the evidence: status = covered | partial | gap | na_by_design. "
+        f"ENTRY-POINT SOURCE EXCERPTS:\n{ev['source_excerpt']}\n\n")
+    rules = (
+        f"The CHECKLIST below was mined from mature repos labeled '{cl.get('app_type')}' "
+        f"(derived from: {cl.get('derived_from', [])}). Those neighbors' PRODUCT CATEGORY may differ from this "
+        f"target's sub-type ({sub_type}) — judge every category against what THIS sub-type requires, not what "
+        "the neighbors' product category requires.\n"
+        "Each category includes EVIDENCE from a deterministic keyword search across the ENTIRE repo "
+        "(top matching files + matched lines). 'NO matching files' is a genuine absence signal; matched files "
+        "are where the capability most likely lives — weigh them over impressions from the README.\n"
+        "Assess EACH category using ONLY the evidence: status = covered | partial | gap | na_by_design. "
         "Mark na_by_design when the category does not apply to THIS target, for either reason:\n"
-        "  (a) STRUCTURALLY inapplicable to the sub_type — e.g. multi-agent coordination (handoffs, leadership "
-        "leases, peer presence, stale-base) does not apply to a single-process analysis/CLI tool;\n"
-        "  (b) DIFFERENT PRODUCT MECHANISM — a capability that belongs to a different kind of engine than the "
-        "target's. E.g. for a prior-art / LLM-based completeness tool, line-level code-review suggestions, "
-        "static-analysis/AST scanning, multi-language parsers, and dependency/supply-chain scanners are a "
-        "DIFFERENT mechanism (a SAST/linter engine), not this tool's job — mark those na_by_design, not gap.\n"
+        "  (a) STRUCTURALLY inapplicable to the target's sub-type — e.g. multi-user PRODUCT surfaces (admin "
+        "dashboards, account/auth flows for end users, plugin marketplaces, adapter onboarding flows, "
+        "internationalization for a user fleet) do NOT apply to a personal single-user tool; multi-agent "
+        "coordination does not apply to a single-process CLI. A capability the target's sub-type would never "
+        "need is na_by_design even if every mined neighbor has it;\n"
+        "  (b) DIFFERENT PRODUCT MECHANISM — the capability belongs to a different kind of engine (e.g. "
+        "static-analysis/AST scanning is a SAST engine's job, not an LLM completeness tool's) — na_by_design, not gap.\n"
         "For each: reasoning (1 sentence) and cited_files (file paths that APPEAR IN THE EVIDENCE/MAP above; "
         "[] if none; do NOT invent filenames). For each gap or partial ONLY, also give fix_sites: 1-3 of "
         '{"file": a file path FROM THE EVIDENCE where the capability would naturally be added or extended, '
         '"what": one concrete line of what to add there}; [] only when no existing file is a sensible anchor. '
         "Return ONLY JSON: "
-        '{"sub_type":"...","assessments":[{"n":<num>,"status":"...","reasoning":"...","cited_files":[...],'
-        '"fix_sites":[{"file":"...","what":"..."}]}]}',
-        max_tokens=max(4000, len(cats) * 150), timeout_ms=300000)
-    if raw is None:  # fan call itself failed (timeout/transport) — not a parse problem
-        print("assess_target: LLM call failed (fan returned no result)", file=sys.stderr)
+        '{"assessments":[{"n":<num>,"status":"...","reasoning":"...","cited_files":[...],'
+        '"fix_sites":[{"file":"...","what":"..."}]}]}')
+
+    chunks = [cats[i:i + ASSESS_CHUNK] for i in range(0, len(cats), ASSESS_CHUNK)]
+    calls = []
+    for ci, chunk in enumerate(chunks):
+        listing = "\n".join(
+            f"{j+1}. [{c['tier']}] {c['category']} — day-1 tell: {c.get('day1_tell', '(none)')}\n"
+            f"   EVIDENCE: {ev['category_evidence'].get(ci * ASSESS_CHUNK + j, '(none gathered)')}"
+            for j, c in enumerate(chunk))
+        calls.append({"id": str(ci), "prompt": f"{preamble}CHECKLIST (this batch numbers 1..{len(chunk)}):\n{listing}\n\n{rules}",
+                      "maxTokens": max(4000, len(chunk) * 150)})
+    try:
+        res = fan_batch(calls, timeout_ms=300000)
+    except RuntimeError as e:
+        print(f"assess_target: fan failed: {e}", file=sys.stderr)
         return None
-    out = extract_json(raw)
-    if not out:
-        Path("/tmp/2080-diff-raw.txt").write_text(raw)
-        print("assess_target: unparseable model output — raw saved to /tmp/2080-diff-raw.txt", file=sys.stderr)
+    outs = []
+    for ci, chunk in enumerate(chunks):
+        raw = res.get(str(ci))
+        out = extract_json(raw) if raw else None
+        if out is None:
+            print(f"assess_target: chunk {ci + 1}/{len(chunks)} failed "
+                  f"({'no result' if raw is None else 'unparseable'}) — its categories stay 'unknown'", file=sys.stderr)
+            if raw:
+                Path(f"/tmp/2080-diff-raw-chunk{ci}.txt").write_text(raw)
+        outs.append((ci, out, len(chunk)))
+    if all(out is None for _, out, _ in outs):
         return None
 
-    cats = apply_assessments(cats, out.get("assessments", []), fileset)
+    cats = apply_assessments(cats, merge_chunk_assessments(outs, ASSESS_CHUNK), fileset)
     cats = escalate_gaps(target, cl, cats, ev, fileset)
-    return {"sub_type": out.get("sub_type", "?"), "app_type": cl.get("app_type"), "categories": cats}
+    return {"sub_type": sub_type, "app_type": cl.get("app_type"), "categories": cats}
 
 
 def print_fix_sites(c):

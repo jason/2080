@@ -140,6 +140,29 @@ def test_escalation_cannot_worsen_or_invent_status():
     assert "pre_escalation_reasoning" not in out[0]
 
 
+def test_chunk_assessments_map_to_global_indices():
+    # intent: chunked assessment (the 194-cat VIP spine blew the single-call ceiling) must map
+    # each chunk's local 1-based numbering back to the right global category — an off-by-one here
+    # silently attaches verdicts to the WRONG categories, worse than failing.
+    from diff_target import merge_chunk_assessments
+    outs = [(0, {"assessments": [{"n": 1, "status": "gap"}, {"n": 40, "status": "covered"}]}, 40),
+            (1, {"assessments": [{"n": 1, "status": "partial"}]}, 25)]
+    merged = {a["n"]: a["status"] for a in merge_chunk_assessments(outs, 40)}
+    assert merged == {1: "gap", 40: "covered", 41: "partial"}
+
+
+def test_chunk_failures_and_garbage_are_contained():
+    # intent: one failed/confused chunk (None output, out-of-range or duplicate n) must leave
+    # other chunks' verdicts intact and never write outside its own range — its categories
+    # surface as 'unknown' instead of corrupting neighbors.
+    from diff_target import merge_chunk_assessments
+    outs = [(0, None, 40),
+            (1, {"assessments": [{"n": 99, "status": "gap"}, {"n": 2, "status": "covered"},
+                                 {"n": 2, "status": "gap"}, {"n": "x", "status": "gap"}]}, 25)]
+    merged = merge_chunk_assessments(outs, 40)
+    assert [(a["n"], a["status"]) for a in merged] == [(42, "covered")]
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for fn in fns:
