@@ -50,6 +50,18 @@ confidence) over diff_target verdicts:
   across the full tree, feed matched snippets) and/or a two-pass file-selection step; drop the
   alphabetical-80 cap. 41 of 65 gap/partial verdicts went unchecked (cap) — re-run after the fix.
 
+**FIXED + RE-MEASURED (same session): precision 0.083 → 0.767.** `gather_evidence` rebuilt:
+per-category parallel `git grep` over the full repo (3.8s on goose, was 136s serial), evidence
+candidates filtered to source/docs/config (lockfiles/minified/vendored blobs were outranking real
+source), full fileset for citation validation, dir-map instead of the alphabetical file dump.
+Controlled re-run, same refutation protocol, cap 30: **precision 0.767** (30 verdicts: 24 goose /
+6 cline; 7 FP). Breakdown: **partial verdicts 22/26 stand (0.85)**; **gap verdicts only 1/4 stand**
+— the residual weakness is `gap` calls where the capability exists under vocabulary the category
+keywords miss (e.g. optional-dependency handling implemented as `ensure_peekaboo()`). Next fix
+direction if pursued: an escalation pass that re-searches with LLM-proposed synonyms before any
+final `gap` verdict. Covered sample: 5/6 stand (1 false-covered: platform compatibility credited
+from a build-only Windows CI job). Unchecked due to cap: 16 gap/partial, 17 covered.
+
 ### init.py live-verified end-to-end (session 3, later still)
 
 First full live run (intent: telegram-LLM-bot): discovery → 4 high-maturity neighbors
