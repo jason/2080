@@ -16,10 +16,12 @@ EXIT_OK, EXIT_ERR, EXIT_NOT_FOUND, EXIT_EMPTY = 0, 1, 2, 3
 
 # fan has NO internal retry: a transient 429 becomes ok:false, which downstream means a silently
 # missing judge vote / assessment. Concurrency and retries are therefore coupled knobs: raising
-# concurrency without retries trades wall-time for data corruption. Defaults preserve fan's
-# historical behavior (4-wide, no retry); override via env after probing the provider's tolerance.
-FAN_CONCURRENCY = int(os.environ.get("FAN_CONCURRENCY", "4"))
-FAN_RETRIES = int(os.environ.get("FAN_RETRIES", "0"))
+# concurrency without retries trades wall-time for data corruption.
+# Probed 2026-06-10 (openai-codex): 100% ok at 8/12/16/24-wide trivial bursts AND 32 realistic
+# long-generation calls at 16-wide (25.5s wall vs ~100s at 4-wide). Default 16 + 1 retry as the
+# safety net; re-probe if the provider or account tier changes.
+FAN_CONCURRENCY = int(os.environ.get("FAN_CONCURRENCY", "16"))
+FAN_RETRIES = int(os.environ.get("FAN_RETRIES", "1"))
 
 
 def extract_json(text):
