@@ -1,5 +1,14 @@
 # 2080 — Thesis
 
+> **Status addendum (2026-06-10).** This is the founding document, kept intact. Measurement has
+> since refined it: the "derive the full requirement surface" bet **split by layer**. Robustness
+> derivation is real but a *generic checklist already does it better than mining* (lift −0.15 vs
+> a common-sense baseline, replicated); **scope prediction is the part only mining delivers**
+> (+0.27 over the same baseline). The gap engine exists end-to-end (mine → check → emit →
+> stop-hook/CI gate) with measured gate precision 0.77. The falsification test below ("does the
+> day-1 map collapse the timeline?") remains unrun — it needs a real new project. See
+> `docs/HANDOFF.md` for the full measurement record.
+
 ## The problem
 
 Agentic development produces a demo-quality result fast, then the project stalls

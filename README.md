@@ -13,16 +13,28 @@ stops being discovered by crashing into walls one at a time over months.
 Start with [`docs/THESIS.md`](docs/THESIS.md). Current state and next step:
 [`docs/HANDOFF.md`](docs/HANDOFF.md).
 
-Status: **working pipeline, dogfooded on itself.** A blind backtest (dexto) showed the
-second-85% is **three layers**, each with its own predictor:
+Status: **working pipeline, dogfooded on itself, measured under controls.** The second-85% is
+**three layers** — and controlled measurement (2026-06) showed each needs a *different* predictor:
 
-1. **Robustness** — the hidden hard-20% of what you built (error handling, NFRs). Predicted by
-   intent-derivation (`completeness.flow.js`) + the recurring-fix mine (`cluster_fixes.py`).
-2. **Generic scope** — features a full product of category X converges on. Predicted by the
-   **feature-surface mine** (`feature_mine.py`) — *find* the feature set from mature neighbors,
-   don't imagine it.
+1. **Robustness** — the hidden hard-20% of what you built (error handling, NFRs). **Common sense
+   is the better discoverer here**: a hand-written generic checklist out-recalled the mined spine
+   (lift −0.15, replicated ×3 — the defect-prediction literature's trivial-baseline lesson, confirmed).
+   So every emitted robustness spine ships with the generic baseline as its floor
+   (`merge_baseline`), and mining adds sub-type-specific categories + day-1 tells on top.
+2. **Generic scope** — features a full product of category X converges on. **This is where mining
+   earns its keep**: the feature-surface mine (`feature_mine.py`) beats the generic baseline by
+   **+0.27 (±0.05, ×3)** — no common-sense checklist predicts "multi-provider, plugin system, web
+   dashboard." *Find* the feature set from mature neighbors, don't imagine it.
 3. **Project-specific direction** — the team's actual product bets. *Not predictable, and
    deliberately out of scope* (that's strategy, not completeness).
+
+The gate's verdicts are themselves measured: **blocking-verdict precision 0.77** (adversarial
+two-lens refutation on real-sized repos; was 0.083 before evidence-grounded assessment — the fix
+was retrieval, not a better model). Gap verdicts must additionally survive a synonym-escalation
+second search before they're final. Novelty positioning (verified two-pass survey,
+[`docs/PRIOR-ART.md`](docs/PRIOR-ART.md)): the *idea* of neighbor products as scope predictors is
+app-store-mining prior art; the commit-mined category spine used as a day-1 predictor **and
+enforcement gate** is the unoccupied residue.
 
 Mining is **lens-parameterized** (`mine_common.py`): each axis is a lens (recurring-fix → robustness,
 feature-surface → scope; future: integration/threat/operability). `check.py` is the keystone gate —
