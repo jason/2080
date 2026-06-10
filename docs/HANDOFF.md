@@ -57,9 +57,17 @@ source), full fileset for citation validation, dir-map instead of the alphabetic
 Controlled re-run, same refutation protocol, cap 30: **precision 0.767** (30 verdicts: 24 goose /
 6 cline; 7 FP). Breakdown: **partial verdicts 22/26 stand (0.85)**; **gap verdicts only 1/4 stand**
 — the residual weakness is `gap` calls where the capability exists under vocabulary the category
-keywords miss (e.g. optional-dependency handling implemented as `ensure_peekaboo()`). Next fix
-direction if pursued: an escalation pass that re-searches with LLM-proposed synonyms before any
-final `gap` verdict. Covered sample: 5/6 stand (1 false-covered: platform compatibility credited
+keywords miss (e.g. optional-dependency handling implemented as `ensure_peekaboo()`).
+
+**Synonym escalation BUILT (session 4):** before any `gap` verdict is final, the LLM proposes
+implementation-vocabulary terms, the same deterministic grep re-runs, and a re-judge can lift the
+gap (flip keeps an audit trail: `escalated` + `pre_escalation_reasoning`; survivors are flagged
+`gap-survived-synonym-search`). Live goose run: 'path completion filtering' flipped to partial
+(found rustyline FilenameCompleter); 'optional dependency handling' still survived — the synonym
+list didn't guess `peekaboo`, so escalation reduces but does not eliminate vocabulary mismatch
+when the implementation name is genuinely unguessable. Verdicts also vary run-to-run (LLM
+sampling): same goose assessment produced 5 then 3 then 2 gaps across runs — a variance bound
+on the precision number needs repeated runs if rigor is wanted. Covered sample: 5/6 stand (1 false-covered: platform compatibility credited
 from a build-only Windows CI job). Unchecked due to cap: 16 gap/partial, 17 covered.
 
 ### init.py live-verified end-to-end (session 3, later still)
