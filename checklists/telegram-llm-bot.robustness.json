@@ -7,6 +7,7 @@
     "LangBot",
     "nekro-agent"
   ],
+  "baseline_merged": true,
   "commit_weighted_recurrence_pct": 71.4,
   "required": [
     {
@@ -21,7 +22,7 @@
       ],
       "recurrence_projects": 4,
       "size": 25,
-      "day1_tell": "Trigger a known async failure; confirm the user-facing error includes context and the process does not crash."
+      "day1_tell": "Trigger a known sync and async failure path; confirm the user-facing error includes the operation, cause, and recovery hint without leaking stack traces."
     },
     {
       "category": "timeout error handling",
@@ -35,7 +36,7 @@
       ],
       "recurrence_projects": 4,
       "size": 17,
-      "day1_tell": "Run a request that exceeds the configured timeout; confirm it aborts with a clear timeout error and frees the session."
+      "day1_tell": "Run a request against an endpoint that sleeps past the configured timeout; confirm it aborts at the expected time and reports a timeout-specific error."
     },
     {
       "category": "localization updates",
@@ -48,7 +49,7 @@
       ],
       "recurrence_projects": 3,
       "size": 16,
-      "day1_tell": "Switch UI language to a non-default locale; confirm labels, dates, and fallback strings render correctly."
+      "day1_tell": "Switch UI/API locale to a non-default language; confirm translated labels, errors, and formatted dates/numbers render correctly."
     },
     {
       "category": "empty value handling",
@@ -62,7 +63,7 @@
       ],
       "recurrence_projects": 4,
       "size": 14,
-      "day1_tell": "Submit empty string, whitespace, and null values; confirm validation rejects or handles them without exceptions."
+      "day1_tell": "Submit empty string, whitespace-only input, and explicit null for the field; confirm validation rejects or handles each without crashing."
     },
     {
       "category": "dependency fix",
@@ -76,7 +77,7 @@
       ],
       "recurrence_projects": 4,
       "size": 13,
-      "day1_tell": "Install from a clean environment; confirm dependency resolution succeeds with no missing or unused required packages."
+      "day1_tell": "Install from a clean lockfile/cache and start the app; confirm no missing, unused, or incompatible dependency errors appear."
     },
     {
       "category": "provider integration",
@@ -90,7 +91,7 @@
       ],
       "recurrence_projects": 4,
       "size": 11,
-      "day1_tell": "Call the integrated provider with a minimal valid request; confirm authentication, request shape, and response parsing work."
+      "day1_tell": "Call the integrated provider with a minimal valid request; confirm authentication, request shape, and response parsing work against the live or mocked provider API."
     },
     {
       "category": "environment configuration",
@@ -104,7 +105,7 @@
       ],
       "recurrence_projects": 4,
       "size": 9,
-      "day1_tell": "Start with no config file; confirm documented defaults are applied and visible."
+      "day1_tell": "Start with no user config present; confirm documented defaults are loaded and visible in effective configuration."
     },
     {
       "category": "api compatibility fix",
@@ -117,7 +118,7 @@
       ],
       "recurrence_projects": 3,
       "size": 9,
-      "day1_tell": "Send old and new API response formats; confirm both are parsed or the unsupported one errors clearly."
+      "day1_tell": "Feed the client both old and new API response formats; confirm both are parsed or the unsupported one fails with a clear compatibility error."
     },
     {
       "category": "file message support",
@@ -131,7 +132,7 @@
       ],
       "recurrence_projects": 4,
       "size": 8,
-      "day1_tell": "Send a message containing a document/file attachment; confirm it is accepted and formatted correctly."
+      "day1_tell": "Send a message containing an attached text/document file; confirm it is accepted, formatted, and displayed as a file message."
     },
     {
       "category": "failure notification fix",
@@ -144,7 +145,7 @@
       ],
       "recurrence_projects": 3,
       "size": 8,
-      "day1_tell": "Force message send failure; confirm a normalized failure notification is emitted once with the parsed reason."
+      "day1_tell": "Force message delivery to fail; confirm a failure notification is emitted and the failed message is parsed and displayed consistently."
     },
     {
       "category": "proxy support",
@@ -157,7 +158,7 @@
       ],
       "recurrence_projects": 3,
       "size": 7,
-      "day1_tell": "Run through an HTTP/SOCKS proxy; confirm outbound requests use the proxy and still succeed."
+      "day1_tell": "Run traffic through an HTTP/SOCKS proxy; confirm outbound requests use the proxy and still succeed."
     },
     {
       "category": "type usage fix",
@@ -171,7 +172,7 @@
       ],
       "recurrence_projects": 4,
       "size": 7,
-      "day1_tell": "Run static type checking; confirm the touched module has no type errors or unsafe casts."
+      "day1_tell": "Run static type checking on a clean checkout; confirm no type errors are reported in the changed area."
     },
     {
       "category": "message merging fix",
@@ -183,7 +184,7 @@
       ],
       "recurrence_projects": 2,
       "size": 7,
-      "day1_tell": "Send segmented messages that should merge; confirm final content preserves order and boundaries."
+      "day1_tell": "Send a long message that is split into segments; confirm the segments are merged back in order without duplication or loss."
     },
     {
       "category": "module import fix",
@@ -196,7 +197,7 @@
       ],
       "recurrence_projects": 3,
       "size": 6,
-      "day1_tell": "Import the package from a clean runtime; confirm no missing import errors or import warnings appear."
+      "day1_tell": "Start the app from a clean environment; confirm all modules import without missing-import errors or import warnings."
     },
     {
       "category": "empty response handling",
@@ -209,7 +210,7 @@
       ],
       "recurrence_projects": 3,
       "size": 6,
-      "day1_tell": "Mock an empty/null provider response; confirm the client handles it gracefully without rendering 'null'."
+      "day1_tell": "Mock a provider returning an empty body/null reply; confirm the app shows a controlled empty-response error instead of crashing."
     },
     {
       "category": "permission management",
@@ -221,7 +222,7 @@
       ],
       "recurrence_projects": 2,
       "size": 5,
-      "day1_tell": "Attempt a restricted command as an unprivileged user; confirm it is denied and logged."
+      "day1_tell": "Attempt a privileged command as an unprivileged user; confirm it is denied and logged without executing."
     },
     {
       "category": "schema conversion fix",
@@ -233,7 +234,7 @@
       ],
       "recurrence_projects": 2,
       "size": 5,
-      "day1_tell": "Validate converted schema against the target runtime; confirm required fields and types match."
+      "day1_tell": "Validate a converted schema against the target schema validator; confirm required fields and compatibility rules pass."
     },
     {
       "category": "deployment scripting",
@@ -245,7 +246,7 @@
       ],
       "recurrence_projects": 2,
       "size": 5,
-      "day1_tell": "Run the deployment script on a clean checkout; confirm it exits zero and produces expected artifacts."
+      "day1_tell": "Run the deployment script on a fresh environment with dry-run or staging settings; confirm it completes idempotently."
     },
     {
       "category": "identifier parsing fix",
@@ -259,7 +260,7 @@
       ],
       "recurrence_projects": 4,
       "size": 5,
-      "day1_tell": "Parse identifiers containing hyphens, underscores, and numbers; confirm the retrieved ID matches exactly."
+      "day1_tell": "Provide identifiers with prefixes, suffixes, and invalid characters; confirm parsing extracts the correct ID or rejects clearly."
     },
     {
       "category": "lazy dependency loading",
@@ -272,7 +273,7 @@
       ],
       "recurrence_projects": 3,
       "size": 5,
-      "day1_tell": "Start without optional dependency installed; confirm app boots and only loads dependency when feature is used."
+      "day1_tell": "Start the app without the optional dependency installed; confirm it starts and only loads/errors when the related feature is invoked."
     },
     {
       "category": "pagination size change",
@@ -284,7 +285,7 @@
       ],
       "recurrence_projects": 2,
       "size": 5,
-      "day1_tell": "Request page size at min, max, and invalid values; confirm pagination behaves responsively and validates input."
+      "day1_tell": "Request page sizes below, at, and above the limit; confirm pagination parameters produce correct item counts and navigation metadata."
     },
     {
       "category": "adapter integration",
@@ -296,7 +297,7 @@
       ],
       "recurrence_projects": 2,
       "size": 5,
-      "day1_tell": "Enable the adapter with sample config; confirm it initializes and routes one request successfully."
+      "day1_tell": "Enable the adapter with minimal config; confirm initialization, request forwarding, and teardown all succeed."
     },
     {
       "category": "status indicator fix",
@@ -308,7 +309,7 @@
       ],
       "recurrence_projects": 2,
       "size": 5,
-      "day1_tell": "Force each status state; confirm the indicator displays the correct label/color."
+      "day1_tell": "Force each status state: idle, running, failed, complete; confirm the displayed indicator matches the underlying state."
     },
     {
       "category": "plugin invocation fix",
@@ -320,7 +321,7 @@
       ],
       "recurrence_projects": 2,
       "size": 5,
-      "day1_tell": "Install and invoke a sample plugin; confirm lifecycle hooks run and output is returned."
+      "day1_tell": "Install and invoke a simple test plugin; confirm installation, execution, output capture, and error reporting work."
     },
     {
       "category": "layout display fix",
@@ -333,7 +334,7 @@
       ],
       "recurrence_projects": 3,
       "size": 4,
-      "day1_tell": "Resize viewport across breakpoints; confirm layout spacing does not overlap or clip."
+      "day1_tell": "Resize the viewport across desktop/tablet/mobile widths; confirm spacing and layout do not overlap or clip."
     },
     {
       "category": "markdown rendering control",
@@ -345,7 +346,7 @@
       ],
       "recurrence_projects": 2,
       "size": 4,
-      "day1_tell": "Render markdown with code, links, and malformed syntax; confirm expected rendering and safe fallback."
+      "day1_tell": "Render markdown containing code, links, tables, and malformed syntax; confirm it displays safely and predictably."
     },
     {
       "category": "search provider integration",
@@ -358,7 +359,7 @@
       ],
       "recurrence_projects": 3,
       "size": 4,
-      "day1_tell": "Run a web search query through configured provider; confirm results are returned and attributed."
+      "day1_tell": "Issue a query requiring web search; confirm the configured search provider is called and results are included or cited."
     },
     {
       "category": "hot reload fix",
@@ -370,7 +371,7 @@
       ],
       "recurrence_projects": 2,
       "size": 4,
-      "day1_tell": "Change config during development; confirm hot reload applies once without restart."
+      "day1_tell": "Change a watched config/source file during development; confirm hot reload applies the change without full restart or stale state."
     },
     {
       "category": "url parsing fix",
@@ -382,7 +383,7 @@
       ],
       "recurrence_projects": 2,
       "size": 4,
-      "day1_tell": "Parse URL with encoded params, fragments, and trailing slash; confirm extracted fields are correct."
+      "day1_tell": "Parse URLs with encoded params, fragments, empty params, and repeated keys; confirm extracted values are correct."
     },
     {
       "category": "api configuration",
@@ -394,7 +395,7 @@
       ],
       "recurrence_projects": 2,
       "size": 4,
-      "day1_tell": "Change API base URL/model in config; confirm subsequent requests use the new values."
+      "day1_tell": "Change API base URL/key/model at runtime or via config; confirm subsequent requests use the new settings."
     },
     {
       "category": "command system refactor",
@@ -406,7 +407,7 @@
       ],
       "recurrence_projects": 2,
       "size": 4,
-      "day1_tell": "Run legacy and new command configuration examples; confirm commands resolve identically or migrate cleanly."
+      "day1_tell": "Run existing commands with old and new settings formats; confirm routing and behavior remain correct or migrate cleanly."
     },
     {
       "category": "context compression",
@@ -418,7 +419,7 @@
       ],
       "recurrence_projects": 2,
       "size": 3,
-      "day1_tell": "Send context exceeding limit; confirm compression/fallback preserves essential messages and request succeeds."
+      "day1_tell": "Send a conversation exceeding context limits; confirm compression occurs and essential context is preserved or fallback is used."
     },
     {
       "category": "default model update",
@@ -430,7 +431,7 @@
       ],
       "recurrence_projects": 2,
       "size": 3,
-      "day1_tell": "Create a fresh profile; confirm the documented default model/preset is selected."
+      "day1_tell": "Start with no model selected; confirm the documented default model/preset is selected and usable."
     },
     {
       "category": "empty prompt handling",
@@ -443,7 +444,7 @@
       ],
       "recurrence_projects": 3,
       "size": 3,
-      "day1_tell": "Submit an empty prompt; confirm it is blocked or handled with documented behavior."
+      "day1_tell": "Submit an empty prompt; confirm the system blocks it or applies the defined empty-prompt behavior without sending junk."
     },
     {
       "category": "plugin lifecycle cleanup",
@@ -455,7 +456,7 @@
       ],
       "recurrence_projects": 2,
       "size": 3,
-      "day1_tell": "Disable/delete a plugin; confirm its hooks, temp files, and persisted data are cleaned up."
+      "day1_tell": "Install, enable, disable, and uninstall a plugin; confirm lifecycle hooks run and plugin data is cleaned or retained as specified."
     },
     {
       "category": "file format support",
@@ -467,7 +468,7 @@
       ],
       "recurrence_projects": 2,
       "size": 3,
-      "day1_tell": "Upload each supported document format; confirm parsing succeeds or unsupported formats error clearly."
+      "day1_tell": "Upload each supported document format plus an unsupported one; confirm supported files parse and unsupported files fail clearly."
     },
     {
       "category": "argument handling fix",
@@ -480,7 +481,7 @@
       ],
       "recurrence_projects": 3,
       "size": 3,
-      "day1_tell": "Invoke command with quoted, missing, and repeated arguments; confirm parsed keys/values are correct."
+      "day1_tell": "Invoke the command with missing, extra, and differently cased arguments; confirm argument handling matches the spec."
     },
     {
       "category": "authentication error messaging",
@@ -492,7 +493,7 @@
       ],
       "recurrence_projects": 2,
       "size": 3,
-      "day1_tell": "Use invalid credentials; confirm authentication error is specific and does not leak secrets."
+      "day1_tell": "Use invalid, expired, and missing credentials; confirm authentication errors are specific and actionable."
     },
     {
       "category": "path validation",
@@ -504,7 +505,7 @@
       ],
       "recurrence_projects": 2,
       "size": 3,
-      "day1_tell": "Enter absolute, relative, symlink, and traversal paths; confirm unsafe paths are rejected."
+      "day1_tell": "Enter absolute, relative, symlink, and traversal install paths; confirm unsafe paths are rejected."
     },
     {
       "category": "native upload handling",
@@ -517,7 +518,7 @@
       ],
       "recurrence_projects": 3,
       "size": 3,
-      "day1_tell": "Upload a file with spaces/unicode in filename; confirm native upload succeeds and name is preserved/sanitized."
+      "day1_tell": "Upload files with Unicode, spaces, duplicate names, and long filenames; confirm native upload preserves safe filenames."
     },
     {
       "category": "internationalization support",
@@ -529,7 +530,7 @@
       ],
       "recurrence_projects": 2,
       "size": 3,
-      "day1_tell": "Set browser/system locale to supported language; confirm UI loads matching internationalized resources."
+      "day1_tell": "Switch the application language and reload; confirm UI strings, messages, and formatting remain localized."
     },
     {
       "category": "missing configuration warning",
@@ -541,7 +542,7 @@
       ],
       "recurrence_projects": 2,
       "size": 3,
-      "day1_tell": "Remove required config; confirm startup warns with actionable fallback/error."
+      "day1_tell": "Start with a required config key missing; confirm a clear warning/error names the key and fallback behavior."
     },
     {
       "category": "sandbox support",
@@ -554,7 +555,7 @@
       ],
       "recurrence_projects": 3,
       "size": 3,
-      "day1_tell": "Run a file operation inside sandbox; confirm access is limited to workspace."
+      "day1_tell": "Run a workspace operation inside the sandbox; confirm file/process/network access is restricted to allowed scope."
     },
     {
       "category": "download type handling",
@@ -566,7 +567,7 @@
       ],
       "recurrence_projects": 2,
       "size": 3,
-      "day1_tell": "Download text, image, and binary files; confirm each is routed to the correct handler."
+      "day1_tell": "Download file types such as image, text, PDF, and unknown binary; confirm each routes to the correct handler."
     },
     {
       "category": "path traversal prevention",
@@ -578,7 +579,7 @@
       ],
       "recurrence_projects": 2,
       "size": 3,
-      "day1_tell": "Request file path '../secret'; confirm access is denied and no file is read."
+      "day1_tell": "Request a file path containing '../' and encoded traversal sequences; confirm access is blocked."
     },
     {
       "category": "payload compatibility",
@@ -590,7 +591,7 @@
       ],
       "recurrence_projects": 2,
       "size": 3,
-      "day1_tell": "Send legacy and current payload shapes; confirm compatibility or clear validation errors."
+      "day1_tell": "Send legacy and current payload shapes to the handler; confirm compatible payloads are accepted and normalized."
     },
     {
       "category": "configuration reset",
@@ -603,7 +604,7 @@
       ],
       "recurrence_projects": 3,
       "size": 3,
-      "day1_tell": "Run configuration reset; confirm settings return to defaults and old values are removed."
+      "day1_tell": "Run the configuration reset command; confirm user settings return to defaults and stale values are removed."
     },
     {
       "category": "schema validation compliance",
@@ -615,7 +616,7 @@
       ],
       "recurrence_projects": 2,
       "size": 3,
-      "day1_tell": "Validate good and bad configs against schema; confirm only compliant models pass."
+      "day1_tell": "Validate good and bad payloads against the schema; confirm invalid data is rejected with field-level errors."
     },
     {
       "category": "streaming persistence optimization",
@@ -628,7 +629,7 @@
       ],
       "recurrence_projects": 3,
       "size": 3,
-      "day1_tell": "Stream a long response; confirm persistence writes are throttled and final content is complete."
+      "day1_tell": "Stream a long response; confirm UI/storage updates are throttled and final content is complete."
     },
     {
       "category": "mobile layout adjustment",
@@ -640,7 +641,7 @@
       ],
       "recurrence_projects": 2,
       "size": 3,
-      "day1_tell": "Open on narrow mobile viewport; confirm controls remain usable without horizontal scrolling."
+      "day1_tell": "Open the UI on a narrow mobile viewport; confirm controls remain usable without horizontal scrolling."
     },
     {
       "category": "plugin identifier validation",
@@ -652,7 +653,7 @@
       ],
       "recurrence_projects": 2,
       "size": 3,
-      "day1_tell": "Create plugin IDs with invalid chars/case; confirm invalid IDs are rejected consistently."
+      "day1_tell": "Create plugin IDs with uppercase, spaces, slashes, and valid characters; confirm validation accepts only allowed formats."
     },
     {
       "category": "cross-platform file reading",
@@ -665,7 +666,7 @@
       ],
       "recurrence_projects": 3,
       "size": 3,
-      "day1_tell": "Read files with Windows, macOS, and Linux line endings/paths; confirm content loads correctly."
+      "day1_tell": "Read the same test file on Windows, macOS, and Linux paths/encodings; confirm content is identical."
     },
     {
       "category": "configuration persistence",
@@ -678,7 +679,7 @@
       ],
       "recurrence_projects": 3,
       "size": 3,
-      "day1_tell": "Change plugin config, restart app; confirm plugin setting persists."
+      "day1_tell": "Change plugin configuration, restart the app, and reopen it; confirm the setting persists."
     },
     {
       "category": "database migration integration",
@@ -690,7 +691,7 @@
       ],
       "recurrence_projects": 2,
       "size": 3,
-      "day1_tell": "Run migrations from previous DB version; confirm schema upgrades and app starts."
+      "day1_tell": "Start with an old database schema; confirm migrations run once and the app can read/write afterward."
     },
     {
       "category": "message routing",
@@ -702,7 +703,7 @@
       ],
       "recurrence_projects": 2,
       "size": 3,
-      "day1_tell": "Send messages for each role/routing rule; confirm each reaches the intended handler."
+      "day1_tell": "Send messages for each role/channel; confirm routing rules deliver them to the intended destination only."
     },
     {
       "category": "performance optimization",
@@ -714,7 +715,7 @@
       ],
       "recurrence_projects": 2,
       "size": 3,
-      "day1_tell": "Run baseline workload; confirm latency/memory improves or stays within target budget."
+      "day1_tell": "Run the baseline workload and compare latency/memory/CPU to the target threshold; confirm no regression."
     },
     {
       "category": "mention parsing fix",
@@ -726,7 +727,7 @@
       ],
       "recurrence_projects": 2,
       "size": 3,
-      "day1_tell": "Send mentions at start, middle, unicode, and email-like text; confirm only valid mentions parse."
+      "day1_tell": "Send text with @mentions, emails, and code blocks; confirm only valid mentions are parsed."
     },
     {
       "category": "credential configuration",
@@ -738,7 +739,7 @@
       ],
       "recurrence_projects": 2,
       "size": 3,
-      "day1_tell": "Save malformed and normalized credentials; confirm validation rejects bad format and accepts valid."
+      "day1_tell": "Enter credentials with extra spaces, missing fields, and wrong formats; confirm normalization and validation behavior."
     },
     {
       "category": "streaming response latency",
@@ -750,7 +751,7 @@
       ],
       "recurrence_projects": 2,
       "size": 3,
-      "day1_tell": "Stream provider response with chunks and final marker; confirm first token latency and completion handling."
+      "day1_tell": "Stream a response from a compatible provider; confirm first token latency and chunk parsing meet expectations."
     },
     {
       "category": "user access blocking",
@@ -762,7 +763,7 @@
       ],
       "recurrence_projects": 2,
       "size": 3,
-      "day1_tell": "Send request as blocked user; confirm access is denied and no side effects occur."
+      "day1_tell": "Attempt access as a blocked user; confirm all actions are denied and the block reason is surfaced."
     },
     {
       "category": "history clearing fix",
@@ -774,7 +775,7 @@
       ],
       "recurrence_projects": 2,
       "size": 3,
-      "day1_tell": "Clear history then reload; confirm deleted history does not reappear and retention rules apply."
+      "day1_tell": "Clear history and restart; confirm deleted entries stay deleted and retention settings are respected."
     },
     {
       "category": "navigation entries",
@@ -786,7 +787,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Open navigation menu; confirm new entries link to correct pages and permissions."
+      "day1_tell": "Open the navigation menu; confirm every new entry links to an existing route and highlights correctly."
     },
     {
       "category": "task interface",
@@ -798,7 +799,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Create, update, and complete a task via interface; confirm state transitions persist."
+      "day1_tell": "Create, update, complete, and fail a task through the interface; confirm state transitions are reflected."
     },
     {
       "category": "parameter compatibility",
@@ -810,7 +811,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Pass parameters as string, number, boolean, and array; confirm supported types are accepted."
+      "day1_tell": "Pass parameters as string, number, boolean, array, and null where supported; confirm type handling matches spec."
     },
     {
       "category": "message serialization fix",
@@ -822,7 +823,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Serialize message/response containing unicode and attachments; confirm round trip preserves fields."
+      "day1_tell": "Serialize and deserialize a message/response containing Unicode, attachments, and metadata; confirm round-trip equality."
     },
     {
       "category": "dynamic model discovery",
@@ -834,7 +835,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Query model list from provider; confirm available models populate dynamically."
+      "day1_tell": "Call model discovery against the provider; confirm available models are listed and selectable."
     },
     {
       "category": "configuration template optimization",
@@ -846,7 +847,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Load config template with overrides; confirm load time and resulting config are correct."
+      "day1_tell": "Load configuration from template, env, and user file; confirm loading is fast and produces expected effective config."
     },
     {
       "category": "recording behavior fix",
@@ -858,7 +859,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Submit feedback/recording action; confirm exactly one record with correct metadata is stored."
+      "day1_tell": "Submit positive and negative feedback once each; confirm exactly one record per action is stored."
     },
     {
       "category": "capability indicator display",
@@ -870,7 +871,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Display model/tool capability indicators; confirm badges match actual capabilities."
+      "day1_tell": "Toggle capabilities on a model/provider; confirm capability indicators update accurately."
     },
     {
       "category": "duplicate display fix",
@@ -882,7 +883,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Render list with duplicate IDs/names; confirm duplicates are not shown twice unintentionally."
+      "day1_tell": "Render a list containing duplicate IDs/names; confirm each item appears only when intended."
     },
     {
       "category": "filename sanitization",
@@ -894,7 +895,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Upload filename with slashes, control chars, and unicode; confirm stored name is safe."
+      "day1_tell": "Upload/create names containing slashes, control chars, emoji, and reserved words; confirm sanitized safe filenames."
     },
     {
       "category": "fallback request routing",
@@ -906,7 +907,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Request unknown route; confirm fallback route returns expected page/error."
+      "day1_tell": "Request an unknown route; confirm fallback routing serves the intended page or 404 without breaking assets."
     },
     {
       "category": "invalid parameter removal",
@@ -918,7 +919,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Send request containing removed invalid parameter; confirm it is omitted before provider call."
+      "day1_tell": "Send a payload containing deprecated/invalid parameters; confirm they are removed before provider/API submission."
     },
     {
       "category": "platform compatibility fix",
@@ -930,7 +931,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Run smoke test on supported platforms; confirm no platform-specific path/runtime failure."
+      "day1_tell": "Run the feature on each supported OS/runtime version; confirm behavior is consistent."
     },
     {
       "category": "embedding provider support",
@@ -942,7 +943,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Generate embedding through configured provider; confirm vector dimensions and metadata are correct."
+      "day1_tell": "Generate embeddings with the configured provider; confirm vector dimensions and metadata match expectations."
     },
     {
       "category": "plugin update tracking",
@@ -954,7 +955,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Install older plugin then check updates; confirm available update is detected."
+      "day1_tell": "Publish/mock a newer plugin version; confirm update detection marks the plugin and does not flag current versions."
     },
     {
       "category": "state reset fix",
@@ -966,7 +967,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Trigger state reset action; confirm all intended state clears and unrelated state remains."
+      "day1_tell": "Trigger the reset action; confirm all intended state is cleared and unrelated state remains intact."
     },
     {
       "category": "background command execution",
@@ -978,7 +979,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Run background command; confirm UI remains responsive and result is reported."
+      "day1_tell": "Start a background command and continue using the UI; confirm it runs asynchronously and reports completion."
     },
     {
       "category": "input composition handling",
@@ -990,7 +991,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Type with IME composition then press Enter; confirm message sends only after composition ends."
+      "day1_tell": "Type using an IME composition flow; confirm Enter does not submit until composition ends."
     },
     {
       "category": "configuration interface improvement",
@@ -1002,7 +1003,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Open configuration UI and edit a setting; confirm validation, save, and reload work."
+      "day1_tell": "Open and edit configuration through the UI; confirm validation, save, and reload work."
     },
     {
       "category": "clipboard utility fix",
@@ -1014,7 +1015,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Copy text using clipboard utility in supported browsers/runtimes; confirm clipboard contains exact text."
+      "day1_tell": "Copy text containing Unicode and newlines to/from clipboard; confirm clipboard operations succeed on supported platforms."
     },
     {
       "category": "upload error handling",
@@ -1026,7 +1027,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Force upload network/server error; confirm user sees actionable upload error."
+      "day1_tell": "Force upload network failure and unsupported file type; confirm upload errors are clear and recoverable."
     },
     {
       "category": "module path alignment",
@@ -1038,7 +1039,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Import module via documented path; confirm resolved module path matches package layout."
+      "day1_tell": "Import modules using configured aliases/paths; confirm runtime and build tools resolve the same paths."
     },
     {
       "category": "transition layout stability",
@@ -1050,7 +1051,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Trigger panel/page transition; confirm layout does not jump or collapse."
+      "day1_tell": "Trigger panel/page transitions rapidly; confirm layout dimensions remain stable with no jumps."
     },
     {
       "category": "audio input support",
@@ -1062,7 +1063,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Record or upload audio input; confirm transcription/upload pipeline receives audio."
+      "day1_tell": "Record or upload a short audio input; confirm it is captured, processed, and attached/transcribed as expected."
     },
     {
       "category": "environment variable propagation",
@@ -1074,7 +1075,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Set env var before launch; confirm child processes/API clients receive it."
+      "day1_tell": "Set an environment variable before launching child tasks/services; confirm the child process receives it."
     },
     {
       "category": "response content filtering",
@@ -1086,7 +1087,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Return response containing disallowed content marker; confirm filter removes or blocks it."
+      "day1_tell": "Return content containing blocked terms or unsafe markup; confirm response filtering removes or flags it."
     },
     {
       "category": "dependency addition",
@@ -1098,7 +1099,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Install from lockfile; confirm newly added dependency is present and importable."
+      "day1_tell": "Install from scratch; confirm the newly added dependency is present in manifest and lockfile and loads correctly."
     },
     {
       "category": "empty response retry",
@@ -1110,7 +1111,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Mock first empty response then valid retry; confirm retry occurs and final answer displays."
+      "day1_tell": "Mock an empty provider response followed by a valid response; confirm retry occurs and final response is used."
     },
     {
       "category": "url suffix handling",
@@ -1122,7 +1123,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Parse URL with suffix/trailing punctuation; confirm suffix is handled correctly."
+      "day1_tell": "Parse URLs with trailing slashes, suffixes, and query strings; confirm suffix handling is correct."
     },
     {
       "category": "tool invocation fix",
@@ -1134,7 +1135,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Invoke a tool with valid arguments; confirm execution result is returned to the conversation."
+      "day1_tell": "Invoke a tool with valid arguments; confirm call, result handling, and error handling work end to end."
     },
     {
       "category": "empty-state shortcut",
@@ -1146,7 +1147,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Open empty state and click shortcut; confirm it performs the advertised action."
+      "day1_tell": "Open an empty-state screen and click its shortcut action; confirm it navigates or creates the expected item."
     },
     {
       "category": "frontend asset optimization",
@@ -1158,7 +1159,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Build frontend assets; confirm bundle size/load time meets target and app loads."
+      "day1_tell": "Build frontend assets and inspect bundle size/loading; confirm optimization reduces or meets target size."
     },
     {
       "category": "ui component simplification",
@@ -1170,7 +1171,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Render simplified component with previous props; confirm behavior remains equivalent."
+      "day1_tell": "Render the simplified component with default and edge props; confirm behavior matches the old component."
     },
     {
       "category": "password authentication fix",
@@ -1182,7 +1183,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Login with valid and invalid password config; confirm authentication behavior is correct."
+      "day1_tell": "Login with correct, wrong, and missing password configuration; confirm authentication behavior matches config."
     },
     {
       "category": "configuration override support",
@@ -1194,7 +1195,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Apply config override via env/CLI; confirm it takes precedence where documented."
+      "day1_tell": "Set the same option in default config, env, and override file; confirm the override value wins."
     },
     {
       "category": "media handling fix",
@@ -1206,7 +1207,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Send media message; confirm delivery, preview, and download all work."
+      "day1_tell": "Send media content through the delivery path; confirm it arrives with correct MIME type and preview/download behavior."
     },
     {
       "category": "timestamp parsing fix",
@@ -1218,7 +1219,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Parse timestamps with timezone, epoch, and ISO formats; confirm displayed time is correct."
+      "day1_tell": "Parse timestamps with timezone, milliseconds, and invalid values; confirm correct dates or clear errors."
     },
     {
       "category": "configuration precedence",
@@ -1230,7 +1231,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Set same option in defaults, file, env, and CLI; confirm precedence order is correct."
+      "day1_tell": "Define conflicting config values across sources; confirm precedence order matches documentation."
     },
     {
       "category": "configuration type coercion",
@@ -1242,7 +1243,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Provide config values as strings for booleans/numbers; confirm coercion is correct or rejected."
+      "day1_tell": "Provide config values as strings for booleans/numbers/lists; confirm coercion or rejection is correct."
     },
     {
       "category": "undefined value handling",
@@ -1254,7 +1255,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Pass undefined optional fields; confirm no crash and defaults apply."
+      "day1_tell": "Pass undefined/missing fields through the handler; confirm defaults or validation prevent crashes."
     },
     {
       "category": "emoji support",
@@ -1266,7 +1267,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Send emoji-only and mixed emoji text; confirm round trip preserves emoji."
+      "day1_tell": "Send and receive emoji, skin tones, and surrogate pairs; confirm they render and serialize correctly."
     },
     {
       "category": "reply routing",
@@ -1278,7 +1279,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Reply to a threaded message; confirm reply routes to the correct parent/conversation."
+      "day1_tell": "Reply in a thread/channel/private context; confirm the reply routes to the original context."
     },
     {
       "category": "query telemetry",
@@ -1290,7 +1291,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Perform query with telemetry enabled; confirm anonymized telemetry event is emitted once."
+      "day1_tell": "Execute a query with telemetry enabled and disabled; confirm metrics are emitted only when allowed."
     },
     {
       "category": "service configuration migration",
@@ -1302,7 +1303,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Start with old service config; confirm automatic migration produces new config."
+      "day1_tell": "Start with an old service config; confirm automatic migration updates it and preserves values."
     },
     {
       "category": "instance identifier management",
@@ -1314,7 +1315,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Start two instances; confirm each reports a stable unique instance ID."
+      "day1_tell": "Start two app instances; confirm each has a stable unique instance identifier."
     },
     {
       "category": "file audio support",
@@ -1326,7 +1327,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Upload audio file formats; confirm supported files are processed and unsupported rejected."
+      "day1_tell": "Upload WAV/MP3/M4A files; confirm supported audio files are accepted and processed."
     },
     {
       "category": "streaming mode toggle",
@@ -1338,7 +1339,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Toggle streaming mode on/off; confirm responses follow selected mode."
+      "day1_tell": "Toggle streaming mode on and off; confirm requests use streaming only when enabled."
     },
     {
       "category": "api integration update",
@@ -1350,7 +1351,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Run sample API integration call; confirm request and response match updated API."
+      "day1_tell": "Call the updated API integration with a sample request; confirm request/response mapping matches the new API."
     },
     {
       "category": "message handling refactor",
@@ -1362,7 +1363,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Send normal, tool, and error messages; confirm refactored flow preserves behavior."
+      "day1_tell": "Send normal, edited, failed, and retried messages; confirm the refactored flow preserves behavior."
     },
     {
       "category": "log level adjustment",
@@ -1374,7 +1375,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Set log level to debug/warn; confirm emitted logs respect level."
+      "day1_tell": "Set log level to debug/info/warn/error; confirm only appropriate messages are emitted."
     },
     {
       "category": "image generation compatibility",
@@ -1386,7 +1387,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Send image generation request to each supported provider; confirm compatibility handling works."
+      "day1_tell": "Send generated/received images through the target provider/client; confirm compatible image formats work."
     },
     {
       "category": "startup configuration fix",
@@ -1398,7 +1399,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Start app from configured startup entry; confirm correct config loads."
+      "day1_tell": "Start the app with minimal startup config; confirm startup entries load in the correct order."
     },
     {
       "category": "role message merging",
@@ -1410,7 +1411,7 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Merge consecutive role messages; confirm roles are preserved and provider accepts payload."
+      "day1_tell": "Send adjacent messages with different roles; confirm role boundaries are preserved when merging."
     },
     {
       "category": "task cancellation scoping",
@@ -1422,7 +1423,27 @@
       ],
       "recurrence_projects": 2,
       "size": 2,
-      "day1_tell": "Cancel one task among several; confirm only the scoped task stops."
+      "day1_tell": "Cancel one running task among multiple tasks; confirm only the targeted task is cancelled."
+    },
+    {
+      "category": "release versioning",
+      "aliases": "versioning / changelog / release notes / semver",
+      "tier": "required",
+      "origin": "generic-baseline",
+      "projects": [],
+      "recurrence_projects": 0,
+      "size": 0,
+      "day1_tell": "Build a release artifact; confirm version, changelog, and semver tag are consistent."
+    },
+    {
+      "category": "caching",
+      "aliases": "cache / caching layer / cache invalidation",
+      "tier": "required",
+      "origin": "generic-baseline",
+      "projects": [],
+      "recurrence_projects": 0,
+      "size": 0,
+      "day1_tell": "Read, update, and invalidate a cached value; confirm stale data is not served after invalidation."
     }
   ],
   "optional": [
@@ -1435,7 +1456,7 @@
       ],
       "recurrence_projects": 1,
       "size": 6,
-      "day1_tell": "Reset prompt in one conversation; confirm other conversations retain their prompt state."
+      "day1_tell": "Reset the prompt in one conversation/session; confirm other conversations retain their prompt state."
     },
     {
       "category": "translation key coverage",
@@ -1446,7 +1467,7 @@
       ],
       "recurrence_projects": 1,
       "size": 5,
-      "day1_tell": "Run translation key audit; confirm no visible key is missing in supported locales."
+      "day1_tell": "Run the translation coverage check; confirm every referenced translation key exists in all supported locales."
     },
     {
       "category": "log display improvement",
@@ -1457,7 +1478,7 @@
       ],
       "recurrence_projects": 1,
       "size": 5,
-      "day1_tell": "Open logs containing long lines and ANSI/control chars; confirm display remains readable and clean."
+      "day1_tell": "Generate multiline logs with ANSI/control characters; confirm the log viewer displays clean, readable entries."
     },
     {
       "category": "usage metric correction",
@@ -1468,7 +1489,7 @@
       ],
       "recurrence_projects": 1,
       "size": 3,
-      "day1_tell": "Compare reported token/usage metrics with provider payload; confirm totals match."
+      "day1_tell": "Send a request with known token/usage metadata; confirm recorded usage matches the provider response."
     },
     {
       "category": "polling failure recovery",
@@ -1479,7 +1500,7 @@
       ],
       "recurrence_projects": 1,
       "size": 3,
-      "day1_tell": "Make polling endpoint fail twice then recover; confirm retries continue and state resumes."
+      "day1_tell": "Make the polling endpoint fail twice then recover; confirm retries/backoff occur and the loop resumes."
     },
     {
       "category": "websocket messaging",
@@ -1490,7 +1511,7 @@
       ],
       "recurrence_projects": 1,
       "size": 3,
-      "day1_tell": "Send message over websocket; confirm client receives exactly one ordered delivery."
+      "day1_tell": "Send a websocket message while connected, disconnected, and reconnecting; confirm delivery or retry behavior is correct."
     },
     {
       "category": "code block segmentation",
@@ -1501,7 +1522,7 @@
       ],
       "recurrence_projects": 1,
       "size": 3,
-      "day1_tell": "Segment code containing nested fences/functions; confirm chunks preserve semantic boundaries."
+      "day1_tell": "Segment a file containing multiple functions/classes and code fences; confirm chunks preserve semantic boundaries."
     },
     {
       "category": "image upload support",
@@ -1512,7 +1533,7 @@
       ],
       "recurrence_projects": 1,
       "size": 3,
-      "day1_tell": "Upload PNG/JPEG image; confirm it is accepted, previewed, and sent to backend."
+      "day1_tell": "Upload PNG, JPEG, oversized, and invalid image files; confirm valid images work and invalid ones fail clearly."
     },
     {
       "category": "request format fix",
@@ -1523,7 +1544,7 @@
       ],
       "recurrence_projects": 1,
       "size": 3,
-      "day1_tell": "Inspect outgoing request body; confirm it matches documented API format."
+      "day1_tell": "Send a request with the documented wire format; confirm the server accepts it and rejects malformed variants."
     },
     {
       "category": "message batching timeout",
@@ -1534,7 +1555,7 @@
       ],
       "recurrence_projects": 1,
       "size": 3,
-      "day1_tell": "Send rapid messages below and above batching timeout; confirm batching flushes at expected time."
+      "day1_tell": "Send messages just inside and just outside the batching window; confirm batches flush at the configured timeout."
     },
     {
       "category": "test reliability fix",
@@ -1545,7 +1566,7 @@
       ],
       "recurrence_projects": 1,
       "size": 3,
-      "day1_tell": "Run the flaky test 50 times; confirm it passes consistently."
+      "day1_tell": "Run the affected test 20 times with randomized order; confirm it passes consistently."
     },
     {
       "category": "container build fix",
@@ -1556,7 +1577,7 @@
       ],
       "recurrence_projects": 1,
       "size": 3,
-      "day1_tell": "Build container from scratch; confirm image builds and starts successfully."
+      "day1_tell": "Build the container from a clean Docker cache; confirm image builds and starts successfully."
     },
     {
       "category": "development database config",
@@ -1567,7 +1588,7 @@
       ],
       "recurrence_projects": 1,
       "size": 3,
-      "day1_tell": "Start dev environment with dev DB config; confirm it connects to the intended database."
+      "day1_tell": "Start in development mode with dev database settings; confirm it connects to the dev database only."
     },
     {
       "category": "resource cleanup",
@@ -1578,7 +1599,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Create temp resources then cancel operation; confirm temp files/handles are removed."
+      "day1_tell": "Run an operation that creates temp files/resources, then cancel it; confirm all resources are cleaned up."
     },
     {
       "category": "command suggestion support",
@@ -1589,7 +1610,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Type command prefix; confirm relevant suggestions appear and can be selected."
+      "day1_tell": "Type a command prefix; confirm relevant command suggestions appear and can be selected."
     },
     {
       "category": "rendering issue fix",
@@ -1600,7 +1621,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Open affected UI screen; confirm text, icons, and controls render without visual defects."
+      "day1_tell": "Open the affected UI state in supported browsers; confirm no visual glitches, clipping, or console render errors."
     },
     {
       "category": "font fallback support",
@@ -1611,7 +1632,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Render characters missing from primary font; confirm fallback font displays them."
+      "day1_tell": "Render text containing characters missing from the primary font; confirm fallback font displays them legibly."
     },
     {
       "category": "qr registration flow",
@@ -1622,7 +1643,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Complete QR registration scan flow; confirm configuration is saved and usable."
+      "day1_tell": "Complete the QR registration/configuration flow from scan to confirmation; confirm the account/config is saved."
     },
     {
       "category": "configuration validation",
@@ -1633,7 +1654,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Start with invalid config types; confirm validation reports exact fields."
+      "day1_tell": "Start with valid and invalid config files; confirm validation catches bad values before runtime use."
     },
     {
       "category": "blank input guard",
@@ -1644,7 +1665,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Submit blank input via keyboard and paste; confirm no request is sent."
+      "day1_tell": "Submit blank or whitespace-only input; confirm the action is blocked with no backend request."
     },
     {
       "category": "preference state persistence",
@@ -1655,7 +1676,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Change preference, reload page/app; confirm preference persists."
+      "day1_tell": "Change a user preference, reload, and log back in; confirm the preference persists."
     },
     {
       "category": "attachment event handling",
@@ -1666,7 +1687,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Send attachment add/remove event; confirm message attachment state updates correctly."
+      "day1_tell": "Send messages with added, removed, and failed attachments; confirm attachment events update message state correctly."
     },
     {
       "category": "usage statistics command",
@@ -1677,7 +1698,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Run usage statistics command/dashboard; confirm displayed totals match stored events."
+      "day1_tell": "Run the usage statistics command/dashboard; confirm totals match known seeded usage data."
     },
     {
       "category": "path resolution",
@@ -1688,7 +1709,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Resolve cached and uncached paths; confirm canonical path is correct after file moves."
+      "day1_tell": "Resolve the same path before and after moving the target; confirm cache invalidates or updates correctly."
     },
     {
       "category": "syntax highlighting",
@@ -1699,7 +1720,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Render code in several languages; confirm syntax highlighting applies and plain text fallback works."
+      "day1_tell": "Render code blocks in multiple languages; confirm syntax highlighting is applied and does not corrupt text."
     },
     {
       "category": "empty message filtering",
@@ -1710,7 +1731,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Process list containing empty messages; confirm empties are filtered before send."
+      "day1_tell": "Process a batch containing empty messages; confirm empty entries are filtered before send/display."
     },
     {
       "category": "display readability styling",
@@ -1721,7 +1742,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Render dense code/text block; confirm contrast, wrapping, and spacing are readable."
+      "day1_tell": "Render long paragraphs and code blocks; confirm styling remains readable with proper contrast and wrapping."
     },
     {
       "category": "tool selection handling",
@@ -1732,7 +1753,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Request a task requiring tools; confirm tool selection guidance chooses/asks appropriately."
+      "day1_tell": "Request a task requiring a specific tool; confirm tool selection guidance chooses or asks for the correct tool."
     },
     {
       "category": "message truncation guard",
@@ -1743,7 +1764,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Send overlong message; confirm truncation guard warns or blocks before data loss."
+      "day1_tell": "Send text longer than the truncation limit; confirm it is truncated safely with an indicator and no broken encoding."
     },
     {
       "category": "dependency security patching",
@@ -1754,7 +1775,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Run dependency vulnerability scan; confirm patched dependency removes known advisory."
+      "day1_tell": "Run dependency audit; confirm patched versions are installed and the targeted vulnerability is gone."
     },
     {
       "category": "payload immutability",
@@ -1765,7 +1786,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Pass payload through middleware; confirm original object is not mutated."
+      "day1_tell": "Pass a payload through middleware; confirm original object remains unchanged after processing."
     },
     {
       "category": "credential normalization",
@@ -1776,7 +1797,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Enter credentials with whitespace/case variants; confirm normalized stored value works."
+      "day1_tell": "Enter credentials with casing, whitespace, or prefix variations; confirm normalized stored credentials authenticate."
     },
     {
       "category": "status badge visibility",
@@ -1787,7 +1808,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Toggle status badge conditions; confirm badge visibility matches state."
+      "day1_tell": "Open the status badge area in all states/themes; confirm the badge is visible and readable."
     },
     {
       "category": "translation key addition",
@@ -1798,7 +1819,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Switch locales and open new feature; confirm added translation keys show localized text."
+      "day1_tell": "Reference each new translation key in the UI; confirm no raw key names are displayed."
     },
     {
       "category": "documentation links",
@@ -1809,7 +1830,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Click documentation links; confirm they open valid current docs."
+      "day1_tell": "Click every documentation link; confirm it opens the intended current documentation page."
     },
     {
       "category": "endpoint configuration",
@@ -1820,7 +1841,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Set custom API endpoint; confirm requests go to that endpoint."
+      "day1_tell": "Configure a custom API endpoint; confirm requests go to that endpoint and not the default."
     },
     {
       "category": "oauth service extraction",
@@ -1831,7 +1852,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Complete OAuth login flow; confirm extracted service issues usable tokens."
+      "day1_tell": "Complete OAuth login/refresh/logout flow; confirm tokens are stored, refreshed, and revoked correctly."
     },
     {
       "category": "deployment documentation",
@@ -1842,7 +1863,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Follow deployment docs on clean environment; confirm service is reachable."
+      "day1_tell": "Follow deployment docs on a clean environment; confirm the documented steps produce a running service."
     },
     {
       "category": "model initialization handling",
@@ -1853,7 +1874,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Initialize model with missing/invalid config; confirm graceful error or fallback."
+      "day1_tell": "Initialize a model with valid, invalid, and missing config; confirm readiness or clear initialization errors."
     },
     {
       "category": "inline mode fix",
@@ -1864,7 +1885,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Use inline mode trigger; confirm inline result inserts at cursor/context."
+      "day1_tell": "Use inline mode from the supported client; confirm inline query, result selection, and response work."
     },
     {
       "category": "streaming output support",
@@ -1875,7 +1896,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Stream tool output; confirm incremental chunks display and final result completes."
+      "day1_tell": "Invoke a streaming tool; confirm partial output streams and final result are handled correctly."
     },
     {
       "category": "model option filtering",
@@ -1886,7 +1907,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Apply model filter criteria; confirm only matching models are selectable."
+      "day1_tell": "List models with capability/option filters; confirm only matching models are shown."
     },
     {
       "category": "code execution sandboxing",
@@ -1897,7 +1918,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Attempt code to read outside sandbox/network; confirm sandbox blocks it."
+      "day1_tell": "Run untrusted code attempting file/network escape; confirm the sandbox blocks it."
     },
     {
       "category": "generated image display",
@@ -1908,7 +1929,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Generate image; confirm resulting image displays with correct metadata."
+      "day1_tell": "Generate an image; confirm the resulting image displays with correct dimensions and fallback text."
     },
     {
       "category": "command availability fix",
@@ -1919,7 +1940,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Check command list for current user/context; confirm unavailable commands are hidden/disabled."
+      "day1_tell": "Check command availability for enabled, disabled, and unauthorized contexts; confirm visibility matches rules."
     },
     {
       "category": "message edit handling",
@@ -1930,7 +1951,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Edit a sent message; confirm conversation updates and downstream state is consistent."
+      "day1_tell": "Edit a sent message; confirm stored content, display, and downstream state update."
     },
     {
       "category": "paired message deletion",
@@ -1941,7 +1962,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Delete one paired user/assistant message; confirm paired deletion behavior is correct."
+      "day1_tell": "Delete one message in a paired request/response; confirm the paired message is deleted or retained per spec."
     },
     {
       "category": "model parameter propagation",
@@ -1952,7 +1973,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Set model parameters like temperature/max tokens; confirm provider request includes them."
+      "day1_tell": "Set model parameters like temperature/max tokens; confirm they are included in provider requests."
     },
     {
       "category": "history deletion logic",
@@ -1963,7 +1984,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Delete history entries by rule; confirm only targeted records are removed."
+      "day1_tell": "Delete selected history entries; confirm cleanup removes dependent records without deleting unrelated history."
     },
     {
       "category": "multi-user state isolation",
@@ -1974,7 +1995,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Use two users concurrently; confirm preferences/history/session state do not leak."
+      "day1_tell": "Run two users concurrently changing state; confirm each sees only their own state."
     },
     {
       "category": "panel state fix",
@@ -1985,7 +2006,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Open, close, and reload panel; confirm panel state restores correctly."
+      "day1_tell": "Open, close, and reload the panel; confirm panel state restores correctly."
     },
     {
       "category": "language setting fix",
@@ -1996,7 +2017,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Change language setting and restart; confirm selected language persists."
+      "day1_tell": "Change language setting and restart; confirm the selected language remains active."
     },
     {
       "category": "tuple unpacking fix",
@@ -2007,7 +2028,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Exercise tuple-returning function with expected values; confirm unpacking order is correct."
+      "day1_tell": "Run the code path with tuples of expected and unexpected lengths; confirm unpacking handles them safely."
     },
     {
       "category": "translation correction",
@@ -2018,7 +2039,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Run translation detection/correction case; confirm corrected locale/string is used."
+      "day1_tell": "Display corrected translations and auto-detected language text; confirm wording and detection are accurate."
     },
     {
       "category": "localized prompt fix",
@@ -2029,7 +2050,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Change locale then render localized prompt; confirm prompt refreshes in new language."
+      "day1_tell": "Switch locale after loading prompts; confirm localized prompts refresh to the new language."
     },
     {
       "category": "null configuration check",
@@ -2040,7 +2061,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Start with null config object/section; confirm defaults or clear error apply."
+      "day1_tell": "Start with null configuration sections; confirm null checks apply defaults or produce clear errors."
     },
     {
       "category": "text length handling",
@@ -2051,7 +2072,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Submit very long text; confirm length limits, wrapping, and processing are safe."
+      "day1_tell": "Submit very long text near and beyond limits; confirm length handling prevents crashes and informs the user."
     },
     {
       "category": "image recognition fix",
@@ -2062,7 +2083,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Send image recognition request; confirm recognized content is returned."
+      "day1_tell": "Submit an image for recognition; confirm detected content is returned and errors are handled."
     },
     {
       "category": "dependency modularization",
@@ -2073,7 +2094,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Install minimal module set; confirm optional modules load only when needed."
+      "day1_tell": "Install only the core module, then optional modules; confirm modular dependencies load only when needed."
     },
     {
       "category": "compressed image recognition",
@@ -2084,7 +2105,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Send compressed image; confirm it is decompressed/recognized correctly."
+      "day1_tell": "Upload a compressed image; confirm it is decompressed or processed for recognition correctly."
     },
     {
       "category": "conversation prompt isolation",
@@ -2095,7 +2116,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Set different prompts in two conversations; confirm isolation is maintained."
+      "day1_tell": "Set different prompts in two conversations; confirm prompt changes do not leak between them."
     },
     {
       "category": "race condition locking",
@@ -2106,7 +2127,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Run concurrent updates to shared resource; confirm lock prevents race/inconsistent state."
+      "day1_tell": "Run concurrent writes to the same resource; confirm locking prevents race corruption."
     },
     {
       "category": "model selection fix",
@@ -2117,7 +2138,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Select model, reload, and send request; confirm selected model is used."
+      "day1_tell": "Select a different model and send a request; confirm the selected model is used immediately."
     },
     {
       "category": "request payload filtering",
@@ -2128,7 +2149,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Add unsupported fields to request payload; confirm they are filtered before send."
+      "day1_tell": "Send a request containing unsupported/null/internal fields; confirm payload filtering removes them."
     },
     {
       "category": "model response fix",
@@ -2139,7 +2160,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Mock provider response variants; confirm model response parser returns correct text/data."
+      "day1_tell": "Mock a model response with expected and edge-case content; confirm parsing produces the correct final message."
     },
     {
       "category": "prompt rendering fix",
@@ -2150,7 +2171,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Render prompt preview with variables; confirm output is simple and correct."
+      "day1_tell": "Render prompts containing variables, markdown, and missing values; confirm output is simple and correct."
     },
     {
       "category": "event stream abstraction",
@@ -2161,7 +2182,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Consume event stream with data, error, and close events; confirm abstraction emits correct events."
+      "day1_tell": "Consume event streams from multiple providers; confirm abstraction normalizes start, delta, error, and done events."
     },
     {
       "category": "path correction",
@@ -2172,7 +2193,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Resolve default path on fresh install; confirm corrected path exists and is writable."
+      "day1_tell": "Use default paths on a fresh install; confirm corrected paths exist and are writable."
     },
     {
       "category": "resolver improvement",
@@ -2183,7 +2204,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Resolve ambiguous resource names; confirm resolver chooses documented target or errors clearly."
+      "day1_tell": "Resolve ambiguous and missing references; confirm resolver picks the correct target or reports ambiguity."
     },
     {
       "category": "permission fix",
@@ -2194,7 +2215,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Attempt action before and after granting permission; confirm permission check behavior is correct."
+      "day1_tell": "Attempt the affected action with allowed and denied permissions; confirm enforcement is correct."
     },
     {
       "category": "adapter initialization guard",
@@ -2205,7 +2226,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Initialize adapter with missing config; confirm guard prevents invalid startup."
+      "day1_tell": "Initialize an adapter with missing/invalid prerequisites; confirm guard prevents use and reports the issue."
     },
     {
       "category": "installation script update",
@@ -2216,7 +2237,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Run installer script on clean machine/container; confirm install completes and service starts."
+      "day1_tell": "Run the installer script on a clean machine/container; confirm it installs required files and is repeatable."
     },
     {
       "category": "editor bug fix",
@@ -2227,7 +2248,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Open editor entry and perform edit/save; confirm bug is absent."
+      "day1_tell": "Open the editor entry point and perform a basic edit/save; confirm the editor works without errors."
     },
     {
       "category": "path conversion fix",
@@ -2238,7 +2259,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Convert paths between URL/native formats; confirm spaces/unicode/separators survive correctly."
+      "day1_tell": "Convert paths between URL, POSIX, and Windows forms; confirm resulting paths are valid."
     },
     {
       "category": "error feedback control",
@@ -2249,7 +2270,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Trigger handled error with feedback disabled/enabled; confirm feedback behavior follows setting."
+      "day1_tell": "Trigger an error with feedback enabled and disabled; confirm feedback is shown or suppressed as configured."
     },
     {
       "category": "plugin reload fix",
@@ -2260,7 +2281,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Reload plugin after code/config change; confirm old instance unloads and new one runs."
+      "day1_tell": "Reload a plugin after code/config change; confirm old instance is disposed and new behavior is active."
     },
     {
       "category": "history filtering",
@@ -2271,7 +2292,7 @@
       ],
       "recurrence_projects": 1,
       "size": 2,
-      "day1_tell": "Navigate history with filters applied; confirm only matching history appears in order."
+      "day1_tell": "Navigate history with filters/search; confirm only matching entries appear in correct order."
     }
   ]
 }

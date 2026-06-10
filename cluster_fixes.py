@@ -195,6 +195,25 @@ def pick_eps(rows):
     return max(scored, key=lambda r: r["silhouette"])["eps"] if scored else 0.34
 
 
+def merge_baseline(cats, baseline_cats):
+    """Codified measurement verdict (2026-06-10, replicated ×3): a generic common-sense checklist
+    RECALLS later robustness work better than a mined spine (lift −0.15) — so every emitted
+    robustness spine ships with the generic baseline as its floor, and mined categories add the
+    sub-type-specific detail. A generic category is skipped only when a mined category already
+    covers its vocabulary (keyword overlap). Mutates cats in place; returns #appended. Pure."""
+    from diff_target import category_keywords
+    mined_kws = {k for c in cats for k in category_keywords(c)}
+    added = 0
+    for b in baseline_cats:
+        if set(category_keywords(b)) & mined_kws:
+            continue
+        cats.append({"category": b["category"], "aliases": b.get("aliases", b["category"]),
+                     "tier": "required", "origin": "generic-baseline",
+                     "projects": [], "recurrence_projects": 0, "size": 0})
+        added += 1
+    return added
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("files", nargs="*")
@@ -208,6 +227,9 @@ def main():
     ap.add_argument("--batch", type=int, default=32, help="commits per fan call (≤~50; sweet spot 32-40)")
     ap.add_argument("--sweep", action="store_true", help="grid-sweep eps × min_samples and print metrics")
     ap.add_argument("--emit-checklist", metavar="PATH", help="write a scoped, tiered second-85% checklist")
+    ap.add_argument("--baseline", default=str(Path(__file__).resolve().parent / "checklists/generic-software.baseline.json"),
+                    help="generic baseline merged into every emitted spine (measured: it out-recalls mined robustness)")
+    ap.add_argument("--no-baseline", action="store_true", help="emit the mined-only spine (for measurement/research)")
     ap.add_argument("--app-type", default="ai-agent-tool", help="scope label for the emitted checklist")
     ap.add_argument("--no-abstract", action="store_true")
     ap.add_argument("--json", action="store_true")
@@ -287,6 +309,17 @@ def main():
                  "tier": "required" if c["multi_project"] else "optional",
                  "projects": list(c["projects"].keys()), "recurrence_projects": len(c["projects"]), "size": c["size"]}
                 for c in info]
+        baseline_merged = False
+        if not a.no_baseline:
+            bp = Path(a.baseline)
+            if bp.exists():
+                added = merge_baseline(cats, json.loads(bp.read_text()).get("required", []))
+                baseline_merged = True
+                print(f"merged generic baseline: +{added} non-overlapping categories "
+                      f"(measured: generic beats mined robustness recall, lift −0.15; mined cats add sub-type detail)",
+                      file=sys.stderr)
+            else:
+                print(f"baseline not found, emitting mined-only spine: {bp}", file=sys.stderr)
         listing = "\n".join(f"{i + 1}. {c['aliases']}" for i, c in enumerate(cats))
         prompt = ("For each numbered engineering category, write ONE concrete DAY-1 CHECK — a specific test or "
                   "inspection that reveals whether a project covers it (e.g. 'feed the parser a NUL byte + an "
@@ -307,6 +340,7 @@ def main():
             "scope_note": f"Derived ONLY from {a.app_type} repos {report['projects']}. Categories are app-type-relative — "
                           f"this checklist does NOT transfer to other app types.",
             "derived_from": report["projects"],
+            "baseline_merged": baseline_merged,
             "commit_weighted_recurrence_pct": report["commits_in_recurring_clusters_pct"],
             "required": [c for c in cats if c["tier"] == "required"],
             "optional": [c for c in cats if c["tier"] == "optional"],

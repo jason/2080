@@ -48,6 +48,25 @@ def test_fallback_when_nothing_passes_guards():
     assert pick_eps(rows) == 0.30
 
 
+def test_baseline_merge_adds_only_uncovered_categories():
+    # intent: the replicated measurement (generic checklist out-recalls mined robustness,
+    # lift -0.15) is codified as a merge floor. A generic category whose vocabulary a mined
+    # category already covers must NOT be duplicated; an uncovered one must be appended as
+    # required with its origin marked — silently shipping a mined-only spine would hand users
+    # a worse-than-common-sense checklist.
+    from cluster_fixes import merge_baseline
+    cats = [{"category": "error message improvement", "aliases": "error message improvement / async error handling", "tier": "required"}]
+    baseline = [{"category": "error handling", "aliases": "error handling / exception handling"},
+                {"category": "caching", "aliases": "cache / caching layer / cache invalidation"}]
+    added = merge_baseline(cats, baseline)
+    assert added == 1
+    names = [c["category"] for c in cats]
+    assert "error handling" not in names          # covered by mined vocabulary -> skipped
+    assert "caching" in names                     # uncovered -> appended
+    appended = cats[-1]
+    assert appended["tier"] == "required" and appended["origin"] == "generic-baseline"
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for fn in fns:
