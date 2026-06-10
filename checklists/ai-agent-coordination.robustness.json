@@ -1,5 +1,5 @@
 {
-  "app_type": "ai-agent-tool",
+  "app_type": "ai-agent-coordination",
   "scope_note": "Derived ONLY from ai-agent-tool repos ['agent-rally-point', 'build-loop', 'symphony', 'voltagent']. Categories are app-type-relative \u2014 this checklist does NOT transfer to other app types.",
   "derived_from": [
     "agent-rally-point",

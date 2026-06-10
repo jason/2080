@@ -10,7 +10,7 @@ agentic CLI surface (capability map, --yes enforcement, --dry-run). The full liv
 Run: python3 -m unittest test_init -v
 """
 from __future__ import annotations
-import json, os, re, subprocess, sys, tempfile, unittest
+import json, os, subprocess, sys, tempfile, unittest
 from pathlib import Path
 
 import init

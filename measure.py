@@ -27,7 +27,7 @@ import argparse, json, re, subprocess, sys
 from pathlib import Path
 import numpy as np
 
-from mine_common import fan_batch, extract_json, EXIT_OK, EXIT_ERR, EXIT_NOT_FOUND
+from mine_common import fan_batch, extract_json, EXIT_OK, EXIT_NOT_FOUND
 from cluster_fixes import embed, abstract_via_fan
 
 THRESHOLDS = [0.35, 0.40, 0.45, 0.50, 0.55]
@@ -126,7 +126,9 @@ def judge_calls(target, layer, spine_id, items, cats, judges):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--robustness-spine", default="checklists/ai-agent-tool.json")
+    # default = the sub-type-MATCHED spine (measured: a mismatched spine halves recall, 0.23 vs 0.44);
+    # the coordination-sub-type spine lives at checklists/ai-agent-coordination.robustness.json
+    ap.add_argument("--robustness-spine", default="checklists/ai-agent-cli.robustness.json")
     ap.add_argument("--scope-spine", default="checklists/ai-agent-tool.features.json")
     ap.add_argument("--null-spine", default=None,
                     help="real adjacent-domain spine as the control (e.g. a mined terminal-multiplexer spine); "

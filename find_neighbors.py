@@ -16,6 +16,8 @@ Usage: find_neighbors.py "what you are building" [--json]
 import argparse, json, re, subprocess, sys
 from datetime import datetime, timezone
 
+from mine_common import fan_call as mc_fan_call, extract_json
+
 
 def _months_since(iso):
     d = datetime.fromisoformat(iso.replace("Z", "+00:00"))
@@ -49,24 +51,13 @@ def measured_maturity(cand):
     return {"label": label, "commits": commits, "age_months": round(age, 1), "months_since_push": round(since_push, 1)}
 
 
-def fan_call(prompt, max_tokens=2000, model="gpt-5.5", provider="openai-codex", reasoning="low"):
-    cfg = {"calls": [{"id": "0", "provider": provider, "model": model, "reasoning": reasoning,
-                      "prompt": prompt, "maxTokens": max_tokens, "timeoutMs": 120000}]}
-    r = subprocess.run(["fan"], input=json.dumps(cfg), capture_output=True, text=True, timeout=300)
-    if not r.stdout:
-        sys.exit(f"fan failed: {r.stderr[:300]}")
-    res = json.loads(r.stdout)["results"][0]
-    if not res.get("ok"):
-        sys.exit(f"fan error: {res.get('error')}")
-    return res["text"]
-
-
-def extract_json(t):
-    try:
-        return json.loads(t)
-    except Exception:
-        m = re.search(r"[\{\[][\s\S]*[\}\]]", t)
-        return json.loads(m.group(0)) if m else None
+def fan_call(prompt, max_tokens=2000):
+    """Thin shim over the shared substrate (mine_common owns the fan plumbing);
+    keeps this tool's die-on-failure semantics."""
+    txt = mc_fan_call(prompt, max_tokens=max_tokens, timeout_ms=120000)
+    if txt is None:
+        sys.exit("fan error: call failed")
+    return txt
 
 
 def gh_search(query, limit=12):
@@ -157,4 +148,5 @@ def main():
         print(f"  ✗ {r.get('repo')} — {r.get('reason')}")
 
 
-main()
+if __name__ == "__main__":
+    main()

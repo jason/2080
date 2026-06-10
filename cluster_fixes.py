@@ -189,7 +189,6 @@ def main():
     from collections import Counter, defaultdict
 
     if a.sweep:
-        import numpy as np
         from sklearn.metrics import silhouette_score
         print(f"{'eps':>5} {'ms':>3} {'clusters':>8} {'noise%':>7} {'recurClust':>10} {'recurCommit%':>12} {'maxClust':>8} {'silhouette':>10}")
         for eps in (0.22, 0.26, 0.30, 0.34, 0.38, 0.42, 0.46):

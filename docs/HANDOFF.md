@@ -237,10 +237,10 @@ Other next steps: adversarial-verify pass for `diff_target` (catch prose-level o
 - `measure.py` — **controlled recall measurement**: ML + strict-fan judges, recall LIFT over a null spine (`--null-spine`)
 - `checklists/terminal-multiplexer.features.json` — the real adjacent-domain NULL control (tmux+zellij)
 - `completeness.flow.js` — adaptive intent-derivation engine (run on rally-flow, `--harness fan`)
-- `checklists/ai-agent-tool.json` — robustness spine, COORDINATION sub-type (rally/build-loop/voltagent/symphony)
+- `checklists/ai-agent-coordination.robustness.json` — robustness spine, COORDINATION sub-type (rally/build-loop/voltagent/symphony; was `ai-agent-tool.json` — renamed to kill the label collision with the aider/OI/gptme-derived `ai-agent-tool.features.json`)
 - `checklists/ai-agent-cli.robustness.json` — robustness spine, agent-CLI sub-type (aider/OI/gptme) — the matched one
 - `checklists/ai-agent-tool.features.json` — scope spine for ai-agent-tool (feature lens; aider/OI/gptme)
 - `checklists/ai-codebase-gap-analysis.features.json` — **2080's OWN scope spine** (5 neighbors; the dogfood)
-- `gap_enum.md` / `gap_review.md` — the logout thesis test (the origin insight)
+- `docs/gap_enum.md` / `docs/gap_review.md` — the logout thesis test (the origin insight)
 
 Backtest details and scratch args live in `/tmp` clones (regenerable); `.backtest-*-args.json` are gitignored.
