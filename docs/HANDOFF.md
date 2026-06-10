@@ -29,6 +29,34 @@ tests green on the merged tree:
 (provider-selection, BYOK, PR-integration, enterprise-secrets, reporting) are now emitted as a task
 queue with fix sites — close them with `emit.py --target . --spine checklists/ai-codebase-gap-analysis.features.json --format md`.
 
+### ⚖️ Generic-baseline control + variance (session 4) — THE THESIS SPLITS BY LAYER
+
+The MATTER-style control ran (3 repeats vs `checklists/generic-software.baseline.json`, a
+20-category no-mining common-sense checklist; plus 2 repeats vs the tmux/zellij null for
+continuity; strict 2-judge, dexto/goose/cline, fresh full clones):
+
+| control | robustness lift | scope lift |
+|---|---|---|
+| tmux/zellij (wrong domain) | **+0.44** (sd 0.01) — reproduces the headline | **+0.51** (sd 0.06) |
+| **generic checklist (common sense)** | **−0.15** (sd 0.01, replicated ×3) | **+0.27** (sd 0.05) |
+
+- **The robustness mining FAILS the trivial-baseline control.** A hand-written generic checklist
+  recalls later robustness work BETTER than the mined sub-type spine (0.63 vs 0.48). The CPDP
+  literature's warning came true for this layer: robustness work is largely universal. (Nuance:
+  the weak ML signal disagrees on sign, +0.10 mined — granularity confound: 20 broad categories
+  match more easily than ~100 narrow ones. But by the primary instrument, generic wins.)
+- **The scope mining SURVIVES it** (+0.27±0.05, replicated). Generic checklists cannot predict
+  "multi-provider / plugin marketplace / web dashboard"; mining can. **Scope prediction is 2080's
+  measured differentiator.**
+- **Product implication:** the robustness layer should ship AS a generic baseline (free, no
+  mining) with mined sub-type categories as additive day-1 tells/gating detail — not as the
+  discovery mechanism. The mining pipeline's pitch narrows to the scope layer + the gate loop.
+- **Assessment stability (3 repeated goose runs, escalation active):** 16/28 required categories
+  identical across all 3 runs (57%); all flips are adjacent (covered↔partial↔gap, never
+  covered↔gap... except via gap-lift); aggregate blocking count is steady (22/22/24); gap counts
+  0/4/3. For gate use, a majority-of-3 assessment mode (~3× cost, cents) would stabilize
+  per-category verdicts — not built, noted as an option.
+
 ### Precision measurement (session 3, later): THE GATE IS BLIND ON LARGE REPOS
 
 Adversarial refutation (2 independent lenses per verdict, FP only when both refute with ≥med
