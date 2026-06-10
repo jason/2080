@@ -78,6 +78,41 @@ lineages.
 - Can 2080's recall-lift survive a MATTER-style generic-checklist control? The CPDP track record
   says this is a real risk, not a formality.
 
+## Follow-up pass (2026-06-10, verified — 24 claims, all 3-0; the three open angles)
+
+**Angle 1 — LLM-era agentic completeness tooling: NO anticipation (high confidence).**
+OpenSpec, GitHub Spec Kit, and the "Kitchen Loop" preprint (arXiv 2603.25697) all gate
+completeness against the project's OWN user-authored spec — zero neighbor-repo or commit-history
+input anywhere (full-text greps verified). The Kitchen Loop even names "knowing what to build" as
+the open bottleneck without solving it — the strongest signal 2080's gap is recognized but
+unfilled in the 2026 agentic literature. Nearest academic line (Luitel et al., RE-J 2024) checks
+completeness INSIDE a requirements document via BERT. Caveat: absence claim in a weekly-moving
+space; Devin/SWE-agent/OpenHands/Cursor internals were covered only by searches failing to
+surface anticipating mechanisms, not by direct inventory.
+
+**Angle 2 — requirements mining: PARTIAL anticipation, and it IS the closer neighbor lineage.**
+The conceptual move "recurring features across similar products = candidate scope for a new
+product" is established prior art: Harman/Jia/Zhang (MSR 2012, app-store featurelets) founded it;
+Xie et al. (JSS 2022) recommend MISSING standard features relative to similar products (from UI
+pages); APPFIRE (ASE 2024) recommends features for a NEW app from a description (structurally the
+closest pipeline); Iqbal et al. (2019) propose exactly 2080's day-1 input/output shape — as an
+unimplemented vision paper. It's even documented manual PRACTICE (Al-Subaihin, TSE: 56% of 186
+developers gather requirements from similar apps). **Position 2080 against THIS lineage, not
+defect prediction.**
+
+**Angle 3 — patents: UNANSWERED twice.** Zero patent claims survived verification in either pass.
+No freedom-to-operate signal exists in any direction. Not legal advice; a human/professional
+search is the only way to close this.
+
+**Updated overall verdict: "partially novel" survives, narrowed.** Not novel: completeness gates
+for agentic coding (all spec-internal); the idea of neighbor products as scope predictors
+(app-store lineage). Novel residue, per verified evidence: (i) commit histories of mature
+same-app-type repos as the evidence base, (ii) a recurring fix/feature CATEGORY spine as the
+artifact, (iii) its use as a day-1 forward predictor AND enforcement gate for hidden remaining
+work. Note this aligns with the measurement verdict: the scope layer (where 2080's lift survives
+the generic-baseline control) is exactly where the app-store lineage stops short of commit-mined,
+gate-enforced prediction.
+
 ## Killed claims (excluded — do not reuse)
 
 - "Levin & Yehudai classify by keyword matching" (0-3).
