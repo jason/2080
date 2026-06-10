@@ -57,6 +57,37 @@ continuity; strict 2-judge, dexto/goose/cline, fresh full clones):
   0/4/3. For gate use, a majority-of-3 assessment mode (~3× cost, cents) would stabilize
   per-category verdicts — not built, noted as an option.
 
+### 🐕 VIP-bot dogfood (session 4) — first real external target; relevance fixed live
+
+Ran `~/projects/vip` (351 files, TS/bun) against both telegram spines. First pass exposed the next
+quality frontier: verdicts factually right but **strategically irrelevant** — a personal
+single-user bot gated on admin dashboards, plugin marketplaces, onboarding flows, i18n
+(framework-product features from the AstrBot/LangBot neighbor set). Plus the 194-cat robustness
+spine blew the single-call ceiling entirely.
+
+Both fixed and live-verified (`diff_target` v0.4):
+- **Sub-type-aware assessment:** `infer_sub_type` runs first; every verdict judged against what
+  THE TARGET's sub-type requires, with multi-user-product-vs-personal-tool examples in the
+  na_by_design rules. VIP scope blocking: **13/17 → 4/17**, all 9 flips being exactly the
+  framework-product features, each with sound reasoning.
+- **Chunked assessment** (ASSESS_CHUNK=40, parallel fan chunks, per-chunk failure containment):
+  the robustness spine now completes (5 chunks).
+
+VIP's actual day-1 map (scope): 4 partials — provider/model management, agent command system,
+knowledge-base/document QA, rich message handling. Queue at /tmp/vip-scope-queue.md.
+
+**New finding from the robustness run: mined robustness categories are change-shaped, not
+capability-shaped.** 97/117 required blocking on VIP — labels like "dependency fix", "type usage
+fix", "module import fix" are cluster names of FIXES, not requirements a target can satisfy, so
+the gate drowns in mushy partials. Confirms (again, from a new angle) the layer-split verdict:
+gate on the SCOPE spine + the generic-baseline robustness floor; treat the mined robustness
+detail as advisory tells, not blocking categories. Candidate codification: `--fail-on` should
+default to scope spines, or cluster_fixes should emit capability-phrased labels (abstraction
+prompt change). Not built yet.
+(Nuance noted: 'sandbox runtime' / 'tool permissions' na'd as product features is correct
+scope-wise; the bot's real sandboxing/security concerns are robustness-side and already active
+work in that repo — tainted-mode commits.)
+
 ### Precision measurement (session 3, later): THE GATE IS BLIND ON LARGE REPOS
 
 Adversarial refutation (2 independent lenses per verdict, FP only when both refute with ≥med
