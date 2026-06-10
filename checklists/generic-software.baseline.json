@@ -1,0 +1,28 @@
+{
+  "app_type": "generic-software-baseline",
+  "scope_note": "MATTER-style trivial baseline (the 'ONE' analog): categories ANY software project converges on, written from common sense with NO mining. The mined spines' recall lift must beat THIS control or the mining adds nothing over a generic checklist. Deliberately strong.",
+  "derived_from": [],
+  "required": [
+    {"category": "error handling", "aliases": "error handling / exception handling / error messages / graceful failure"},
+    {"category": "logging and diagnostics", "aliases": "logging / log levels / debug output / diagnostics"},
+    {"category": "input validation", "aliases": "input validation / sanitization / malformed input handling"},
+    {"category": "configuration management", "aliases": "configuration / config files / settings / environment variables / defaults"},
+    {"category": "documentation improvement", "aliases": "documentation / README / usage docs / examples"},
+    {"category": "test coverage", "aliases": "tests / unit tests / integration tests / test fixes"},
+    {"category": "CI/CD setup", "aliases": "continuous integration / build pipeline / release automation"},
+    {"category": "dependency upgrades", "aliases": "dependency updates / version bumps / library upgrades"},
+    {"category": "performance optimization", "aliases": "performance / speed / memory usage / optimization"},
+    {"category": "security hardening", "aliases": "security / vulnerability fix / secrets handling / permissions"},
+    {"category": "packaging and installation", "aliases": "packaging / install / distribution / setup"},
+    {"category": "release versioning", "aliases": "versioning / changelog / release notes / semver"},
+    {"category": "retry and timeout handling", "aliases": "retries / timeouts / backoff / transient failure handling"},
+    {"category": "caching", "aliases": "cache / caching layer / cache invalidation"},
+    {"category": "telemetry and monitoring", "aliases": "metrics / monitoring / observability / usage tracking"},
+    {"category": "authentication and access control", "aliases": "auth / login / API keys / access control"},
+    {"category": "data persistence and migration", "aliases": "database / persistence / schema migration / data integrity"},
+    {"category": "UI and UX polish", "aliases": "user interface / usability / display fixes / formatting"},
+    {"category": "internationalization", "aliases": "i18n / localization / translations"},
+    {"category": "resource cleanup", "aliases": "resource leaks / file handles / memory cleanup / shutdown handling"}
+  ],
+  "optional": []
+}
