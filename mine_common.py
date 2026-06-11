@@ -23,8 +23,31 @@ from __future__ import annotations
 import json, os, re, shutil, subprocess, time
 import urllib.request, urllib.error
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 EXIT_OK, EXIT_ERR, EXIT_NOT_FOUND, EXIT_EMPTY = 0, 1, 2, 3
+
+
+def write_atomic(path, text):
+    """Crash-safe artifact write (tmp + os.replace): the pipeline is long and resumable, and a
+    Ctrl-C/OOM mid-write must never leave a truncated JSON that a later run loads as authoritative.
+    The tmp name carries the pid so two concurrent runs writing the same artifact can't
+    interleave on a shared tmp file (os.replace keeps the final file whole either way)."""
+    path = Path(path)
+    tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+    tmp.write_text(text)
+    os.replace(tmp, path)
+
+
+def git_text(repo, *args, timeout=60):
+    """stdout of `git -C <repo> <args>`, '' on timeout — the shared read-only git helper.
+    A wedged git (lazy-blob fetch, credential prompt) degrades to 'no material' instead of
+    hanging a long pipeline run."""
+    try:
+        return subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True,
+                              timeout=timeout).stdout
+    except subprocess.TimeoutExpired:
+        return ""
 
 # Neither backend retries internally: a transient 429 becomes a None result, which downstream
 # means a silently missing judge vote / assessment. Concurrency and retries are therefore coupled
@@ -107,12 +130,22 @@ def _fan_once(calls, model, provider, reasoning, timeout_ms, concurrency):
     # Per-call timeouts are enforced INSIDE fan via timeoutMs; this is only the hang backstop.
     waves = -(-len(calls) // max(1, concurrency))
     ceiling = timeout_ms / 1000 + 60 * waves
-    r = subprocess.run(["fan"], input=json.dumps(cfg), capture_output=True, text=True,
-                       timeout=ceiling)
+    # All three failure shapes (hang, crash, garbage stdout) become RuntimeError — the one
+    # exception type assess_target and the other callers actually catch. A raw TimeoutExpired/
+    # JSONDecodeError here used to abort entire pipeline runs instead of degrading.
+    try:
+        r = subprocess.run(["fan"], input=json.dumps(cfg), capture_output=True, text=True,
+                           timeout=ceiling)
+    except subprocess.TimeoutExpired:
+        raise RuntimeError(f"fan timed out after {ceiling:.0f}s ({len(calls)} calls)")
     if not r.stdout:
         raise RuntimeError(f"fan failed: {(r.stderr or '')[:300]}")
+    try:
+        data = json.loads(r.stdout)
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f"fan returned non-JSON output: {e}")
     out = {}
-    for res in json.loads(r.stdout).get("results", []):
+    for res in data.get("results", []):
         out[str(res.get("id"))] = res.get("text", "") if res.get("ok") else None
     return out
 
@@ -201,7 +234,10 @@ def fan_batch(calls, model="gpt-5.5", provider="openai-codex", reasoning="low", 
         if not failed:
             break
         time.sleep(3)
-        out.update(once(failed, max(1, concurrency // 2)))
+        try:
+            out.update(once(failed, max(1, concurrency // 2)))
+        except RuntimeError:
+            break  # retry pass died wholesale — keep the first pass's partial results
     return out
 
 

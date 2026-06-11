@@ -116,6 +116,58 @@ def test_native_without_key_raises_actionable_error():
         env("OPENAI_API_KEY", old_key); env("LLM_2080_BACKEND", old_b)
 
 
+def test_fan_once_timeout_and_garbage_stdout_become_runtimeerror():
+    # intent: a wedged or crashing fan used to leak raw TimeoutExpired/JSONDecodeError out of
+    # fan_batch — assess_target only catches RuntimeError, so one malformed fan response
+    # aborted an entire multi-hour pipeline run instead of degrading to a structured failure.
+    import subprocess as sp
+    old_run = mine_common.subprocess.run
+    try:
+        def hang(cmd, **kw):
+            raise sp.TimeoutExpired(cmd, kw.get("timeout"))
+        mine_common.subprocess.run = hang
+        try:
+            mine_common._fan_once([{"id": "1", "prompt": "x"}], "m", "p", "low", 1000, 4)
+            assert False, "expected RuntimeError on timeout"
+        except RuntimeError as e:
+            assert "timed out" in str(e)
+
+        class R:
+            returncode, stdout, stderr = 0, "Segmentation fault (core dumped)", ""
+        mine_common.subprocess.run = lambda cmd, **kw: R()
+        try:
+            mine_common._fan_once([{"id": "1", "prompt": "x"}], "m", "p", "low", 1000, 4)
+            assert False, "expected RuntimeError on non-JSON stdout"
+        except RuntimeError as e:
+            assert "non-JSON" in str(e)
+    finally:
+        mine_common.subprocess.run = old_run
+
+
+def test_retry_pass_exception_keeps_first_pass_partials():
+    # intent: when the RETRY pass itself dies wholesale (e.g. fan crashes the second time),
+    # the first pass's successful results must survive — raising would discard paid-for
+    # verdicts and turn a partial failure into a total one.
+    old_b = os.environ.get("LLM_2080_BACKEND")
+    calls_seen = []
+
+    def fake_native(calls, model, reasoning, timeout_ms, concurrency):
+        calls_seen.append([c["id"] for c in calls])
+        if len(calls_seen) == 1:
+            return {"1": "ok", "2": None}
+        raise RuntimeError("retry pass died")
+
+    old_native = mine_common._native_once
+    try:
+        env("LLM_2080_BACKEND", "native")
+        mine_common._native_once = fake_native
+        out = fan_batch([{"id": "1", "prompt": "a"}, {"id": "2", "prompt": "b"}], retries=1)
+        assert out == {"1": "ok", "2": None}
+        assert calls_seen == [["1", "2"], ["2"]]
+    finally:
+        mine_common._native_once = old_native; env("LLM_2080_BACKEND", old_b)
+
+
 def test_retry_refires_only_failures_at_half_concurrency():
     # intent: the retry loop is the data-integrity net for BOTH backends — if it re-fired
     # everything (duplicate cost) or nothing (silent missing votes), batch results rot.
