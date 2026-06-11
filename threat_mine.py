@@ -22,7 +22,7 @@ import argparse, json, re, subprocess, sys, time, tomllib
 import urllib.error, urllib.parse, urllib.request
 from pathlib import Path
 
-from mine_common import EXIT_OK, EXIT_ERR, EXIT_NOT_FOUND, EXIT_EMPTY
+from mine_common import write_atomic, git_text as _git, EXIT_OK, EXIT_ERR, EXIT_NOT_FOUND, EXIT_EMPTY
 from lens_mine import neighbor_name
 
 OSV_API = "https://api.osv.dev/v1"
@@ -102,10 +102,6 @@ CLASSES = [
      "weak cryptography / weak cipher / insecure randomness / timing attack",
      _AUDIT + "inventory cipher, hash, and randomness usage and confirm no deprecated primitives remain."),
 ]
-
-
-def _git(repo, *args):
-    return subprocess.run(["git", "-C", repo, *args], capture_output=True, text=True).stdout
 
 
 # ── manifest parsing (pure text -> [(ecosystem, name)]) ──────────────────────
@@ -369,7 +365,7 @@ def main():
         "optional": optional,
     }
     if a.emit:
-        Path(a.emit).write_text(json.dumps(checklist, indent=2))
+        write_atomic(Path(a.emit), json.dumps(checklist, indent=2))
         print(f"→ {a.app_type} threat spine: {len(required)} convergent + {len(optional)} "
               f"single-neighbor ({stats['vulns_found']} vulns over {stats['deps_queried']} deps) "
               f"→ {a.emit}", file=sys.stderr)

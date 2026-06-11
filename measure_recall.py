@@ -66,7 +66,7 @@ def sample_even(commits, cap):
 def repo_commits(repo_dir):
     """Full history (newest-first) from the clone: [{'sha','subject'}]."""
     r = subprocess.run(["git", "-C", str(repo_dir), "log", "--format=%H%x09%s"],
-                       capture_output=True, text=True, check=True)
+                       capture_output=True, text=True, check=True, timeout=120)
     return [{"sha": ln.split("\t", 1)[0], "subject": ln.split("\t", 1)[1] if "\t" in ln else ""}
             for ln in r.stdout.splitlines() if ln]
 
@@ -134,7 +134,7 @@ def make_snapshot(repo_dir, sha):
     wt = Path(f"/tmp/2080-recall-{repo_dir.name}-{sha[:8]}")
     if not wt.exists():
         subprocess.run(["git", "-C", str(repo_dir), "worktree", "add", "--force", str(wt), sha],
-                       check=True, capture_output=True, text=True)
+                       check=True, capture_output=True, text=True, timeout=300)
     return wt
 
 

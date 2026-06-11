@@ -20,7 +20,7 @@ from __future__ import annotations
 import argparse, json, re, subprocess, sys
 from pathlib import Path
 
-from mine_common import EXIT_OK, EXIT_ERR, EXIT_NOT_FOUND, EXIT_EMPTY
+from mine_common import write_atomic, git_text as _git, EXIT_OK, EXIT_ERR, EXIT_NOT_FOUND, EXIT_EMPTY
 from lens_mine import neighbor_name
 
 HEALTH_RE = r"healthz|readyz|/health|health_check|healthcheck"
@@ -127,10 +127,6 @@ def filter_content_hit(cat, paths):
     return None
 
 
-def _git(repo, *args):
-    return subprocess.run(["git", "-C", repo, *args], capture_output=True, text=True).stdout
-
-
 def detect(files, health_hit=None, content_hits=None):
     """Probe a neighbor's tracked-file list (+ content-grep hits) -> {category: example_path} (pure).
 
@@ -226,7 +222,7 @@ def main():
         "optional": optional,
     }
     if a.emit:
-        Path(a.emit).write_text(json.dumps(checklist, indent=2))
+        write_atomic(Path(a.emit), json.dumps(checklist, indent=2))
         print(f"→ {a.app_type} operability spine: {len(required)} convergent + {len(optional)} "
               f"single-neighbor → {a.emit}", file=sys.stderr)
     if a.json:

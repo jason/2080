@@ -34,7 +34,7 @@ import argparse, hashlib, json, os, pickle, re, subprocess, sys
 from pathlib import Path
 import numpy as np
 
-from mine_common import fan_batch, extract_json, EXIT_OK, EXIT_NOT_FOUND
+from mine_common import fan_batch, extract_json, write_atomic, git_text as git, EXIT_OK, EXIT_NOT_FOUND
 
 # ── embedding + LLM-abstraction substrate (moved here from cluster_fixes.py when it was
 # archived 2026-06-11 — measure.py was its last consumer; caches stay path-compatible) ──
@@ -103,7 +103,7 @@ def abstract_via_fan(items, model, provider, reasoning, batch_size=32):
                 elif isinstance(e, str) and e.strip():
                     cache[_pkey(it["subject"])] = {"phrase": e.strip().lower(), "substantive": True}
         PHRASE_CACHE.parent.mkdir(parents=True, exist_ok=True)
-        PHRASE_CACHE.write_text(json.dumps(cache))
+        write_atomic(PHRASE_CACHE, json.dumps(cache))
     for it in items:
         e = cache.get(_pkey(it["subject"]))
         if e:
@@ -124,10 +124,6 @@ NULL_SPINE = {"required": [{"category": c} for c in [
     "gamepad rumble feedback", "sprite atlas packing", "screen-space reflections",
     "tilemap chunk loading", "dialogue tree branching", "inventory grid management",
     "ragdoll death physics", "minimap fog of war"]], "optional": []}
-
-
-def git(repo, *args):
-    return subprocess.run(["git", "-C", repo, *args], capture_output=True, text=True).stdout
 
 
 def answer_key(repo, cutoff_frac=0.12, cap=130):
@@ -196,7 +192,7 @@ def classify_layers(all_items, model, provider, reasoning):
             lcache[_lkey(s)] = lab if lab in ("robustness", "scope", "direction") else "churn"
     if calls:
         LAYER_CACHE.parent.mkdir(parents=True, exist_ok=True)
-        LAYER_CACHE.write_text(json.dumps(lcache))
+        write_atomic(LAYER_CACHE, json.dumps(lcache))
     return {t: [lcache.get(_lkey(s), "churn") for s in items] for t, items in all_items.items()}
 
 

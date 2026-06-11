@@ -32,7 +32,7 @@ from __future__ import annotations
 import argparse, json, os, re, subprocess, sys
 from pathlib import Path
 
-from mine_common import extract_json, EXIT_OK, EXIT_ERR, EXIT_NOT_FOUND, EXIT_EMPTY
+from mine_common import extract_json, write_atomic, EXIT_OK, EXIT_ERR, EXIT_NOT_FOUND, EXIT_EMPTY
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 CACHE_ROOT = Path(os.environ.get("CACHE_2080", str(Path.home() / ".cache" / "2080")))
@@ -117,15 +117,28 @@ def clone_dest(repo):
 
 def ensure_clone(repo, dest, run=subprocess.run):
     """Idempotent: clone --filter=blob:none if absent (full history, lazy blobs);
-    fetch + ff-merge to refresh if present. Returns 'cloned' | 'refreshed'."""
+    fetch + ff-merge to refresh if present. Returns 'cloned' | 'refreshed' | 'stale (...)'.
+    A failed refresh must SAY so — spines are the rule set the gate enforces, and silently
+    mining an out-of-date clone yields a stale spine with no signal to the user."""
     if (dest / ".git").exists():
-        run(["git", "-C", str(dest), "fetch", "--quiet"], capture_output=True, text=True)
-        run(["git", "-C", str(dest), "merge", "--ff-only", "--quiet", "FETCH_HEAD"],
-            capture_output=True, text=True)  # best-effort; diverged/detached just stays put
+        try:
+            f = run(["git", "-C", str(dest), "fetch", "--quiet"], capture_output=True, text=True,
+                    timeout=300)
+            m = run(["git", "-C", str(dest), "merge", "--ff-only", "--quiet", "FETCH_HEAD"],
+                    capture_output=True, text=True, timeout=60) if f.returncode == 0 else None
+        except subprocess.TimeoutExpired:
+            return "stale (refresh timed out; mining existing clone)"
+        if f.returncode != 0:
+            return "stale (fetch failed; mining existing clone)"
+        if m is None or m.returncode != 0:
+            return "stale (diverged/detached; mining existing clone)"
         return "refreshed"
     dest.parent.mkdir(parents=True, exist_ok=True)
-    r = run(["git", "clone", "--filter=blob:none", f"https://github.com/{repo}.git", str(dest)],
-            capture_output=True, text=True)
+    try:
+        r = run(["git", "clone", "--filter=blob:none", f"https://github.com/{repo}.git", str(dest)],
+                capture_output=True, text=True, timeout=900)
+    except subprocess.TimeoutExpired:
+        raise RuntimeError(f"clone timed out for {repo}")
     if r.returncode != 0:
         raise RuntimeError(f"clone failed for {repo}: {(r.stderr or '')[:200]}")
     return "cloned"
@@ -138,7 +151,10 @@ def build_harvest(clone_dir, name, max_commits=500):
     cmd = ["git", "-C", str(clone_dir), "log", "--format=%H%x09%s"]
     if max_commits:
         cmd += ["-n", str(max_commits)]
-    r = subprocess.run(cmd, capture_output=True, text=True)
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+    except subprocess.TimeoutExpired:
+        return {"project": name, "commits": []}  # caller already handles the empty-harvest case
     commits = []
     for line in r.stdout.splitlines():
         sha, _, subject = line.partition("\t")
@@ -294,7 +310,7 @@ def main():
         if not h["commits"]:
             print(f"  ✗ no commits harvested from {repo}", file=sys.stderr); continue
         hp = harvest_dir / f"{name}.json"
-        hp.write_text(json.dumps(h))
+        write_atomic(hp, json.dumps(h))
         harvests[name] = {"path": str(hp), "commits": len(h["commits"])}
         print(f"  ✓ {repo}: {action}, {len(h['commits'])} commits → {hp}", file=sys.stderr)
     if not harvests:

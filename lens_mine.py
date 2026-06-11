@@ -38,13 +38,9 @@ from __future__ import annotations
 import argparse, json, os, re, subprocess, sys
 from pathlib import Path
 
-from mine_common import fan_batch, extract_json, EXIT_OK, EXIT_ERR, EXIT_NOT_FOUND, EXIT_EMPTY
+from mine_common import fan_batch, extract_json, write_atomic, git_text as _git, EXIT_OK, EXIT_ERR, EXIT_NOT_FOUND, EXIT_EMPTY
 
 README_NAMES = ("README.md", "Readme.md", "readme.md", "README.rst", "README")
-
-
-def _git(repo, *args):
-    return subprocess.run(["git", "-C", repo, *args], capture_output=True, text=True).stdout
 
 
 def neighbor_name(repo_dir):
@@ -105,15 +101,20 @@ def slug_from_url(url):
 
 
 def format_issue_lines(items, cap=120):
-    """GitHub issues API items -> material lines, PRs excluded, reactions surfaced (pure)."""
-    lines = []
+    """GitHub issues API items -> material lines, PRs excluded, reactions surfaced (pure).
+    Reaction counts are coerced defensively (API/cached payloads can carry null) and the sort
+    key is the stored int — re-parsing the rendered line crashed the mine on '(+None)'."""
+    rows = []
     for it in items:
         if not isinstance(it, dict) or "pull_request" in it or not it.get("title"):
             continue
-        n = (it.get("reactions") or {}).get("total_count", 0)
-        lines.append(f"- [{it.get('state', '?')}] (+{n}) {str(it['title']).strip()[:120]}")
-    lines.sort(key=lambda l: -int(re.search(r"\(\+(\d+)\)", l).group(1)))
-    return lines[:cap]
+        try:
+            n = int((it.get("reactions") or {}).get("total_count") or 0)
+        except (TypeError, ValueError):
+            n = 0
+        rows.append((n, f"- [{it.get('state', '?')}] (+{n}) {str(it['title']).strip()[:120]}"))
+    rows.sort(key=lambda p: -p[0])
+    return [line for _, line in rows[:cap]]
 
 
 FIX_SUBJECT_RE = re.compile(r"^(fix|bug|hotfix|patch)\b|(\bfix(es|ed)?\b)", re.I)
@@ -135,19 +136,31 @@ def _issue_surface_source(repo):
     cache.mkdir(parents=True, exist_ok=True)
     cached = cache / f"{name}.json"
     if cached.exists():
-        items = json.loads(cached.read_text())
-    else:
-        slug = slug_from_url(_git(repo, "remote", "get-url", "origin").strip())
-        if not slug:
-            return ""
-        items = []
-        for page in (1, 2):
+        try:
+            return "\n".join(format_issue_lines(json.loads(cached.read_text())))
+        except Exception:
+            cached.unlink(missing_ok=True)  # corrupt/truncated cache = cache miss, refetch
+    slug = slug_from_url(_git(repo, "remote", "get-url", "origin").strip())
+    if not slug:
+        return ""
+    items, complete = [], True
+    for page in (1, 2):
+        try:
             r = subprocess.run(["gh", "api", f"repos/{slug}/issues?state=all&per_page=100&page={page}"],
-                               capture_output=True, text=True)
-            if r.returncode != 0:
-                break
-            items += json.loads(r.stdout)
-        cached.write_text(json.dumps(items))
+                               capture_output=True, text=True, timeout=120)
+            page_items = json.loads(r.stdout) if r.returncode == 0 else None
+        except Exception:
+            page_items = None
+        if not isinstance(page_items, list):
+            complete = False  # gh/network/parse failure — usable this run, but NOT authoritative
+            break
+        items += page_items
+        if len(page_items) < 100:
+            break  # short page = last page; skip the needless second call
+    if complete:
+        # only a COMPLETE fetch is cached (a partial one would look authoritative forever and
+        # silently shrink the mined material on every future run); written atomically
+        write_atomic(cached, json.dumps(items))
     return "\n".join(format_issue_lines(items))
 
 
@@ -208,9 +221,13 @@ def _discussions_surface_source(repo):
     cache = Path(os.environ.get("CACHE_2080", os.path.expanduser("~/.cache/2080"))) / "discussions"
     cache.mkdir(parents=True, exist_ok=True)
     cached = cache / f"{name}.json"
+    nodes = None
     if cached.exists():
-        nodes = json.loads(cached.read_text())
-    else:
+        try:
+            nodes = json.loads(cached.read_text())
+        except Exception:
+            cached.unlink(missing_ok=True)  # corrupt cache = miss, refetch
+    if nodes is None:
         slug = slug_from_url(_git(repo, "remote", "get-url", "origin").strip())
         if not slug:
             return ""
@@ -218,21 +235,27 @@ def _discussions_surface_source(repo):
         query = ("query($owner:String!,$name:String!){repository(owner:$owner,name:$name){"
                  "discussions(first:100,answered:false){nodes{title body upvoteCount isAnswered "
                  "category{name} comments{totalCount}}}}}")
-        r = subprocess.run(["gh", "api", "graphql", "-f", f"query={query}",
-                            "-f", f"owner={owner}", "-f", f"name={repo_name}"],
-                           capture_output=True, text=True)
+        try:
+            r = subprocess.run(["gh", "api", "graphql", "-f", f"query={query}",
+                                "-f", f"owner={owner}", "-f", f"name={repo_name}"],
+                               capture_output=True, text=True, timeout=120)
+        except subprocess.TimeoutExpired:
+            print(f"discussions fetch timed out for {name} — skipping (not cached)", file=sys.stderr)
+            return ""
         if r.returncode != 0:
             print(f"discussions unavailable for {name} (disabled or gh error) — skipping",
                   file=sys.stderr)
-            nodes = []
+            nodes = []  # a definitive gh "no" IS cacheable (Discussions disabled)
         else:
             try:
                 payload = json.loads(r.stdout)
             except json.JSONDecodeError:
-                payload = {}
+                print(f"discussions payload unparseable for {name} — skipping (not cached)",
+                      file=sys.stderr)
+                return ""
             nodes = ((((payload.get("data") or {}).get("repository") or {})
                       .get("discussions") or {}).get("nodes") or [])
-        cached.write_text(json.dumps(nodes))
+        write_atomic(cached, json.dumps(nodes))
     ranked = []
     for d in nodes:
         if not isinstance(d, dict) or d.get("isAnswered") or not d.get("title"):
@@ -482,7 +505,7 @@ def main():
     }
 
     if a.emit:
-        Path(a.emit).write_text(json.dumps(checklist, indent=2))
+        write_atomic(Path(a.emit), json.dumps(checklist, indent=2))
         print(f"→ {a.app_type} feature spine ({a.lens}): {len(required)} convergent (required) + "
               f"{len(optional)} single-neighbor (optional) → {a.emit}", file=sys.stderr)
 

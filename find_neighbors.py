@@ -26,7 +26,11 @@ def _months_since(iso):
 
 def commit_count(full_name):
     """Cheap total-commit count via the Link rel=last header (per_page=1)."""
-    r = subprocess.run(["gh", "api", "-i", f"repos/{full_name}/commits?per_page=1"], capture_output=True, text=True)
+    try:
+        r = subprocess.run(["gh", "api", "-i", f"repos/{full_name}/commits?per_page=1"],
+                           capture_output=True, text=True, timeout=60)
+    except subprocess.TimeoutExpired:
+        return 0
     m = re.search(r'[?&]page=(\d+)>;\s*rel="last"', r.stdout)
     if m:
         return int(m.group(1))
@@ -61,11 +65,15 @@ def fan_call(prompt, max_tokens=2000):
 
 
 def gh_search(query, limit=12):
-    r = subprocess.run(
-        ["gh", "api", "-X", "GET", "search/repositories", "-f", f"q={query}", "-f", "sort=stars",
-         "-f", f"per_page={limit}",
-         "--jq", ".items[] | {full_name,stargazers_count,description,created_at,pushed_at,language,fork}"],
-        capture_output=True, text=True)
+    try:
+        r = subprocess.run(
+            ["gh", "api", "-X", "GET", "search/repositories", "-f", f"q={query}", "-f", "sort=stars",
+             "-f", f"per_page={limit}",
+             "--jq", ".items[] | {full_name,stargazers_count,description,created_at,pushed_at,language,fork}"],
+            capture_output=True, text=True, timeout=60)
+    except subprocess.TimeoutExpired:
+        print(f"gh search timed out for query: {query[:80]}", file=sys.stderr)
+        return []
     out = []
     for line in r.stdout.splitlines():
         try:
@@ -75,11 +83,24 @@ def gh_search(query, limit=12):
     return out
 
 
+def capability_map():
+    return {"tool": "find_neighbors", "version": "0.1",
+            "args": '"what you are building" [--json]',
+            "what": "intent -> app_type/sub_type + justified mature neighbor repos "
+                    "(gh search, maturity measured from commit-count/age)",
+            "exit_codes": {"0": "ok", "1": "usage/err"}}
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("intent")
+    ap.add_argument("intent", nargs="?")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
+    if not a.intent:
+        if a.json:  # agentic contract: bare --json = self-describing capability map
+            print(json.dumps(capability_map())); sys.exit(0)
+        print('usage: find_neighbors.py "what you are building" [--json]', file=sys.stderr)
+        sys.exit(1)
 
     # 1) intent -> app_type, sub_type, search queries
     spec = extract_json(fan_call(

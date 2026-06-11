@@ -89,6 +89,20 @@ def test_issue_lines_exclude_prs_and_rank_by_reactions():
     assert "typo" in lines[1]
 
 
+def test_issue_lines_survive_null_and_junk_reaction_counts():
+    # intent: GitHub API (and old cached payloads) can carry reactions.total_count: null — the
+    # old sort re-parsed '(+None)' out of the rendered line and crashed the whole issue mine,
+    # and one bad cached record poisoned every future run of a VALIDATED gating lens.
+    items = [{"title": "good issue", "state": "open", "reactions": {"total_count": 3}},
+             {"title": "null reactions", "state": "open", "reactions": {"total_count": None}},
+             {"title": "junk reactions", "state": "open", "reactions": {"total_count": "n/a"}},
+             {"title": "no reactions key", "state": "open"}]
+    lines = format_issue_lines(items)
+    assert len(lines) == 4
+    assert "(+3)" in lines[0]  # real count still ranks first
+    assert all("(+0)" in l for l in lines[1:])  # null/junk coerced to 0, never a crash
+
+
 def test_config_material_surfaces_recurring_env_tokens():
     # intent: config mining is only as good as its token extraction — prose words and
     # one-letter noise must not appear, and recurring keys must rank first.
