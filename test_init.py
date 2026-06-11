@@ -112,6 +112,37 @@ class TestCloneIdempotence(unittest.TestCase):
             self.assertFalse(any(c[:2] == ["git", "clone"] for c in calls[1:]))
             self.assertTrue(any("fetch" in c for c in calls[1:]))
 
+    def test_clone_one_contains_failures_instead_of_raising(self):
+        # intent: neighbors are cloned CONCURRENTLY (ex.map pool); a worker that raises
+        # poisons the map and aborts the whole batch — one bad neighbor (malformed name,
+        # failed clone) must degrade to a skip-with-reason so the healthy neighbors still
+        # get harvested and mined.
+        from unittest.mock import patch
+        repo, name, dest, action, err = init.clone_one({"repo": "../../etc"})
+        self.assertIsNone(action)
+        self.assertIn("malformed", err)
+        with patch.object(init, "ensure_clone", side_effect=RuntimeError("clone failed for o/r")):
+            repo, name, dest, action, err = init.clone_one({"repo": "o/r"})
+        self.assertIsNone(action)
+        self.assertIn("clone failed", err)
+        # not just RuntimeError: an OSError (mkdir, disk full) must be contained too
+        with patch.object(init, "ensure_clone", side_effect=OSError("disk full")):
+            repo, name, dest, action, err = init.clone_one({"repo": "o/r"})
+        self.assertIsNone(action)
+        self.assertIn("disk full", err)
+        with patch.object(init, "ensure_clone", return_value="cloned"):
+            repo, name, dest, action, err = init.clone_one({"repo": "o/r"})
+        self.assertEqual((name, action, err), ("r", "cloned", None))
+
+    def test_same_basename_neighbors_dont_share_a_clone_dir(self):
+        # intent: apache/airflow and astronomer/airflow map to the SAME cache dir; cloned
+        # concurrently they interleave writes into one working tree and the spine gets mined
+        # from a corrupted clone — the later one must be skipped loudly, never raced.
+        kept = init.dedupe_clone_dests([{"repo": "apache/airflow"},
+                                        {"repo": "astronomer/airflow"},
+                                        {"repo": "o/other"}])
+        self.assertEqual([n["repo"] for n in kept], ["apache/airflow", "o/other"])
+
     def test_repo_name_traversal_rejected(self):
         # intent: a hostile/typo'd neighbor name like "../../etc" must not
         # become a cache path outside ~/.cache/2080 (path traversal).

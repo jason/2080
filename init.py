@@ -30,6 +30,7 @@ Exit codes: 0 OK | 1 USAGE/ERR/DECLINED | 2 NOT_FOUND | 3 EMPTY (no neighbors/co
 """
 from __future__ import annotations
 import argparse, json, os, re, subprocess, sys
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from mine_common import extract_json, write_atomic, EXIT_OK, EXIT_ERR, EXIT_NOT_FOUND, EXIT_EMPTY
@@ -142,6 +143,36 @@ def ensure_clone(repo, dest, run=subprocess.run):
     if r.returncode != 0:
         raise RuntimeError(f"clone failed for {repo}: {(r.stderr or '')[:200]}")
     return "cloned"
+
+
+def clone_one(n):
+    """Clone/refresh ONE neighbor — the network-bound stage, run concurrently across
+    neighbors. Never raises: a bad repo name or failed clone returns an err tuple so one
+    sick neighbor can't sink the pool (results are folded in input order by the caller,
+    keeping output and precedence deterministic regardless of completion order)."""
+    repo = n["repo"]
+    if not REPO_RE.fullmatch(repo or ""):
+        return repo, None, None, None, f"skipping malformed repo name: {repo}"
+    name, dest = repo.split("/")[-1], clone_dest(repo)
+    try:
+        return repo, name, dest, ensure_clone(repo, dest), None
+    except Exception as e:  # RuntimeError from clone, but also OSError/mkdir etc — contain ALL
+        return repo, name, dest, None, str(e)
+
+
+def dedupe_clone_dests(neighbors):
+    """Two neighbors sharing a repo basename (apache/airflow + astronomer/airflow) share a
+    clone dest — cloned CONCURRENTLY they'd interleave writes into one directory. Keep the
+    first (list arrives best-first), skip the rest loudly."""
+    seen, out = set(), []
+    for n in neighbors:
+        base = (n.get("repo") or "").split("/")[-1]
+        if base in seen:
+            print(f"  ✗ skipping {n.get('repo')}: clone dir collides with an earlier neighbor",
+                  file=sys.stderr)
+            continue
+        seen.add(base); out.append(n)
+    return out
 
 
 # ── stage 4: harvest ──────────────────────────────────────────────────────────
@@ -296,15 +327,12 @@ def main():
     cloned, harvests = {}, {}
     harvest_dir = CACHE_ROOT / "harvests"
     harvest_dir.mkdir(parents=True, exist_ok=True)
-    for n in neighbors:
-        repo = n["repo"]
-        if not REPO_RE.fullmatch(repo or ""):
-            print(f"  ✗ skipping malformed repo name: {repo}", file=sys.stderr); continue
-        name, dest = repo.split("/")[-1], clone_dest(repo)
-        try:
-            action = ensure_clone(repo, dest)
-        except RuntimeError as e:
-            print(f"  ✗ {e}", file=sys.stderr); continue
+    neighbors = dedupe_clone_dests(neighbors)
+    with ThreadPoolExecutor(max_workers=min(4, max(1, len(neighbors)))) as ex:
+        clone_results = list(ex.map(clone_one, neighbors))
+    for repo, name, dest, action, err in clone_results:
+        if err:
+            print(f"  ✗ {err}", file=sys.stderr); continue
         cloned[name] = {"path": str(dest), "action": action}
         h = build_harvest(dest, name, a.max_commits)
         if not h["commits"]:
