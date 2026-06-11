@@ -17,9 +17,16 @@ Signals (both reported, per layer):
 Layers: robustness (vs robustness-axis spine) | scope (vs SCOPE-axis spine). Targets must be OUTSIDE
 both spine pools (no leakage). Default: dexto, goose, cline.
 
+Scheduling (2026-06-11): prepare-once-judge-N. Answer keys, layer classification (content-hash
+cached), abstraction, and embeddings are computed ONCE; only strict judging repeats — and ALL
+repeats × spine variants go into ONE fan batch, so wall-clock ≈ one run regardless of repeats.
+Repeats stay independent judge samples (variance is what they measure); variants within a repeat
+share the same null sample (interleaving by construction — better controlled than serial runs).
+
 Usage:
-  measure.py [--robustness-spine a.json] [--scope-spine b.json] [--target name=path ...]
-             [--judges 2] [--cutoff-frac 0.12] [--json]
+  measure.py [--robustness-spine a.json [b.json ...]] [--scope-spine c.json [d.json ...]]
+             [--target name=path ...] [--judges 2] [--repeats 1] [--cutoff-frac 0.12] [--json]
+Multiple spines per layer = variants compared against the SAME answer keys/null in one process.
 Exit codes: 0 OK | 1 USAGE/ERR | 2 NOT_FOUND
 """
 from __future__ import annotations
@@ -151,10 +158,23 @@ def spine_cat_texts(spine):
     return out
 
 
+LAYER_CACHE = CACHE_DIR / "layers.json"
+def _lkey(subj): return hashlib.sha256(f"layers-v1\n{subj}".encode()).hexdigest()[:32]
+
+
 def classify_layers(all_items, model, provider, reasoning):
-    """fan-classify every item -> robustness | scope | direction | churn (only robustness/scope measured)."""
+    """fan-classify every item -> robustness | scope | direction | churn (only robustness/scope
+    measured). Content-hash cached: classification is a deterministic property of the item, so
+    re-measuring the same targets (every repeat/variant/control re-run) pays zero calls."""
+    try:
+        lcache = json.loads(LAYER_CACHE.read_text()) if LAYER_CACHE.exists() else {}
+    except Exception:
+        lcache = {}
     calls, index, CH = [], [], 30
-    flat = [(t, i, s) for t, items in all_items.items() for i, s in enumerate(items)]
+    flat = [(t, i, s) for t, items in all_items.items() for i, s in enumerate(items)
+            if _lkey(s) not in lcache]
+    if flat:
+        print(f"  classifying {len(flat)} uncached items…", file=sys.stderr)
     for ci in range(0, len(flat), CH):
         chunk = flat[ci:ci + CH]
         listing = "\n".join(f"{j+1}. {s}" for j, (_, _, s) in enumerate(chunk))
@@ -168,18 +188,21 @@ def classify_layers(all_items, model, provider, reasoning):
             "- churn: docs/CI/refactor/version-bump, no user-facing change.\n\n"
             f"COMMITS:\n{listing}\n\nReturn ONLY JSON {{number: \"robustness|scope|direction|churn\"}}."})
         index.append(chunk)
-    res = fan_batch(calls, model, provider, reasoning)
-    tagged = {t: [None] * len(items) for t, items in all_items.items()}
+    res = fan_batch(calls, model, provider, reasoning) if calls else {}
     for call, chunk in zip(calls, index):
         m = extract_json(res.get(call["id"]) or "") or {}
-        for j, (t, i, _) in enumerate(chunk):
+        for j, (t, i, s) in enumerate(chunk):
             lab = str(m.get(str(j + 1)) or m.get(j + 1) or "churn").lower().strip()
-            tagged[t][i] = lab if lab in ("robustness", "scope", "direction") else "churn"
-    return tagged
+            lcache[_lkey(s)] = lab if lab in ("robustness", "scope", "direction") else "churn"
+    if calls:
+        LAYER_CACHE.parent.mkdir(parents=True, exist_ok=True)
+        LAYER_CACHE.write_text(json.dumps(lcache))
+    return {t: [lcache.get(_lkey(s), "churn") for s in items] for t, items in all_items.items()}
 
 
-def judge_calls(target, layer, spine_id, items, cats, judges):
-    """STRICT single-best-match judge: name the ONE category an item is a direct INSTANCE of, or null."""
+def judge_calls(target, layer, variant, repeat, items, cats, judges):
+    """STRICT single-best-match judge: name the ONE category an item is a direct INSTANCE of, or
+    null. One call set per (variant, repeat) — every repeat is an independent judge sample."""
     calls, CH = [], 18
     cat_listing = "\n".join(f"- {c['label']}" for c in cats)
     for ci in range(0, len(items), CH):
@@ -192,22 +215,37 @@ def judge_calls(target, layer, spine_id, items, cats, judges):
                   "relates, or matches none, return null. Be STRICT — when unsure, return null. "
                   'Return ONLY JSON {number: {"cat": "<exact category label or null>"}}.')
         for jdg in range(judges):
-            calls.append({"id": f"{target}|{layer}|{spine_id}|{ci}|{jdg}", "maxTokens": 1100,
+            calls.append({"id": f"{target}|{layer}|{variant}|{repeat}|{ci}|{jdg}", "maxTokens": 1100,
                           "prompt": prompt, "_chunk_start": ci, "_n": len(chunk)})
     return calls
+
+
+def mean_sd(xs):
+    xs = [x for x in xs if x is not None]
+    if not xs:
+        return None, None
+    m = sum(xs) / len(xs)
+    sd = (sum((x - m) ** 2 for x in xs) / (len(xs) - 1)) ** 0.5 if len(xs) > 1 else 0.0
+    return round(m, 3), round(sd, 3)
 
 
 def main():
     ap = argparse.ArgumentParser()
     # default = the sub-type-MATCHED spine (measured: a mismatched spine halves recall, 0.23 vs 0.44);
     # the coordination-sub-type spine lives at checklists/ai-agent-coordination.robustness.json
-    ap.add_argument("--robustness-spine", default="checklists/ai-agent-cli.robustness.json")
-    ap.add_argument("--scope-spine", default="checklists/ai-agent-tool.features.json")
+    ap.add_argument("--robustness-spine", nargs="+", action="extend",
+                    help="robustness-axis spine(s); several = variants compared on the same keys "
+                         "(default checklists/ai-agent-cli.robustness.json)")
+    ap.add_argument("--scope-spine", nargs="+", action="extend",
+                    help="SCOPE-axis spine(s); several = variants "
+                         "(default checklists/ai-agent-tool.features.json)")
     ap.add_argument("--null-spine", default=None,
                     help="real adjacent-domain spine as the control (e.g. a mined terminal-multiplexer spine); "
                          "falls back to the synthetic 3d-game NULL_SPINE")
     ap.add_argument("--target", action="append", default=[], metavar="name=path")
     ap.add_argument("--judges", type=int, default=2)
+    ap.add_argument("--repeats", type=int, default=1,
+                    help="independent judge repeats, ALL in one fan batch (≈ same wall-clock as 1)")
     ap.add_argument("--cutoff-frac", type=float, default=0.12)
     ap.add_argument("--model", default="gpt-5.5")
     ap.add_argument("--provider", default="openai-codex")
@@ -226,11 +264,18 @@ def main():
 
     null_src = json.loads(Path(a.null_spine).read_text()) if a.null_spine else NULL_SPINE
     null_desc = f"mined spine {a.null_spine}" if a.null_spine else "synthetic 3d-game/graphics categories"
-    spines = {
-        "robustness": spine_cat_texts(json.loads(Path(a.robustness_spine).read_text())),
-        "scope": spine_cat_texts(json.loads(Path(a.scope_spine).read_text())),
-        "null": spine_cat_texts(null_src),
-    }
+    layer_paths = {"robustness": a.robustness_spine or ["checklists/ai-agent-cli.robustness.json"],
+                   "scope": a.scope_spine or ["checklists/ai-agent-tool.features.json"]}
+    # variants[L] = ordered {variant_name: cat_texts}; names must not contain the id separator
+    variants = {}
+    for L, paths in layer_paths.items():
+        variants[L] = {}
+        for p in paths:
+            if not Path(p).exists():
+                print(f"spine not found: {p}", file=sys.stderr); sys.exit(EXIT_NOT_FOUND)
+            vname = Path(p).stem.replace("|", "_")
+            variants[L][vname] = spine_cat_texts(json.loads(Path(p).read_text()))
+    null_cats = spine_cat_texts(null_src)
 
     # ── answer keys + layer classification ──
     print("building answer keys…", file=sys.stderr)
@@ -250,7 +295,9 @@ def main():
     abstract_via_fan(ab, a.model, a.provider, a.reasoning)
     phrase_of = {it["subject"]: it.get("phrase") or it["subject"] for it in ab}
     print("embedding (all-MiniLM)…", file=sys.stderr)
-    vecs = {k: (embed([c["embed_text"] for c in cats]) if cats else np.zeros((0, 384))) for k, cats in spines.items()}
+    vecs = {L: {v: (embed([c["embed_text"] for c in cats]) if cats else np.zeros((0, 384)))
+                for v, cats in variants[L].items()} for L in LAYERS}
+    null_vecs = embed([c["embed_text"] for c in null_cats])
     iv = {s: v for s, v in zip(all_items, embed([phrase_of[s] for s in all_items]))}
 
     def ml_recall(items, V, t):
@@ -258,84 +305,93 @@ def main():
             return None
         return round(sum(1 for s in items if (iv[s] @ V.T).max() >= t) / len(items), 2)
 
-    # ── fan signal: STRICT judges vs real spine AND null spine, per layer ──
-    print(f"judging (strict, {a.judges} judges) vs real + null spine via fan…", file=sys.stderr)
+    # ── fan signal: ONE batch = strict judges × variants × repeats × null (interleaved by
+    # construction: every repeat/variant shares identical system conditions) ──
     jcalls = []
     for t in targets:
         for L in LAYERS:
-            jcalls += judge_calls(t, L, "real", by_tl[t][L], spines[L], a.judges)
-            jcalls += judge_calls(t, L, "null", by_tl[t][L], spines["null"], a.judges)
+            for r in range(a.repeats):
+                for v, cats in variants[L].items():
+                    jcalls += judge_calls(t, L, v, r, by_tl[t][L], cats, a.judges)
+                jcalls += judge_calls(t, L, "~null", r, by_tl[t][L], null_cats, a.judges)
+    print(f"judging (strict, {a.judges} judges × {a.repeats} repeats × "
+          f"{ {L: len(variants[L]) for L in LAYERS} } variants + null): {len(jcalls)} calls, one batch…",
+          file=sys.stderr)
     jres = fan_batch(jcalls, a.model, a.provider, a.reasoning) if jcalls else {}
 
-    votes = {t: {L: {"real": {}, "null": {}} for L in LAYERS} for t in targets}
+    votes = {}  # (t, L, variant, repeat) -> {item_idx: [hit,…]}
     for c in jcalls:
-        t, layer, spine_id, ci, _ = c["id"].split("|")
-        ci = int(ci)
+        t, L, v, r, ci, _ = c["id"].split("|")
         m = extract_json(jres.get(c["id"]) or "") or {}
         for k in range(c["_n"]):
             e = m.get(str(k + 1)) or m.get(k + 1) or {}
             cat = e.get("cat") if isinstance(e, dict) else e
             hit = bool(cat) and str(cat).lower() not in ("null", "none", "")
-            votes[t][layer][spine_id].setdefault(ci + k, []).append(hit)
+            votes.setdefault((t, L, v, int(r)), {}).setdefault(int(ci) + k, []).append(hit)
 
-    def llm_recall(t, L, spine_id):
-        v = votes[t][L][spine_id]
+    def llm_recall(t, L, v, r):
+        vt = votes.get((t, L, v, r), {})
         n = len(by_tl[t][L])
         if n == 0:
             return None
-        hits = sum(1 for idx in range(n) if sum(v.get(idx, [])) * 2 > len(v.get(idx, [1])))
+        hits = sum(1 for idx in range(n) if sum(vt.get(idx, [])) * 2 > len(vt.get(idx, [1])))
         return round(hits / n, 2)
 
     def lift(real, null):
         return None if real is None or null is None else round(real - null, 2)
 
-    # ── report ──
-    rep = {"targets": list(targets), "judges": a.judges, "ml_threshold": HEADLINE_T,
-           "control": f"null spine = {null_desc}",
-           "robustness_spine": a.robustness_spine, "scope_spine": a.scope_spine, "per_target": {}}
+    # ── report: per layer × variant, per-repeat lifts + mean/sd across repeats ──
+    rep = {"targets": list(targets), "judges": a.judges, "repeats": a.repeats,
+           "ml_threshold": HEADLINE_T, "control": f"null spine = {null_desc}",
+           "spines": {L: dict(zip(variants[L], layer_paths[L])) for L in LAYERS},
+           "per_target": {}, "aggregate": {}}
     for t in targets:
         rep["per_target"][t] = {}
         for L in LAYERS:
             items = by_tl[t][L]
-            ml_real = ml_recall(items, vecs[L], HEADLINE_T)
-            ml_null = ml_recall(items, vecs["null"], HEADLINE_T)
-            llm_real = llm_recall(t, L, "real")
-            llm_null = llm_recall(t, L, "null")
-            rep["per_target"][t][L] = {"n": len(items),
-                                       "ml_real": ml_real, "ml_null": ml_null, "ml_lift": lift(ml_real, ml_null),
-                                       "llm_real": llm_real, "llm_null": llm_null, "llm_lift": lift(llm_real, llm_null)}
+            rep["per_target"][t][L] = {"n": len(items), "variants": {}}
+            for v in variants[L]:
+                ml_real = ml_recall(items, vecs[L][v], HEADLINE_T)
+                ml_null = ml_recall(items, null_vecs, HEADLINE_T)
+                runs = []
+                for r in range(a.repeats):
+                    lr, ln = llm_recall(t, L, v, r), llm_recall(t, L, "~null", r)
+                    runs.append({"llm_real": lr, "llm_null": ln, "llm_lift": lift(lr, ln)})
+                rep["per_target"][t][L]["variants"][v] = {
+                    "ml_real": ml_real, "ml_null": ml_null, "ml_lift": lift(ml_real, ml_null),
+                    "llm_runs": runs}
 
-    def mean(xs):
-        xs = [x for x in xs if x is not None]
-        return round(sum(xs) / len(xs), 2) if xs else None
-
-    rep["aggregate"] = {L: {
-        "n_total": sum(rep["per_target"][t][L]["n"] for t in targets),
-        "ml_real": mean([rep["per_target"][t][L]["ml_real"] for t in targets]),
-        "ml_null": mean([rep["per_target"][t][L]["ml_null"] for t in targets]),
-        "ml_lift": mean([rep["per_target"][t][L]["ml_lift"] for t in targets]),
-        "llm_real": mean([rep["per_target"][t][L]["llm_real"] for t in targets]),
-        "llm_null": mean([rep["per_target"][t][L]["llm_null"] for t in targets]),
-        "llm_lift": mean([rep["per_target"][t][L]["llm_lift"] for t in targets]),
-    } for L in LAYERS}
+    for L in LAYERS:
+        rep["aggregate"][L] = {"n_total": sum(rep["per_target"][t][L]["n"] for t in targets),
+                               "variants": {}}
+        for v in variants[L]:
+            per_run_lifts, per_run_real, per_run_null = [], [], []
+            for r in range(a.repeats):
+                lifts = [rep["per_target"][t][L]["variants"][v]["llm_runs"][r]["llm_lift"] for t in targets]
+                reals = [rep["per_target"][t][L]["variants"][v]["llm_runs"][r]["llm_real"] for t in targets]
+                nulls = [rep["per_target"][t][L]["variants"][v]["llm_runs"][r]["llm_null"] for t in targets]
+                per_run_lifts.append(mean_sd(lifts)[0]); per_run_real.append(mean_sd(reals)[0])
+                per_run_null.append(mean_sd(nulls)[0])
+            lm, lsd = mean_sd(per_run_lifts)
+            rep["aggregate"][L]["variants"][v] = {
+                "ml_lift": mean_sd([rep["per_target"][t][L]["variants"][v]["ml_lift"] for t in targets])[0],
+                "llm_lift_runs": per_run_lifts, "llm_lift_mean": lm, "llm_lift_sd": lsd,
+                "llm_real_mean": mean_sd(per_run_real)[0], "llm_null_mean": mean_sd(per_run_null)[0]}
 
     if a.json:
         print(json.dumps(rep, indent=2)); sys.exit(EXIT_OK)
 
-    print(f"\n=== 2080 RECALL LIFT over null baseline (strict {a.judges}-judge fan + ML) ===")
-    print(f"targets: {', '.join(targets)} | null = 3d-game categories | ML @ {HEADLINE_T}\n")
-    hdr = f"{'target':<9}{'layer':<11}{'n':>4} | {'llm_real':>8}{'llm_null':>9}{'llm_LIFT':>9} | {'ml_real':>7}{'ml_null':>8}{'ml_LIFT':>8}"
+    print(f"\n=== 2080 RECALL LIFT over null baseline (strict {a.judges}-judge fan × {a.repeats} repeats + ML) ===")
+    print(f"targets: {', '.join(targets)} | null = {null_desc} | ML @ {HEADLINE_T}\n")
+    hdr = f"{'layer':<11}{'variant':<34}{'n':>4} | {'lift runs':<22}{'mean±sd':>13} | {'real':>5}{'null':>6}{'mlΔ':>7}"
     print(hdr); print("-" * len(hdr))
-    for t in targets:
-        for L in LAYERS:
-            d = rep["per_target"][t][L]
-            print(f"{t:<9}{L:<11}{d['n']:>4} | {str(d['llm_real']):>8}{str(d['llm_null']):>9}{str(d['llm_lift']):>9} | "
-                  f"{str(d['ml_real']):>7}{str(d['ml_null']):>8}{str(d['ml_lift']):>8}")
-    print("-" * len(hdr))
     for L in LAYERS:
         g = rep["aggregate"][L]
-        print(f"{'MEAN':<9}{L:<11}{g['n_total']:>4} | {str(g['llm_real']):>8}{str(g['llm_null']):>9}{str(g['llm_lift']):>9} | "
-              f"{str(g['ml_real']):>7}{str(g['ml_null']):>8}{str(g['ml_lift']):>8}")
+        for v, d in g["variants"].items():
+            runs = " ".join(f"{x:+.2f}" if x is not None else "?" for x in d["llm_lift_runs"])
+            ms = f"{d['llm_lift_mean']:+.3f}±{d['llm_lift_sd']:.3f}" if d["llm_lift_mean"] is not None else "?"
+            print(f"{L:<11}{v:<34}{g['n_total']:>4} | {runs:<22}{ms:>13} | "
+                  f"{str(d['llm_real_mean']):>5}{str(d['llm_null_mean']):>6}{str(d['ml_lift']):>7}")
     print("\nLIFT = real − null. Only lift is signal; raw recall conflates real matching with judge leniency.")
     sys.exit(EXIT_OK)
 

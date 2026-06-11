@@ -31,6 +31,16 @@ _Last updated: 2026-06-10 (session 5)_
   Also fixed live: lens attribution (normalized name matching + neighbors REQUIRED in the
   synthesis prompt) — identity-poor material had zeroed the required tier.
 
+### ⚡ measure.py prepare-once-judge-N (2026-06-11) — 13× faster controls, same statistics
+One process now takes N spine variants per layer (`--robustness-spine a.json b.json`), `--repeats
+N`, and puts ALL judge calls (variants × repeats × null) in ONE fan batch; answer keys, layer
+classification (now content-hash cached, layers.json), abstraction, and embeddings compute once.
+Verified: the 2-variant ×3-repeat control that took ~40 min serial ran in **3m04s**, reproducing
+the unchanged-input variant within noise (cluster_fixes −0.213 ±0.018 vs serial −0.200 ±0.036).
+Repeats stay independent judge samples; variants within a repeat share the same null sample —
+interleaving by construction. Side-finding: the floor-merged robustness-surface spine lifts
++0.12 ±0.09 over the bare baseline (floor + mined detail > baseline alone; high variance, n=3).
+
 ## ⏩ Session-5b: five new mining lenses (published repo: github.com/jason/2080, public)
 
 The lens registry earned its keep — four new LLM lenses are LENSES entries in `lens_mine.py`
