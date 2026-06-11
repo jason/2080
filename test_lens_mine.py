@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-test_feature_mine.py — deterministic tests for the lens registry + pure extraction helpers.
+test_lens_mine.py — deterministic tests for the lens registry + pure extraction helpers.
 
 No LLM, no git, no gh: exercises the pure layer of the five LLM lenses.
-Run: python3 test_feature_mine.py
+Run: python3 test_lens_mine.py
 """
-from feature_mine import (LENSES, slug_from_url, format_issue_lines, config_material,
+from lens_mine import (LENSES, slug_from_url, format_issue_lines, config_material,
                           synth_prompt, CONFIG_FILE_RE, TEST_PATH_RE)
 
 
@@ -27,7 +27,7 @@ def test_registry_only_feature_surface_may_gate():
 
 
 def test_registry_axes_match_check_gating_contract():
-    # intent: feature_mine and check.py share the axis vocabulary implicitly; if check's
+    # intent: lens_mine and check.py share the axis vocabulary implicitly; if check's
     # validated set drifts (e.g. a rename to "scope"), advisory demotion silently breaks.
     from check import VALIDATED_GATING_AXES
     assert "SCOPE" in VALIDATED_GATING_AXES

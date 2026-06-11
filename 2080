@@ -1,0 +1,46 @@
+#!/usr/bin/env python3
+"""2080 — one entry point for the pipeline. `2080 <command> [args…]`.
+
+Dispatches to the sibling tool scripts (their shebangs handle uv-managed deps), so
+`./2080 check . --spine checklists/x.json` works from a fresh clone with no install.
+Bare `2080 --json` prints the capability map (agentic contract).
+"""
+import json, os, subprocess, sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+COMMANDS = {
+    "init": ("init.py", "acquire matched spines: find neighbors → clone → harvest → mine"),
+    "check": ("check.py", "the gate: assess target vs spine(s), exit 3 while required gaps remain"),
+    "emit": ("emit.py", "blocking gaps → agent-ready task queue (json|md)"),
+    "mine": ("lens_mine.py", "LLM lenses: feature/robustness/issue/config/test/docs-surface"),
+    "surface": ("surface_mine.py", "deterministic operability lens (no LLM)"),
+    "cluster": ("cluster_fixes.py", "original robustness mine (superseded-pending-measurement)"),
+    "neighbors": ("find_neighbors.py", "intent → mature neighbor repos via gh"),
+    "measure": ("measure.py", "recall-lift controls (spine vs generic baseline)"),
+    "recall": ("measure_recall.py", "gate recall vs a neighbor's own future"),
+}
+
+
+def capability_map():
+    return {"tool": "2080", "version": "0.3",
+            "args": "<command> [command-args…]; every command supports --json",
+            "commands": {k: v[1] for k, v in COMMANDS.items()},
+            "exit_codes": {"0": "ok/pass", "1": "usage/err", "2": "not_found",
+                           "3": "gated or empty (per command)"}}
+
+
+def main():
+    args = sys.argv[1:]
+    if args == ["--json"]:
+        print(json.dumps(capability_map())); return 0
+    if not args or args[0] in ("-h", "--help") or args[0] not in COMMANDS:
+        print("usage: 2080 <command> [args…]\n\ncommands:", file=sys.stderr)
+        for k, (_, desc) in COMMANDS.items():
+            print(f"  {k:10} {desc}", file=sys.stderr)
+        return 0 if args and args[0] in ("-h", "--help") else 1
+    script = os.path.join(HERE, COMMANDS[args[0]][0])
+    return subprocess.run([script, *args[1:]]).returncode
+
+
+if __name__ == "__main__":
+    sys.exit(main())

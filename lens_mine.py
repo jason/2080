@@ -1,37 +1,33 @@
 #!/usr/bin/env -S uv run --python 3.13
 """
-feature_mine.py — 2080's SCOPE-completeness mine (the feature-surface lens).
+lens_mine.py — 2080's multi-lens spine miner (formerly feature_mine.py).
 
-The sibling of `cluster_fixes.py`. They mine neighbor history along two different AXES:
+One synthesis pipeline, many lenses: each LENSES entry is a source extractor + abstraction
+prose; everything else (cross-neighbor synthesis, convergence tiering, day-1 tells, checklist
+emission) is shared. Current lenses/axes:
 
-  cluster_fixes.py  — recurring-FIX lens   → ROBUSTNESS spine
-        "what hardening do mature <app_type> repos converge on?" (telemetry, retry, validation…)
-        Clusters recurring *fixes*; what recurs across repos is the infra skeleton.
+  feature-surface    → SCOPE       product capabilities (README + feat: commits) — GATES (+0.27)
+  robustness-surface → ROBUSTNESS  capability-phrased hardening (fix-commit subjects) — the
+                                   experiment vehicle to supersede cluster_fixes' change-shaped labels
+  issue-surface      → ISSUES      gaps users actually hit (GitHub issues, reaction-weighted)
+  config-surface     → CONFIG      knob groups (config files + recurring env keys)
+  test-surface       → TESTS       verification surface (test files + names)
+  docs-surface       → DOCS        support surface (markdown headings)
 
-  feature_mine.py   — feature-SURFACE lens → SCOPE spine   ← THIS FILE
-        "what CAPABILITIES does a full working <app_type> need?" (multi-provider, web UI,
-        plugin system, auth flow…). Reads each neighbor's README + feat: commits and abstracts
-        to a category-level feature spine, tiered by cross-neighbor CONVERGENCE.
+The deterministic operability-surface lens (file-presence probes, no LLM) lives in
+surface_mine.py. cluster_fixes.py is the original embedding/DBSCAN robustness mine —
+superseded-pending-measurement by robustness-surface here (see its docstring).
 
-Why two mines: a blind backtest on dexto showed the recurring-fix spine is 100% robustness and
-recalls ~0 of later product features; the feature-surface spine recalls the generic-scope features
-(provider matrix, WebUI, plugins, auth) the robustness engine misses. Neither predicts a project's
-SPECIFIC product bets (multimodal, subagents, vertical agents) — that's strategy, not completeness,
-and is deliberately out of scope.
-
-LENS is the extension seam: a new mining dimension (integration-surface, threat-surface,
-operability-surface, …) is a new entry in LENSES — source selector + abstraction instruction —
-not new plumbing. See mine_common.py.
+None of these predict a project's SPECIFIC product bets — that's strategy, not completeness,
+and is deliberately out of scope. Only SCOPE-axis spines gate (check.py VALIDATED_GATING_AXES);
+every other axis is advisory until it beats the generic-baseline control in measure.py.
 
 Emits a checklist-compatible JSON (required/optional + day1_tell) so `diff_target.py` consumes it
 unchanged.
 
 Usage:
-  feature_mine.py <neighbor-repo-dir>... [--app-type T] [--lens NAME]
+  lens_mine.py <neighbor-repo-dir>... [--app-type T] [--lens NAME]
                   [--emit checklists/<app-type>.<lens>.json] [--json]
-Lenses: feature-surface (SCOPE, gates) · issue-surface (ISSUES) · config-surface (CONFIG) ·
-        test-surface (TESTS) · docs-surface (DOCS) — non-SCOPE axes are advisory in check.py.
-        The deterministic operability-surface lens lives in surface_mine.py.
 Exit codes: 0 OK | 1 USAGE/ERR | 2 NOT_FOUND | 3 EMPTY
 """
 from __future__ import annotations
@@ -108,6 +104,17 @@ def format_issue_lines(items, cap=120):
     return lines[:cap]
 
 
+FIX_SUBJECT_RE = re.compile(r"^(fix|bug|hotfix|patch)\b|(\bfix(es|ed)?\b)", re.I)
+
+
+def _robustness_surface_source(repo):
+    """Fix-shaped commit subjects — same raw material as cluster_fixes, but abstracted by the
+    synthesis prompt into CAPABILITY-phrased categories instead of change-shaped cluster labels."""
+    subs = [s for s in _git(repo, "log", "--format=%s", "-500").splitlines()
+            if FIX_SUBJECT_RE.search(s)][:80]
+    return "\n".join(subs)
+
+
 def _issue_surface_source(repo):
     """Issues = gaps users EXPERIENCED. Fetched via gh, cached; empty block if gh/remote fails
     (the lens then just sees fewer neighbors — never crashes the mine)."""
@@ -181,6 +188,19 @@ LENSES = {
         "day1_kind": "reveals whether a product HAS this capability (e.g. 'open the web UI and confirm it "
                      "serves the chat interface', 'list configured providers and switch model mid-session')",
     },
+    "robustness-surface": {
+        "axis": "ROBUSTNESS",
+        "desc": "capability-phrased hardening a mature <app_type> converges on (fix commits)",
+        "source": _robustness_surface_source,
+        "material_label": "FIX surfaces (fix-shaped commit subjects)",
+        "abstract": ("the ROBUSTNESS CAPABILITIES a mature {app_type} converges on. CRITICAL: phrase "
+                     "every category as a CAPABILITY the target either has or lacks ('recovers from "
+                     "dropped connections mid-stream', 'splits messages exceeding platform limits') — "
+                     "NEVER as a change or fix ('dependency fix', 'error handling improvement'). A "
+                     "category must be judgeable as covered/gap by inspecting a codebase once"),
+        "day1_kind": "tests the capability directly (e.g. 'kill the network mid-request and confirm "
+                     "the bot reports a clean error instead of hanging')",
+    },
     "issue-surface": {
         "axis": "ISSUES",
         "desc": "gaps users actually hit or demanded (GitHub issues, reaction-weighted)",
@@ -244,7 +264,7 @@ def synth_prompt(materials, app_type, lens):
 
 
 def capability_map():
-    return {"tool": "feature_mine", "version": "0.2",
+    return {"tool": "lens_mine", "version": "0.2",
             "args": "<neighbor-repo-dir>... [--app-type T] [--lens NAME] [--emit PATH] [--json]",
             "lenses": {k: {"axis": v["axis"], "desc": v["desc"]} for k, v in LENSES.items()},
             "gating": "only SCOPE-axis spines gate by default; other axes are advisory until they "

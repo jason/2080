@@ -162,6 +162,61 @@ class RobustnessAxisAdvisory(unittest.TestCase):
             self.assertEqual(json.loads(r.stdout)["advisory_count"], 0)
 
 
+class BatteryMode(unittest.TestCase):
+    """Multi-spine day-1 map: gating axes block, advisory axes inform, one merged verdict."""
+
+    def setup_battery(self, tmp):
+        scope = {"app_type": "telegram-llm-bot", "lens": "feature-surface", "axis": "SCOPE",
+                 "required": [{"category": "Web dashboard", "day1_tell": ""}], "optional": []}
+        ops = {"app_type": "telegram-llm-bot", "lens": "operability-surface", "axis": "OPERABILITY",
+               "required": [{"category": "containerization", "day1_tell": ""}], "optional": []}
+        (Path(tmp) / "scope.json").write_text(json.dumps(scope))
+        (Path(tmp) / "ops.json").write_text(json.dumps(ops))
+        asmts = {"scope": {"sub_type": "t", "app_type": "telegram-llm-bot", "axis": "SCOPE",
+                           "categories": [{"category": "Web dashboard", "tier": "required",
+                                           "status": "gap", "reasoning": "", "day1_tell": "",
+                                           "citation_unverified": False}]},
+                 "ops": {"sub_type": "t", "app_type": "telegram-llm-bot", "axis": "OPERABILITY",
+                         "categories": [{"category": "containerization", "tier": "required",
+                                         "status": "gap", "reasoning": "", "day1_tell": "",
+                                         "citation_unverified": False}]}}
+        d = Path(tmp) / "asmts"; d.mkdir()
+        for stem, asmt in asmts.items():
+            (d / f"{stem}.assessment.json").write_text(json.dumps(asmt))
+        return d
+
+    def run_battery(self, tmp, extra=()):
+        return subprocess.run([sys.executable, CHECK, tmp,
+                               "--spine", str(Path(tmp) / "scope.json"), str(Path(tmp) / "ops.json"),
+                               "--from-assessment", str(Path(tmp) / "asmts"), "--json", *extra],
+                              capture_output=True, text=True, cwd=ROOT)
+
+    def test_battery_merges_gating_and_advisory_by_axis(self):
+        # intent: the day-1 map is ONE verdict across spines — SCOPE gaps must block (exit 3)
+        # while OPERABILITY gaps ride along as advisory; collapsing both into blocking would
+        # re-create the 97-block noise, dropping either would hide real findings from emit.
+        with tempfile.TemporaryDirectory() as tmp:
+            self.setup_battery(tmp)
+            r = self.run_battery(tmp)
+            self.assertEqual(r.returncode, 3, r.stderr)
+            v = json.loads(r.stdout)
+            self.assertEqual([g["category"] for g in v["blocking_gaps"]], ["Web dashboard"])
+            self.assertEqual([g["category"] for g in v["advisory_gaps"]], ["containerization"])
+            self.assertEqual(v["blocking_gaps"][0]["axis"], "SCOPE")
+            self.assertEqual(len(v["per_spine"]), 2)
+
+    def test_battery_missing_assessment_dir_is_not_found(self):
+        # intent: CI re-gates from the saved directory; pointing at a missing/wrong path must be
+        # exit 2 (regenerate), never a crash or a silent pass over zero spines.
+        with tempfile.TemporaryDirectory() as tmp:
+            self.setup_battery(tmp)
+            r = subprocess.run([sys.executable, CHECK, tmp,
+                                "--spine", str(Path(tmp) / "scope.json"), str(Path(tmp) / "ops.json"),
+                                "--from-assessment", str(Path(tmp) / "nope"), "--json"],
+                               capture_output=True, text=True, cwd=ROOT)
+            self.assertEqual(r.returncode, 2, r.stderr)
+
+
 class StopHook(unittest.TestCase):
     def hook(self, tmp, stdin="{}"):
         env = {**os.environ, "CLAUDE_PROJECT_DIR": tmp}

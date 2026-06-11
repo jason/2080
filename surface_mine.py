@@ -20,7 +20,7 @@ import argparse, json, re, subprocess, sys
 from pathlib import Path
 
 from mine_common import EXIT_OK, EXIT_ERR, EXIT_NOT_FOUND, EXIT_EMPTY
-from feature_mine import neighbor_name
+from lens_mine import neighbor_name
 
 # (category, what, path regex, aliases-for-evidence-grep, day1_tell)
 PROBES = [

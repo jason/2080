@@ -4,7 +4,7 @@ _Last updated: 2026-06-10 (session 5)_
 
 ## ⏩ Session-5b: five new mining lenses (published repo: github.com/jason/2080, public)
 
-The lens registry earned its keep — four new LLM lenses are LENSES entries in `feature_mine.py`
+The lens registry earned its keep — four new LLM lenses are LENSES entries in `lens_mine.py`
 (source + abstract prose, shared synthesis): **issue-surface** (ISSUES axis — GitHub issues =
 gaps users EXPERIENCED, reaction-weighted, PRs excluded, gh-cached), **config-surface** (CONFIG —
 config files + recurring env keys → knob groups), **test-surface** (TESTS — test files/names →
@@ -16,7 +16,7 @@ compose/CI/release/config-example/migrations/healthcheck/packaging probes; zero 
 {"SCOPE"}` — mined categories on ANY other axis (ROBUSTNESS and all five new ones) are advisory;
 the generic-baseline floor and axis-less user checklists still gate; `--enforce-mined` (alias
 `--enforce-mined-robustness`) opts back in. Tripwire tests enforce it from both sides
-(test_feature_mine: no lens may ship axis SCOPE without the control; test_surface_mine +
+(test_lens_mine: no lens may ship axis SCOPE without the control; test_surface_mine +
 test_check_assessment: new axes demote). A lens earns gating by beating the generic-baseline
 control in measure.py — same bar SCOPE passed (+0.27).
 
@@ -31,7 +31,7 @@ run a measure.py control on the issue lens (the one most likely to earn gating).
 Three moves, all verified (54 deterministic tests green):
 
 - **Robustness gate now matches the layer-split verdict (codified).** Spines carry an `axis`
-  (`ROBUSTNESS` from cluster_fixes, `SCOPE` from feature_mine; existing checklists backfilled).
+  (`ROBUSTNESS` from cluster_fixes, `SCOPE` from lens_mine; existing checklists backfilled).
   `check.py` demotes mined ROBUSTNESS-axis required gaps to `advisory_gaps` — only the
   `origin: generic-baseline` floor gates; `--enforce-mined-robustness` opts back in. Re-gating the
   saved VIP robustness assessment: **97 blocking → 2 blocking** (release versioning, caching —
@@ -72,7 +72,7 @@ tests green on the merged tree:
   acceptance-checklist backlog. This is the day-1 work queue an implementing agent consumes.
 - **`init.py`** — one-command matched-spine acquisition: intent (or target README) → `find_neighbors`
   → idempotent blob-less clones (`~/.cache/2080/`) → harvest JSONs → `cluster_fixes` (robustness
-  spine) + `feature_mine` (scope spine) → `checklists/`. Consent before spend (`--yes`), `--dry-run`,
+  spine) + `lens_mine` (scope spine) → `checklists/`. Consent before spend (`--yes`), `--dry-run`,
   `--neighbors` override, `--max-commits` cost cap. **Full live mine not yet run end-to-end** —
   stage seams individually tested.
 - **Gate integrations** — `check.py --save-assessment/--from-assessment` splits the LLM assessment
@@ -142,7 +142,7 @@ fix", "module import fix" are cluster names of FIXES, not requirements a target 
 the gate drowns in mushy partials. Confirms (again, from a new angle) the layer-split verdict:
 gate on the SCOPE spine + the generic-baseline robustness floor; treat the mined robustness
 detail as advisory tells, not blocking categories. **Codified (2026-06-10):** spines carry an
-`axis` (`ROBUSTNESS` from cluster_fixes, `SCOPE` from feature_mine); `check.py` demotes mined
+`axis` (`ROBUSTNESS` from cluster_fixes, `SCOPE` from lens_mine); `check.py` demotes mined
 ROBUSTNESS-axis categories to `advisory_gaps` by default — only `origin: generic-baseline` floor
 categories gate; `--enforce-mined-robustness` restores full gating. Re-gating the VIP robustness
 assessment: 97 blocking → 2 blocking (release versioning, caching — both floor) + 95 advisory.
@@ -241,7 +241,7 @@ feat/fix as answer key). It reframed everything.
   1. **Robustness** (hard-20% of what you built) → intent-derivation (`completeness.flow.js`) +
      recurring-fix mine (`cluster_fixes.py`). *Predictable.*
   2. **Generic scope** (features a full product of category X converges on) → **feature-surface mine**
-     (`feature_mine.py`): *find* the feature set from mature neighbors. A feature spine mined from
+     (`lens_mine.py`): *find* the feature set from mature neighbors. A feature spine mined from
      aider/OI/gptme recalled ~10 of the feature clusters (multi-provider, WebUI, plugins, auth,
      cost, install, GitHub) the robustness engine missed entirely. *Predictable by "go find it".*
   3. **Project-specific direction** (multimodal, subagents/A2A, vertical agents) → **not predictable,
@@ -383,7 +383,7 @@ Other next steps: adversarial-verify pass for `diff_target` (catch prose-level o
 - `mine_common.py` — shared mine substrate (fan call + JSON extraction); the "mine family" base
 - `find_neighbors.py` — metatool: intent → justified neighbors (measured maturity)
 - `cluster_fixes.py` — **recurring-fix lens** → robustness spine (LLM-abstract + embed + DBSCAN + tiered emit)
-- `feature_mine.py` — **feature-surface lens** → scope spine (README + `feat:` → convergent capability spine; `--lens` is the extension seam)
+- `lens_mine.py` — **feature-surface lens** → scope spine (README + `feat:` → convergent capability spine; `--lens` is the extension seam)
 - `diff_target.py` — target coverage diff; importable `assess_target()`; N/A now covers cross-mechanism
 - `check.py` — **keystone gate**: `2080 check <target> --spine <checklist>` → blocks (exit 3) on required gaps; CI-ready
 - `measure.py` — **controlled recall measurement**: ML + strict-fan judges, recall LIFT over a null spine (`--null-spine`)

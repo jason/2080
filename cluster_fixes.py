@@ -1,6 +1,14 @@
 #!/usr/bin/env -S uv run --python 3.13 --with sentence-transformers --with scikit-learn --with numpy
 """
-cluster_fixes.py — 2080's MEASURED category backbone (LLM-abstraction + ML clustering hybrid).
+cluster_fixes.py — the original ROBUSTNESS mine (LLM-abstraction + ML clustering hybrid).
+
+STATUS: SUPERSEDED-PENDING-MEASUREMENT (2026-06-11). Its output lost the generic-baseline
+control (−0.15) and its cluster labels are change-shaped ("dependency fix"), which made gating
+noise; mined ROBUSTNESS is now advisory in check.py. The lighter replacement candidate is
+lens_mine.py's `robustness-surface` lens (capability-phrased, no embedding stack). Decision
+rule: run both through measure.py's control — if robustness-surface ≥ cluster_fixes on recall,
+archive this file (its embedding/DBSCAN/eps machinery goes with it). Until then it remains the
+only emitter of the eps-swept, baseline-merged robustness spines.
 
 Naive embed-the-raw-commit clustering failed: it grouped by project vocabulary ("rally", "feat")
 and dumped ~88% as noise. The fix is a hybrid:

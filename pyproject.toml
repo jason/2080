@@ -1,0 +1,10 @@
+# Metadata only — 2080 is run from a clone via ./2080 (see README quickstart); the core
+# pipeline is stdlib-only. Measurement extras (numpy/sklearn/sentence-transformers) are
+# declared inline in the scripts that need them and resolved by `uv run`.
+[project]
+name = "tool-2080"
+version = "0.3.0"
+description = "Make the second 85% visible on day 1 — mine mature neighbors into completeness spines, diff your repo, gate on what's genuinely missing"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }

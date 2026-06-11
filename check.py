@@ -5,7 +5,7 @@ check.py — 2080's KEYSTONE gate. `2080 check`: is this target's second-85% clo
 One command unifies three capabilities the feature-spine dogfood flagged as 2080's own gaps,
 each by exposing a primitive 2080 already has:
 
-  CUSTOM RULES  ← the spine/checklist (--spine) IS the rule set; lenses (cluster_fixes / feature_mine)
+  CUSTOM RULES  ← the spine/checklist (--spine) IS the rule set; lenses (cluster_fixes / lens_mine)
                   define what those rules are. Point check at any checklist.
   QUALITY GATE  ← runs diff_target's assessment, then BLOCKS (exit 3) when required-tier gaps remain
                   above --threshold. The blocking logic is lens-agnostic.
@@ -90,10 +90,48 @@ def evaluate(result, fail_on, axis=None, enforce_mined_robustness=False):
     return blocking, advisory, required_total
 
 
+def load_or_assess(target, spine_path, cl, a, save_to=None, from_file=None):
+    """One spine's assessment: loaded from a saved file, or live via assess_target."""
+    if from_file:
+        if not from_file.exists():
+            die(f"assessment not found: {from_file} (generate with --save-assessment)", EXIT_NOT_FOUND, a.json)
+        try:
+            result = json.loads(from_file.read_text())
+        except Exception as e:
+            die(f"assessment unreadable: {from_file}: {e}", EXIT_ERR, a.json)
+        if not isinstance(result, dict) or not isinstance(result.get("categories"), list):
+            die(f"invalid assessment (no 'categories' list): {from_file}", EXIT_ERR, a.json)
+        return result
+    result = assess_target(target, cl)
+    if not result:
+        die(f"assessment failed for {spine_path.name} (could not parse model output)", EXIT_ERR, a.json)
+    if save_to:
+        save_to.write_text(json.dumps(result, indent=2) + "\n")
+    return result
+
+
+def print_gaps(gaps, fix_sites=True):
+    for g in gaps:
+        flag = " ⚠unverified-citation" if g["citation_unverified"] else ""
+        icon = "❌" if g["status"] == "gap" else "🟡"
+        print(f"  {icon} {g['status']:8} {g['category']}{flag}")
+        if g["reasoning"]:
+            print(f"        ↳ {g['reasoning'][:140]}")
+        if g["day1_tell"]:
+            print(f"        check: {g['day1_tell'][:120]}")
+        if fix_sites and g.get("fix_sites"):
+            for s in g["fix_sites"][:3]:
+                if isinstance(s, dict):
+                    print(f"        fix @ {s.get('file', '?')}: {str(s.get('what', ''))[:110]}")
+                else:
+                    print(f"        fix @ {str(s)[:120]}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("target", nargs="?")
-    ap.add_argument("--spine", "--checklist", dest="spine", help="checklist/feature-spine JSON")
+    ap.add_argument("--spine", "--checklist", dest="spine", nargs="+", action="extend",
+                    help="checklist/spine JSON(s); several (or a shell glob) = battery mode with one merged day-1 map")
     ap.add_argument("--threshold", type=int, default=0, help="max applicable required gaps allowed before the gate blocks")
     ap.add_argument("--fail-on", choices=["gap", "partial"], default="partial",
                     help="'gap' blocks only on full gaps; 'partial' (default) also blocks on partials")
@@ -101,10 +139,11 @@ def main():
                     action="store_true",
                     help="gate on mined categories of non-validated axes too (default: only SCOPE-axis "
                          "mined categories and the generic-baseline floor gate; the rest are advisory)")
-    ap.add_argument("--save-assessment", metavar="FILE",
-                    help="after the live assess, write the raw assessment JSON to FILE (re-gate later without an LLM)")
-    ap.add_argument("--from-assessment", metavar="FILE",
-                    help="skip assess_target/LLM: load a saved assessment and run the same gate (deterministic, CI/hook-safe)")
+    ap.add_argument("--save-assessment", metavar="PATH",
+                    help="write the raw assessment JSON to PATH (battery mode: a directory, one file per spine)")
+    ap.add_argument("--from-assessment", metavar="PATH",
+                    help="skip the LLM: gate on saved assessment(s) at PATH (battery mode: the directory "
+                         "--save-assessment wrote; deterministic, CI/hook-safe)")
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--yes", "-y", action="store_true", help="accepted for agentic use; check is read-only")
     a = ap.parse_args()
@@ -114,88 +153,110 @@ def main():
             print(json.dumps(capability_map())); sys.exit(EXIT_OK)
         print(capability_map()["args"], file=sys.stderr); sys.exit(EXIT_ERR)
     if not a.spine:
-        die("--spine <checklist.json> is required", EXIT_ERR, a.json)
-
-    spine_path = Path(a.spine)
-    if not spine_path.exists():
-        die(f"spine not found: {a.spine}", EXIT_NOT_FOUND, a.json)
+        die("--spine <checklist.json>... is required", EXIT_ERR, a.json)
     if not Path(a.target).exists():
         die(f"target not found: {a.target}", EXIT_NOT_FOUND, a.json)
+    for s in a.spine:
+        if not Path(s).exists():
+            die(f"spine not found: {s}", EXIT_NOT_FOUND, a.json)
+    battery = len(a.spine) > 1
 
-    cl = json.loads(spine_path.read_text())
-    if a.from_assessment:
-        asmt_path = Path(a.from_assessment)
-        if not asmt_path.exists():
-            die(f"assessment not found: {a.from_assessment} (generate with --save-assessment)", EXIT_NOT_FOUND, a.json)
-        try:
-            result = json.loads(asmt_path.read_text())
-        except Exception as e:
-            die(f"assessment unreadable: {a.from_assessment}: {e}", EXIT_ERR, a.json)
-        if not isinstance(result, dict) or not isinstance(result.get("categories"), list):
-            die(f"invalid assessment (no 'categories' list): {a.from_assessment}", EXIT_ERR, a.json)
-    else:
-        result = assess_target(a.target, cl)
-        if not result:
-            die("assessment failed (could not parse model output)", EXIT_ERR, a.json)
+    save_dir = from_dir = None
+    if battery:
         if a.save_assessment:
-            Path(a.save_assessment).write_text(json.dumps(result, indent=2) + "\n")
+            save_dir = Path(a.save_assessment); save_dir.mkdir(parents=True, exist_ok=True)
+        if a.from_assessment:
+            from_dir = Path(a.from_assessment)
+            if not from_dir.is_dir():
+                die(f"battery --from-assessment must be the directory --save-assessment wrote: {from_dir}",
+                    EXIT_NOT_FOUND, a.json)
 
-    axis = result.get("axis") or cl.get("axis")  # old saved assessments lack axis; the spine has it
-    blocking, advisory, required_total = evaluate(result, a.fail_on, axis=axis,
-                                                  enforce_mined_robustness=a.enforce_mined_robustness)
-    over = max(0, len(blocking) - a.threshold)
-    gated = over > 0
+    runs = []
+    for s in a.spine:
+        spine_path = Path(s)
+        cl = json.loads(spine_path.read_text())
+        save_to = (save_dir / f"{spine_path.stem}.assessment.json") if save_dir else \
+            (Path(a.save_assessment) if (a.save_assessment and not battery) else None)
+        from_file = (from_dir / f"{spine_path.stem}.assessment.json") if from_dir else \
+            (Path(a.from_assessment) if (a.from_assessment and not battery) else None)
+        result = load_or_assess(a.target, spine_path, cl, a, save_to=save_to, from_file=from_file)
+        axis = result.get("axis") or cl.get("axis")  # old saved assessments lack axis; the spine has it
+        blocking, advisory, required_total = evaluate(result, a.fail_on, axis=axis,
+                                                      enforce_mined_robustness=a.enforce_mined_robustness)
+        runs.append({"spine": str(spine_path), "app_type": cl.get("app_type"),
+                     "sub_type": result.get("sub_type", "?"), "axis": axis,
+                     "required_total": required_total,
+                     "blocking_count": len(blocking), "advisory_count": len(advisory),
+                     "blocking_gaps": blocking, "advisory_gaps": advisory})
+
+    all_blocking = [dict(g, spine=r["spine"], axis=r["axis"]) for r in runs for g in r["blocking_gaps"]] \
+        if battery else runs[0]["blocking_gaps"]
+    all_advisory = [dict(g, spine=r["spine"], axis=r["axis"]) for r in runs for g in r["advisory_gaps"]] \
+        if battery else runs[0]["advisory_gaps"]
+    gated = max(0, len(all_blocking) - a.threshold) > 0
     verdict = {
         "ok": not gated,
         "gated": gated,
         "target": a.target,
-        "spine": str(spine_path),
-        "app_type": cl.get("app_type"),
-        "sub_type": result.get("sub_type", "?"),
-        "axis": axis,
-        "required_total": required_total,
-        "blocking_count": len(blocking),
-        "advisory_count": len(advisory),
+        "spine": runs[0]["spine"] if not battery else None,
+        "spines": [r["spine"] for r in runs],
+        "app_type": runs[0]["app_type"],
+        "sub_type": runs[0]["sub_type"],
+        "axis": runs[0]["axis"] if not battery else None,
+        "required_total": sum(r["required_total"] for r in runs),
+        "blocking_count": len(all_blocking),
+        "advisory_count": len(all_advisory),
         "threshold": a.threshold,
         "fail_on": a.fail_on,
-        "blocking_gaps": blocking,
-        "advisory_gaps": advisory,
+        "blocking_gaps": all_blocking,
+        "advisory_gaps": all_advisory,
     }
+    if battery:
+        verdict["per_spine"] = [{k: r[k] for k in ("spine", "axis", "required_total",
+                                                   "blocking_count", "advisory_count")} for r in runs]
 
     if a.json:
         print(json.dumps(verdict, indent=2))
         sys.exit(EXIT_GATED if gated else EXIT_OK)
 
     head = "🚫 GATED" if gated else "✅ PASS"
-    print(f"{head} — {a.target} vs {cl.get('app_type')} spine ({spine_path.name})")
-    print(f"sub_type: {result.get('sub_type', '?')}")
-    print(f"required: {required_total} | blocking (applicable required {a.fail_on}s): {len(blocking)} "
-          f"| threshold: {a.threshold}\n")
-    if blocking:
-        print("BLOCKING GAPS (close these to open the gate):")
-        for g in blocking:
-            flag = " ⚠unverified-citation" if g["citation_unverified"] else ""
-            icon = "❌" if g["status"] == "gap" else "🟡"
-            print(f"  {icon} {g['status']:8} {g['category']}{flag}")
-            if g["reasoning"]:
-                print(f"        ↳ {g['reasoning'][:140]}")
-            if g["day1_tell"]:
-                print(f"        check: {g['day1_tell'][:120]}")
-            if g.get("fix_sites"):
-                for s in g["fix_sites"][:3]:
-                    if isinstance(s, dict):
-                        print(f"        fix @ {s.get('file', '?')}: {str(s.get('what', ''))[:110]}")
-                    else:
-                        print(f"        fix @ {str(s)[:120]}")
+    if not battery:
+        r = runs[0]
+        print(f"{head} — {a.target} vs {r['app_type']} spine ({Path(r['spine']).name})")
+        print(f"sub_type: {r['sub_type']}")
+        print(f"required: {r['required_total']} | blocking (applicable required {a.fail_on}s): "
+              f"{len(all_blocking)} | threshold: {a.threshold}\n")
     else:
-        print("No applicable required gaps remain — the second-85% is closed for this spine.")
-    if advisory:
-        print(f"\nADVISORY (mined {axis or '?'}-axis — informational, does not gate; "
-              f"--enforce-mined to gate): {len(advisory)}")
-        for g in advisory[:10]:
-            print(f"  • {g['status']:8} {g['category']}")
-        if len(advisory) > 10:
-            print(f"  … and {len(advisory) - 10} more")
+        print(f"{head} — {a.target} day-1 map ({len(runs)} spines, {verdict['required_total']} required categories)")
+        print(f"sub_type: {runs[0]['sub_type']}")
+        print(f"blocking: {len(all_blocking)} (gating axes) | advisory: {len(all_advisory)} "
+              f"| threshold: {a.threshold}\n")
+    if all_blocking:
+        print("BLOCKING GAPS (close these to open the gate):")
+        print_gaps(all_blocking)
+    else:
+        print("No applicable required gaps remain — the gating surface is closed.")
+    if not battery:
+        if all_advisory:
+            print(f"\nADVISORY (mined {runs[0]['axis'] or '?'}-axis — informational, does not gate; "
+                  f"--enforce-mined to gate): {len(all_advisory)}")
+            for g in all_advisory[:10]:
+                print(f"  • {g['status']:8} {g['category']}")
+            if len(all_advisory) > 10:
+                print(f"  … and {len(all_advisory) - 10} more")
+    else:
+        for r in runs:
+            if not r["advisory_gaps"]:
+                continue
+            print(f"\nADVISORY — {r['axis'] or '?'} ({Path(r['spine']).name}): "
+                  f"{r['advisory_count']} of {r['required_total']} required")
+            for g in r["advisory_gaps"][:8]:
+                print(f"  • {g['status']:8} {g['category']}")
+                if g.get("day1_tell"):
+                    print(f"        check: {g['day1_tell'][:110]}")
+            if r["advisory_count"] > 8:
+                print(f"  … and {r['advisory_count'] - 8} more")
+        print("\n(advisory sections inform the day-1 map; only gating axes block. --enforce-mined to gate them)")
     sys.exit(EXIT_GATED if gated else EXIT_OK)
 
 

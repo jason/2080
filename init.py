@@ -11,11 +11,11 @@ Every stage already exists as its own tool — this is glue + caching, not new m
                maturity. Or --neighbors owner/repo,... to skip discovery entirely.
   clone      ← ~/.cache/2080/neighbors/<name>, `git clone --filter=blob:none`: full commit
                HISTORY is required (subjects feed the mine) but blobs stay lazy; the README
-               still materializes in the working tree for feature_mine.
+               still materializes in the working tree for lens_mine.
   harvest    ← ~/.cache/2080/harvests/<name>.json {"project", "commits":[{"sha","subject"}]}
                — exactly cluster_fixes.py's input contract.
   mine       ← cluster_fixes.py  → checklists/<app_type>.robustness.json  (robustness spine)
-               feature_mine.py   → checklists/<app_type>.features.json    (scope spine)
+               lens_mine.py   → checklists/<app_type>.features.json    (scope spine)
 
 Clone + harvest are idempotent (re-run refreshes, never re-clones), so init doubles as the
 "update my spines" command. A full live run costs ~30-60 min of LLM+network — hence --dry-run
@@ -164,7 +164,8 @@ def run_mine(cmd, as_json):
 
 def spine_paths(app_type):
     d = SCRIPT_DIR / "checklists"
-    return d / f"{app_type}.robustness.json", d / f"{app_type}.features.json"
+    return (d / f"{app_type}.robustness.json", d / f"{app_type}.features.json",
+            d / f"{app_type}.operability.json")
 
 
 def main():
@@ -176,7 +177,7 @@ def main():
     ap.add_argument("--app-type", help="spine label; default from discovery (slug of intent with --neighbors)")
     ap.add_argument("--max-commits", type=int, default=500, help="newest commits harvested per neighbor (0 = all)")
     ap.add_argument("--skip-robustness", action="store_true", help="skip the cluster_fixes robustness mine")
-    ap.add_argument("--skip-scope", action="store_true", help="skip the feature_mine scope mine")
+    ap.add_argument("--skip-scope", action="store_true", help="skip the lens_mine scope mine")
     ap.add_argument("--dry-run", action="store_true", help="print the full plan; NO network/LLM, NO writes")
     ap.add_argument("--force", action="store_true", help="overwrite existing spine files for this app-type")
     ap.add_argument("--json", action="store_true")
@@ -203,7 +204,7 @@ def main():
     # ── dry-run: the complete plan, zero network/LLM, zero writes ──
     if a.dry_run:
         app_type = a.app_type or (slug(intent) if override else "<app_type from find_neighbors>")
-        rob, feat = spine_paths(app_type)
+        rob, feat, ops = spine_paths(app_type)
         plan = {"ok": True, "dry_run": True, "intent": intent, "target": next_target,
                 "app_type": app_type,
                 "neighbors": override or f"<discover: find_neighbors.py \"{intent}\" --json, top {a.max_neighbors} by maturity>",
@@ -211,7 +212,8 @@ def main():
                                 or f"{CACHE_ROOT}/neighbors/<name> per neighbor (git clone --filter=blob:none, idempotent)"),
                 "would_harvest": f"{CACHE_ROOT}/harvests/<name>.json (newest {a.max_commits or 'all'} commit subjects)",
                 "would_mine": {"robustness": "skipped" if a.skip_robustness else str(rob),
-                               "scope": "skipped" if a.skip_scope else str(feat)},
+                               "scope": "skipped" if a.skip_scope else str(feat),
+                               "operability": str(ops)},
                 "next": f"check.py {next_target} --spine {feat if not a.skip_scope else rob}"}
         if a.json:
             print(json.dumps(plan, indent=2))
@@ -246,8 +248,9 @@ def main():
 
     # ── overwrite guard: a colliding app_type label would silently clobber a different sub-type's
     # spine (sub-type match is load-bearing; an LLM-classified label is not unique). Refuse early.
-    rob_guard, feat_guard = spine_paths(app_type)
-    clobber = [str(p) for p, skip in ((rob_guard, a.skip_robustness), (feat_guard, a.skip_scope))
+    rob_guard, feat_guard, ops_guard = spine_paths(app_type)
+    clobber = [str(p) for p, skip in ((rob_guard, a.skip_robustness), (feat_guard, a.skip_scope),
+                                      (ops_guard, False))
                if not skip and p.exists()]
     if clobber and not a.force:
         fail(f"refusing to overwrite existing spine(s) for app_type '{app_type}': {', '.join(clobber)} "
@@ -289,8 +292,8 @@ def main():
     if not harvests:
         fail("no neighbor produced a harvest — nothing to mine", EXIT_EMPTY, a.json)
 
-    # ── stage 5: mine both spines ──
-    rob_path, feat_path = spine_paths(app_type)
+    # ── stage 5: mine the spines ──
+    rob_path, feat_path, ops_path = spine_paths(app_type)
     rob_path.parent.mkdir(parents=True, exist_ok=True)
     spines = {}
     if a.skip_robustness:
@@ -303,10 +306,15 @@ def main():
     if a.skip_scope:
         spines["scope"] = "skipped"
     else:
-        print(f"→ mining scope spine (feature_mine) from {len(cloned)} clones…", file=sys.stderr)
-        ok = run_mine(_tool_cmd("feature_mine.py") + [c["path"] for c in cloned.values()]
+        print(f"→ mining scope spine (lens_mine) from {len(cloned)} clones…", file=sys.stderr)
+        ok = run_mine(_tool_cmd("lens_mine.py") + [c["path"] for c in cloned.values()]
                       + ["--app-type", app_type, "--emit", str(feat_path)], a.json)
         spines["scope"] = {"path": str(feat_path), "ok": ok and feat_path.exists()}
+    # operability is deterministic and free (no LLM) — always mined, no skip flag needed
+    print(f"→ mining operability spine (surface_mine, deterministic) from {len(cloned)} clones…", file=sys.stderr)
+    ok = run_mine(_tool_cmd("surface_mine.py") + [c["path"] for c in cloned.values()]
+                  + ["--app-type", app_type, "--emit", str(ops_path)], a.json)
+    spines["operability"] = {"path": str(ops_path), "ok": ok and ops_path.exists()}
 
     mined = [s for s in spines.values() if isinstance(s, dict)]
     all_ok = bool(mined) and all(s["ok"] for s in mined)

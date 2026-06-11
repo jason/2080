@@ -14,7 +14,7 @@ Signals (both reported, per layer):
   fan (conceptual):    J independent STRICT judges ("name the ONE category this is a DIRECT INSTANCE of,
       or null") via parallel `fan`. hit = majority. Run against real spine AND null spine.
 
-Layers: robustness (vs cluster_fixes spine) | scope (vs feature_mine spine). Targets must be OUTSIDE
+Layers: robustness (vs cluster_fixes spine) | scope (vs lens_mine spine). Targets must be OUTSIDE
 both spine pools (no leakage). Default: dexto, goose, cline.
 
 Usage:

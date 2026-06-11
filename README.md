@@ -24,7 +24,7 @@ Status: **working pipeline, dogfooded on itself, measured under controls.** The 
    The gate enforces only that floor: mined robustness categories are **advisory** by default
    (`check.py` demotes them to `advisory_gaps`; `--enforce-mined-robustness` opts back in).
 2. **Generic scope** — features a full product of category X converges on. **This is where mining
-   earns its keep**: the feature-surface mine (`feature_mine.py`) beats the generic baseline by
+   earns its keep**: the feature-surface mine (`lens_mine.py`) beats the generic baseline by
    **+0.27 (±0.05, ×3)** — no common-sense checklist predicts "multi-provider, plugin system, web
    dashboard." *Find* the feature set from mature neighbors, don't imagine it.
 3. **Project-specific direction** — the team's actual product bets. *Not predictable, and
@@ -40,7 +40,7 @@ enforcement gate** is the unoccupied residue.
 
 Mining is **lens-parameterized**: each axis is a lens. Six ship today — recurring-fix → ROBUSTNESS
 (`cluster_fixes.py`); feature-surface → SCOPE, plus issue-surface (GitHub issues = gaps users
-actually hit), config-surface, test-surface, and docs-surface (`feature_mine.py` `--lens`); and a
+actually hit), config-surface, test-surface, and docs-surface (`lens_mine.py` `--lens`); and a
 fully deterministic operability-surface lens (`surface_mine.py`, zero LLM calls — Dockerfile/CI/
 release/config-example/migrations convergence). **Only SCOPE-axis spines gate**; every other axis
 is advisory until it beats the generic-baseline control — the discipline is enforced in `check.py`
@@ -59,10 +59,12 @@ export OPENAI_API_KEY=sk-...           # required (the only setup)
 export OPENAI_BASE_URL=...             # optional: OpenRouter / Azure / local server
 export LLM_2080_MODEL=gpt-5.5         # optional: override the model every tool uses
 
-python3 init.py <your-repo>            # find neighbors → clone → harvest → mine matched spines
-python3 check.py <your-repo> --spine checklists/<app-type>.features.json --save-assessment a.json
-python3 check.py <your-repo> --spine checklists/<app-type>.features.json --from-assessment a.json --json \
-  | python3 emit.py --verdict - --format md   # blocking gaps → agent-ready task queue
+./2080 init <your-repo>                # find neighbors → clone → harvest → mine matched spines
+./2080 check <your-repo> --spine checklists/<app-type>.*.json --save-assessment .2080-assessments/
+# ^ battery mode: ONE merged day-1 map — SCOPE gaps gate, the other axes (operability, issues,
+#   config, tests, docs, robustness) render as ranked advisory sections
+./2080 check <your-repo> --spine checklists/<app-type>.*.json --from-assessment .2080-assessments/ --json \
+  | ./2080 emit --verdict - --format md      # blocking gaps → agent-ready task queue
 ```
 
 `check` exits 3 while applicable required gaps remain (CI-ready); `--from-assessment` re-gates
