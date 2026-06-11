@@ -42,9 +42,10 @@ Mining is **lens-parameterized**: each axis is a lens. Six ship today — recurr
 (`cluster_fixes.py`); feature-surface → SCOPE, plus issue-surface (GitHub issues = gaps users
 actually hit), config-surface, test-surface, and docs-surface (`lens_mine.py` `--lens`); and a
 fully deterministic operability-surface lens (`surface_mine.py`, zero LLM calls — Dockerfile/CI/
-release/config-example/migrations convergence). **Only SCOPE-axis spines gate**; every other axis
-is advisory until it beats the generic-baseline control — the discipline is enforced in `check.py`
-and tested. `check.py` is the keystone gate —
+release/config-example/migrations convergence). **An axis gates only after beating the
+generic-baseline control**: SCOPE (+0.27 ±0.05) and ISSUES (+0.41 ±0.06 on scope-layer work, ×3,
+disjoint spine pool/targets) have passed; every other axis is advisory — the discipline is
+enforced in `check.py` and tripwire-tested. `check.py` is the keystone gate —
 `2080 check <target> --spine <checklist>` runs the diff, blocks (exit 3) on applicable required gaps,
 and is CI-ready. 2080 was run against its own feature spine and closed 3 of the gaps it found.
 See [`docs/HANDOFF.md`](docs/HANDOFF.md) for the full arc and findings.

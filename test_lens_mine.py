@@ -18,22 +18,22 @@ def test_registry_every_lens_is_complete():
         assert callable(lens["source"])
 
 
-def test_registry_only_feature_surface_may_gate():
-    # intent: the codified discipline — only SCOPE beat the generic-baseline control. A new lens
-    # marked SCOPE would silently gain gating power without ever passing the control; this test
-    # is the tripwire that forces the measurement first.
-    scope_lenses = [n for n, l in LENSES.items() if l["axis"].upper() == "SCOPE"]
-    assert scope_lenses == ["feature-surface"]
+# Lenses that PASSED the generic-baseline control (measure.py, strict judges, ×3 each).
+# Promoting a lens here without that measurement is the exact failure the tripwire prevents.
+CONTROL_PASSED = {"feature-surface",  # SCOPE  +0.27 ±0.05 (2026-06)
+                  "issue-surface"}    # ISSUES +0.41 ±0.06 on scope-layer work (2026-06-11)
 
 
-def test_registry_axes_match_check_gating_contract():
-    # intent: lens_mine and check.py share the axis vocabulary implicitly; if check's
-    # validated set drifts (e.g. a rename to "scope"), advisory demotion silently breaks.
+def test_registry_only_control_passed_lenses_may_gate():
+    # intent: the codified discipline — a lens's axis may sit in check.py's validated set ONLY
+    # after beating the generic-baseline control; a new lens reusing a validated axis name (or
+    # a premature promotion) would silently gain gating power without the measurement.
     from check import VALIDATED_GATING_AXES
     assert "SCOPE" in VALIDATED_GATING_AXES
     for n, l in LENSES.items():
-        if n != "feature-surface":
-            assert l["axis"].upper() not in VALIDATED_GATING_AXES, f"{n} gates without validation"
+        gates = l["axis"].upper() in VALIDATED_GATING_AXES
+        assert gates == (n in CONTROL_PASSED), \
+            f"{n}: gating={gates} but control-passed={n in CONTROL_PASSED}"
 
 
 def test_slug_from_url_handles_https_ssh_and_junk():

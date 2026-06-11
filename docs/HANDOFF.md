@@ -2,6 +2,28 @@
 
 _Last updated: 2026-06-10 (session 5)_
 
+## ⏩ Session-5c: ISSUES lens EARNS the gate (+0.41 ×3); battery day-1 map; consolidation
+
+- **The issue lens passed the control and was promoted.** Protocol identical to the SCOPE
+  validation: issue-surface spine mined from aider/gptme/openinterpreter (pool DISJOINT from
+  targets dexto/goose/cline), measure.py strict 2-judge recall lift vs the generic baseline, ×3
+  back-to-back runs. **Scope-layer lift +0.41 ±0.06** (run lifts +0.35/+0.47/+0.42; every
+  target positive every run); robustness-layer +0.02 ±0.03 (baseline-parity — the layer-split
+  confirmed a third independent way). `VALIDATED_GATING_AXES = {SCOPE, ISSUES}`; the
+  test_lens_mine tripwire now keys gating to an explicit CONTROL_PASSED set with the numbers.
+- **Battery mode shipped** (`check.py --spine a.json b.json …`): one merged day-1 map — gating
+  axes block, other axes render as ranked advisory sections; per-spine assessments in a
+  directory; `blocking_gaps` stays flat so emit consumes batteries unchanged. `./2080`
+  dispatcher + pyproject; init.py now also mines the free operability spine every run.
+- **VIP vs issues+operability battery (advisory richness check): PASS with 15 advisory items**
+  that read like a real backlog — tool/plugin governance, multimodal handling, schema/data
+  migrations (vecstore!), release automation, packaging. Map at /tmp/vip-advisory-map.txt.
+- **Consolidation:** feature_mine.py → lens_mine.py (mines six surfaces); new
+  robustness-surface lens (capability-phrased, the cluster_fixes successor candidate);
+  cluster_fixes marked SUPERSEDED-PENDING-MEASUREMENT with an explicit decision rule in its
+  docstring. Open: run robustness-surface vs cluster_fixes through the same control, then
+  archive the loser.
+
 ## ⏩ Session-5b: five new mining lenses (published repo: github.com/jason/2080, public)
 
 The lens registry earned its keep — four new LLM lenses are LENSES entries in `lens_mine.py`

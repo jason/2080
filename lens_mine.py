@@ -9,7 +9,7 @@ emission) is shared. Current lenses/axes:
   feature-surface    → SCOPE       product capabilities (README + feat: commits) — GATES (+0.27)
   robustness-surface → ROBUSTNESS  capability-phrased hardening (fix-commit subjects) — the
                                    experiment vehicle to supersede cluster_fixes' change-shaped labels
-  issue-surface      → ISSUES      gaps users actually hit (GitHub issues, reaction-weighted)
+  issue-surface      → ISSUES      gaps users actually hit (GitHub issues) — GATES (+0.41 ×3, 2026-06-11)
   config-surface     → CONFIG      knob groups (config files + recurring env keys)
   test-surface       → TESTS       verification surface (test files + names)
   docs-surface       → DOCS        support surface (markdown headings)
@@ -19,8 +19,8 @@ surface_mine.py. cluster_fixes.py is the original embedding/DBSCAN robustness mi
 superseded-pending-measurement by robustness-surface here (see its docstring).
 
 None of these predict a project's SPECIFIC product bets — that's strategy, not completeness,
-and is deliberately out of scope. Only SCOPE-axis spines gate (check.py VALIDATED_GATING_AXES);
-every other axis is advisory until it beats the generic-baseline control in measure.py.
+and is deliberately out of scope. An axis gates only after beating the generic-baseline control
+in measure.py (check.py VALIDATED_GATING_AXES — currently SCOPE and ISSUES); the rest are advisory.
 
 Emits a checklist-compatible JSON (required/optional + day1_tell) so `diff_target.py` consumes it
 unchanged.
@@ -267,8 +267,8 @@ def capability_map():
     return {"tool": "lens_mine", "version": "0.2",
             "args": "<neighbor-repo-dir>... [--app-type T] [--lens NAME] [--emit PATH] [--json]",
             "lenses": {k: {"axis": v["axis"], "desc": v["desc"]} for k, v in LENSES.items()},
-            "gating": "only SCOPE-axis spines gate by default; other axes are advisory until they "
-                      "beat the generic-baseline control (see measure.py)",
+            "gating": "an axis gates only after beating the generic-baseline control (check.py "
+                      "VALIDATED_GATING_AXES — currently SCOPE, ISSUES); other axes are advisory",
             "exit_codes": {"0": "ok", "1": "usage/err", "2": "not_found", "3": "empty"}}
 
 
@@ -349,8 +349,8 @@ def main():
         "scope_note": (f"{lens['axis']}-axis spine for {a.app_type}, mined via the {a.lens} lens "
                        f"({lens['desc'].replace('<app_type>', a.app_type)}) from {derived}. "
                        f"Does NOT predict project-specific product direction — that is strategy, not "
-                       f"completeness. Non-SCOPE axes are advisory in check.py until they beat the "
-                       f"generic-baseline control."),
+                       f"completeness. An axis gates only after beating the generic-baseline control "
+                       f"(check.py VALIDATED_GATING_AXES); the rest are advisory."),
         "derived_from": derived,
         "required": required,
         "optional": optional,

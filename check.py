@@ -54,16 +54,21 @@ def die(msg, code, as_json):
     sys.exit(code)
 
 
-VALIDATED_GATING_AXES = {"SCOPE"}  # the only axis that beat the generic-baseline control (+0.27)
+# Axes that beat the generic-baseline control (measure.py, strict judges, ×3 with variance):
+#   SCOPE  +0.27 ±0.05 (2026-06, feature-surface, ai-agent-tool targets dexto/goose/cline)
+#   ISSUES +0.41 ±0.06 on scope-layer work; +0.02 ±0.03 (baseline-parity, not harmful) on
+#          robustness-layer (2026-06-11, issue-surface ai-agent-cli spine, same targets/protocol)
+# Every other axis is advisory until it passes the same bar.
+VALIDATED_GATING_AXES = {"SCOPE", "ISSUES"}
 
 
 def evaluate(result, fail_on, axis=None, enforce_mined_robustness=False):
     """Split assessed categories into blocking (applicable required gaps), advisory, and the rest.
     Blocking = tier==required AND status in fail_on AND not na_by_design/covered.
 
-    Axis discipline: mined categories GATE only on validated axes (SCOPE, +0.27 over the
-    generic-baseline control). On every other mined axis (ROBUSTNESS, ISSUES, CONFIG, TESTS,
-    DOCS, OPERABILITY…) they are ADVISORY — informative, never blocking — until that lens beats
+    Axis discipline: mined categories GATE only on validated axes (SCOPE +0.27, ISSUES +0.41 —
+    see VALIDATED_GATING_AXES). On every other mined axis (ROBUSTNESS, CONFIG, TESTS, DOCS,
+    OPERABILITY…) they are ADVISORY — informative, never blocking — until that lens beats
     the same control. Measured for ROBUSTNESS (2026-06, ×3): the generic checklist out-recalls
     the mined spine (−0.15) and change-shaped labels caused 97/117 false-ish blocks on the first
     external target. The `origin: generic-baseline` floor always gates. A spine with NO axis
