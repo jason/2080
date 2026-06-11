@@ -13,7 +13,7 @@ FILESET = {"app.py", "cli.py", "store.py"}
 
 
 def test_category_keywords_pull_from_what_description():
-    # intent: SCOPE/ISSUES spines — the only axes that GATE — emit no aliases, so without
+    # intent: SCOPE spines — the only axis that GATES — emit no aliases, so without
     # `what` the evidence search for exactly the gating verdicts ran on the 2-3 words of the
     # category name (minimum vocabulary where precision matters most). The one-line `what`
     # description must feed the deterministic keyword set.

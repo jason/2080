@@ -20,9 +20,12 @@ def test_registry_every_lens_is_complete():
 
 # Lenses that PASSED the generic-baseline control (measure.py, strict judges, ×3 each).
 # Promoting a lens here without that measurement is the exact failure the tripwire prevents.
-CONTROL_PASSED = {"feature-surface",  # SCOPE  +0.27 ±0.05 lift; specificity 0.337 vs baseline 0.109
-                  "issue-surface"}    # ISSUES +0.41 ±0.06 lift; specificity baseline-level on an
-#                                       adjacent out-domain — inconclusive, foreign rerun flagged
+CONTROL_PASSED = {"feature-surface"}  # SCOPE +0.27 ±0.05 lift; specificity 0.337 vs baseline
+#                                       0.109 (adjacent) AND +0.474 vs zellij (foreign) — the
+#                                       only lens to survive both controls.
+# issue-surface: +0.41 ±0.06 lift but DEMOTED 2026-06-11 by the foreign-domain rerun — vs
+# zellij (terminal multiplexer) it matched future work at 0.830, HIGHER than in-domain 0.770
+# (specificity −0.060, baseline-level). Breadth, not foresight.
 # test-surface: +0.61/+0.28 lift but DEMOTED 2026-06-11 by the specificity control — its recall
 # is breadth (out-of-domain 0.86/0.79; specificity BELOW the generic baseline's). Lift alone is
 # not sufficient; see check.py VALIDATED_GATING_AXES comment + docs/measurements/.

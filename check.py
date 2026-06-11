@@ -42,7 +42,7 @@ def capability_map():
                            "PASS (exit 1) unless --allow-unassessed; verdict carries unassessed_count",
             "fail_on": ["gap", "partial"],
             "axis_gating": "mined categories gate only on validated axes (VALIDATED_GATING_AXES — "
-                           "currently SCOPE, ISSUES); other axes are advisory by default with the "
+                           "currently SCOPE); other axes are advisory by default with the "
                            "generic-baseline floor still gating; --enforce-mined restores full gating",
             "llm": llm_runtime(),  # bring-your-own-key preflight: backend/model/key SOURCE (never values)
             "assessment": {"--save-assessment": "after the live LLM assess, write the raw assessment JSON to FILE",
@@ -58,17 +58,24 @@ def die(msg, code, as_json):
 
 # Axes that beat the generic-baseline control (measure.py, strict judges, ×3 with variance):
 #   SCOPE  +0.27 ±0.05 (2026-06, feature-surface, ai-agent-tool targets dexto/goose/cline)
-#   ISSUES +0.41 ±0.06 on scope-layer work; +0.02 ±0.03 (baseline-parity, not harmful) on
-#          robustness-layer (2026-06-11, issue-surface ai-agent-cli spine, same targets/protocol)
+#   ISSUES +0.41 ±0.06 lift (2026-06-11) — DEMOTED 2026-06-11 by the foreign-domain specificity
+#          rerun (docs/measurements/issues-discussions-control.json): against a genuinely foreign
+#          out-domain (zellij, terminal multiplexer) the issues spine matched future work at
+#          0.830 — HIGHER than its in-domain 0.770 (specificity −0.060, baseline-level). The
+#          adjacent-domain result (0.112 vs telegram bots) was already inconclusive; the foreign
+#          rerun settled it: ISSUES' lift was breadth, same failure mode as TESTS.
 #   TESTS  +0.61/+0.28 lift (2026-06-11) — PROMOTED then DEMOTED the same day: the out-of-domain
 #          specificity control (docs/measurements/specificity-control.json) showed its recall is
 #          breadth, not foresight — it matches telegram-bot future work at 0.86/0.79, and its
 #          in-minus-out specificity (0.078 scope / 0.159 robustness) is BELOW the generic
 #          baseline's (0.109 / 0.176). Lift over the baseline is necessary but not sufficient;
 #          a gating spine must also be MORE domain-specific than the baseline.
-#          (SCOPE passes that second bar 3×: specificity 0.337. ISSUES sits at baseline-level
-#          0.112 on an ADJACENT out-domain (telegram bots share LLM-app issue vocabulary) —
-#          inconclusive, kept gating, foreign-domain rerun flagged in HANDOFF.)
+#          (SCOPE passes that second bar repeatedly: specificity 0.337 vs telegram bots,
+#          +0.474 vs zellij in the foreign-domain run — the only axis that survives both.)
+#   DISCUSSIONS (telegram, 3-neighbor leak-free spine) passed BOTH bars provisionally in the
+#          same run (+0.45 mean lift ×3 all-positive; specificity +0.248 vs baseline −0.151)
+#          but on only 2 in-domain targets, one with a 3-item answer key — NOT promoted; needs
+#          ≥3 in-domain targets with ≥10-item keys.
 # Measured and NOT promoted (2026-06-11 battery, same protocol): DOCS +0.43 scope but −0.27
 # robustness (material loss, unlike ISSUES' parity); CONFIG +0.10 (thin spine); OPERABILITY and
 # SECURITY negative — feat/fix-commit answer keys structurally undersample artifact-presence and
@@ -84,15 +91,15 @@ def die(msg, code, as_json):
 # assess_target path). An axis can be predictive while the gate misjudges it (and vice versa).
 # Open follow-up (HANDOFF): add an assess_target arm to the promotion criterion so axes earn
 # gating on the path that gates.
-VALIDATED_GATING_AXES = {"SCOPE", "ISSUES"}
+VALIDATED_GATING_AXES = {"SCOPE"}
 
 
 def evaluate(result, fail_on, axis=None, enforce_mined_robustness=False):
     """Split assessed categories into blocking (applicable required gaps), advisory, and the rest.
     Blocking = tier==required AND status in fail_on AND not na_by_design/covered.
 
-    Axis discipline: mined categories GATE only on validated axes (SCOPE, ISSUES — see
-    VALIDATED_GATING_AXES). On every other mined axis (ROBUSTNESS, TESTS, CONFIG, DOCS,
+    Axis discipline: mined categories GATE only on validated axes (SCOPE — see
+    VALIDATED_GATING_AXES). On every other mined axis (ROBUSTNESS, TESTS, ISSUES, CONFIG, DOCS,
     OPERABILITY, SECURITY, DISCUSSIONS…) they are ADVISORY — informative, never blocking —
     until that lens passes both controls (recall lift AND out-of-domain specificity). Measured for ROBUSTNESS (2026-06, ×3): the generic checklist out-recalls
     the mined spine (−0.15) and change-shaped labels caused 97/117 false-ish blocks on the first
@@ -173,7 +180,7 @@ def main():
     ap.add_argument("--enforce-mined", "--enforce-mined-robustness", dest="enforce_mined_robustness",
                     action="store_true",
                     help="gate on mined categories of non-validated axes too (default: only "
-                         "SCOPE/ISSUES-axis mined categories and the generic-baseline floor "
+                         "SCOPE-axis mined categories and the generic-baseline floor "
                          "gate; the rest are advisory)")
     ap.add_argument("--save-assessment", metavar="PATH",
                     help="write the raw assessment JSON to PATH (battery mode: a directory, one file per spine)")

@@ -5,11 +5,12 @@
 > **split by layer**. Robustness derivation is real but a *generic checklist already does it
 > better than mining* (lift −0.15 vs a common-sense baseline, replicated) — so the robustness
 > floor is now an industry-curated checklist (`generic-software.floor.json`), not a mine.
-> **Scope-shaped prediction is the part only mining delivers**: two axes gate — SCOPE (+0.27
-> lift, 3× the baseline's out-of-domain specificity) and ISSUES (+0.41). A third (TESTS,
-> +0.61 — the highest lift measured) was promoted and demoted the same day when a specificity
-> control showed its recall was breadth, not foresight: gating now requires beating BOTH
-> controls. The gap engine exists end-to-end (mine → check →
+> **Scope-shaped prediction is the part only mining delivers**: one axis gates — SCOPE (+0.27
+> lift; specificity 0.337 vs an adjacent out-domain, +0.474 vs a foreign one). Two others with
+> higher lift were both demoted by the specificity controls — TESTS (+0.61, the highest lift
+> measured, promoted and demoted the same day) and ISSUES (+0.41, demoted when the
+> foreign-domain rerun showed it matched zellij's future work better than its own domain's):
+> gating requires beating BOTH controls — lift alone measures breadth. The gap engine exists end-to-end (mine → check →
 > emit → stop-hook/CI gate) with measured gate precision 0.77, across nine lenses spanning
 > four source-of-truth families (neighbor repos, user demand, industry floors, threat
 > landscape). The falsification test below ("does the day-1 map collapse the timeline?")

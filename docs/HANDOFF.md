@@ -1,6 +1,49 @@
 # 2080 — Handoff
 
-_Last updated: 2026-06-11 (session 6 + lens-control battery + specificity control)_
+_Last updated: 2026-06-11 (foreign-domain rerun: ISSUES demoted; DISCUSSIONS provisional pass; floor calibrated)_
+
+## 🔬 Foreign-domain rerun: ISSUES demoted — SCOPE is the only gating axis
+
+The follow-up flagged in the specificity-control entry below ran 2026-06-11. Same instrument
+(measure.py unchanged, pre-registered rules frozen in the analyzer BEFORE results), out-domain
+now fully foreign: terminal multiplexers (tmux, zellij) — no LLM-app vocabulary overlap. Raw
+JSON + analyzer + leak-free discussions spine: `docs/measurements/issues-discussions-control.json`,
+`analyze_idc.py`, `telegram.discussions3.json`.
+
+**Instrument finding first:** tmux and karfly (chatgpt_telegram_bot) produced EMPTY scope-layer
+answer keys — tmux's recent 130 items classify as 95 robustness + 35 churn, zero scope (a
+26-year-old finished tool adds no new generic capabilities; the layer classifier is working,
+not broken). They drop from scope-layer comparisons legitimately. Effective groups:
+in=dexto/goose/cline, out=zellij (key n=23), tg=nekro (n=38) + n3dbot (n=3).
+
+| spine (scope layer) | in(cli) | out(zellij) | specificity |
+|---|---|---|---|
+| issue-surface (ISSUES) | 0.770 | **0.830** | **−0.060 → DEMOTED** |
+| feature-surface (SCOPE) | 0.514 | 0.040 | **+0.474 — survives its 2nd specificity pass** |
+| generic baseline | 0.336 | 0.417 | −0.081 (the bar) |
+
+- **ISSUES demoted** by the pre-registered rule (demote if ≤ baseline+0.05). It matched a
+  terminal multiplexer's future work BETTER than its own domain's — the adjacent-domain 0.112
+  wasn't partial transfer, it was breadth. Same failure as TESTS, now with the loophole
+  ("adjacent domain is inconclusive") closed. `VALIDATED_GATING_AXES = {"SCOPE"}`; tripwire,
+  capability maps, README, THESIS, CHANGELOG all updated.
+- **SCOPE re-affirmed** on a second, harsher out-domain: +0.474 specificity (vs +0.337
+  adjacent). It is now the only axis that has passed lift + two different specificity passes.
+- **DISCUSSIONS control (provisional PASS, NOT promoted):** 3-neighbor leak-free spine
+  (AstrBot/LangBot/ChatGPT-Telegram-Bot mined; nekro-agent held out), judged on telegram
+  targets. Lift +0.452 mean, all 3 runs positive (bar ≥+0.15); specificity in(tg)−out(cli+mux)
+  = +0.248 vs baseline −0.151 (bar passed). BUT: only 2 usable in-domain targets and n3dbot's
+  answer key has 3 items — the pass rests mostly on nekro. Promotion bar: ≥3 in-domain targets
+  with ≥10-item keys. Until then DISCUSSIONS stays advisory.
+- **Floor calibration shipped (same session):** clause (c) added to diff_target's na rules —
+  generic floor categories must be REINTERPRETED in sub-type terms (CLI "UI/UX polish" =
+  help-text/error-message/output quality; i18n = Unicode handling; telemetry for a
+  privacy-deliberate local tool = logs or na). Re-gated 2080 on its own floor: 22 → 17
+  blocking, and the remaining partials now reason in CLI terms (verified by reading verdicts;
+  saved run: /tmp/floor-recal.json pattern, rerun any time). Partials stay blocking:
+  **Picked:** keep `--fail-on partial` default and fix verdict accuracy, **Over:** demoting
+  floor partials to advisory, **Why:** the strict day-1 map is the product and `--fail-on gap`
+  already exists for looser teams. **Rejected fate:** documented here, nothing to remove.
 
 ## 🔬 Out-of-domain specificity control: TESTS demoted; gating now requires TWO controls
 

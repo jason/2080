@@ -51,10 +51,12 @@ SECURITY). The gating floor itself is industry-curated
 (`checklists/generic-software.floor.json` — OpenSSF Scorecard/Best-Practices-Badge +
 community-profile criteria layered over the frozen 20-category measurement control). **An axis gates only after passing TWO controls** — recall lift over the
 generic baseline AND out-of-domain specificity above the baseline's (a spine that matches
-everything everywhere has breadth, not foresight): SCOPE (+0.27 ±0.05 lift, specificity 0.337 vs
-baseline 0.109) and ISSUES (+0.41 ±0.06) gate; TESTS scored the highest lift ever measured
-(+0.61) and was demoted the same day when the specificity control showed that lift was breadth
-(out-of-domain recall 0.86, specificity below the baseline's). Every other axis is advisory —
+everything everywhere has breadth, not foresight). Only SCOPE survives both (+0.27 ±0.05 lift;
+specificity 0.337 vs an adjacent domain, +0.474 vs a foreign one). TESTS scored the highest
+lift ever measured (+0.61) and was demoted the same day when the specificity control showed
+that lift was breadth (out-of-domain recall 0.86, specificity below the baseline's); ISSUES
+(+0.41) followed when a foreign-domain rerun showed it matched a terminal multiplexer's future
+work *better* than its own domain's (0.830 vs 0.770). Every other axis is advisory —
 the discipline is enforced in `check.py` and tripwire-tested. `check.py` is the keystone gate —
 `2080 check <target> --spine <checklist>` runs the diff, blocks (exit 3) on applicable required gaps,
 and is CI-ready. 2080 was run against its own feature spine and closed 3 of the gaps it found.
@@ -72,8 +74,8 @@ export LLM_2080_MODEL=gpt-5.5         # optional: override the model every tool 
 
 ./2080 init <your-repo>                # find neighbors → clone → harvest → mine matched spines
 ./2080 check <your-repo> --spine checklists/<app-type>.*.json --save-assessment .2080-assessments/
-# ^ battery mode: ONE merged day-1 map — SCOPE/ISSUES gaps gate; the other axes
-#   (operability, tests, config, docs, robustness, security, discussions) render as ranked advisory
+# ^ battery mode: ONE merged day-1 map — SCOPE gaps gate; the other axes
+#   (issues, operability, tests, config, docs, robustness, security, discussions) render as ranked advisory
 ./2080 check <your-repo> --spine checklists/<app-type>.*.json --from-assessment .2080-assessments/ --json \
   | ./2080 emit --verdict - --format md      # blocking gaps → agent-ready task queue
 ```

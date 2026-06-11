@@ -20,7 +20,8 @@ everything below is the unreleased line; the first tag will cut it into a versio
 ### Changed
 - Gating promotion now requires TWO controls (recall lift AND out-of-domain specificity);
   TESTS was promoted on lift (+0.61) and demoted the same day on specificity — the event that
-  made the second control mandatory. Gating axes: SCOPE, ISSUES.
+  made the second control mandatory. ISSUES (+0.41) was demoted next by the foreign-domain
+  rerun (specificity −0.060 vs zellij). Gating axes: SCOPE only.
 
 ### Deprecated
 - `archive/cluster_fixes.py` (lost the interleaved control to the robustness-surface lens) and

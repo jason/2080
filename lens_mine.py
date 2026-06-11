@@ -10,7 +10,9 @@ emission) is shared. Current lenses/axes:
   robustness-surface  → ROBUSTNESS  capability-phrased hardening (fix commits) + gating floor
                                     (generic-software.floor.json); superseded archive/cluster_fixes
                                     2026-06-11 (−0.04 vs −0.20)
-  issue-surface       → ISSUES      gaps users actually hit (GitHub issues) — GATES (+0.41 ×3)
+  issue-surface       → ISSUES      gaps users actually hit (GitHub issues) — +0.41 lift but
+                                    DEMOTED 2026-06-11: foreign-domain rerun (zellij) showed
+                                    specificity −0.060 — breadth, same failure as TESTS
   discussions-surface → DISCUSSIONS unanswered GitHub Discussions = demand never closed (gh GraphQL)
   config-surface      → CONFIG      runtime knob groups (config files + recurring env keys)
   test-surface        → TESTS       verification surface (test files + names) — high lift (+0.61/+0.28)
@@ -24,7 +26,7 @@ surface_mine.py. The original embedding/DBSCAN robustness mine lives in archive/
 
 None of these predict a project's SPECIFIC product bets — that's strategy, not completeness,
 and is deliberately out of scope. An axis gates only after beating the generic-baseline control
-in measure.py (check.py VALIDATED_GATING_AXES — currently SCOPE and ISSUES); the rest are advisory.
+in measure.py (check.py VALIDATED_GATING_AXES — currently SCOPE only); the rest are advisory.
 
 Emits a checklist-compatible JSON (required/optional + day1_tell) so `diff_target.py` consumes it
 unchanged.
@@ -58,9 +60,10 @@ def neighbor_name(repo_dir):
 #
 # GATING DISCIPLINE: an axis gates only after passing BOTH controls — recall lift over the
 # generic baseline AND out-of-domain specificity above the baseline's (check.py
-# VALIDATED_GATING_AXES is the source of truth; currently SCOPE +0.27/spec 0.337 and ISSUES
-# +0.41). TESTS proved why lift alone is insufficient: +0.61 lift, demoted same day for
-# baseline-level specificity (breadth). Do not mark a new lens with a gating axis to make it gate.
+# VALIDATED_GATING_AXES is the source of truth; currently SCOPE only, +0.27 lift / spec 0.337
+# adjacent and +0.474 foreign). TESTS (+0.61) and ISSUES (+0.41) both proved why lift alone is
+# insufficient: each demoted for baseline-level out-of-domain specificity (breadth).
+# Do not mark a new lens with a gating axis to make it gate.
 
 def _ls_tree(repo):
     return _git(repo, "ls-tree", "-r", "--name-only", "HEAD").splitlines()
@@ -399,8 +402,9 @@ def capability_map():
     return {"tool": "lens_mine", "version": "0.2",
             "args": "<neighbor-repo-dir>... [--app-type T] [--lens NAME] [--emit PATH] [--json]",
             "lenses": {k: {"axis": v["axis"], "desc": v["desc"]} for k, v in LENSES.items()},
-            "gating": "an axis gates only after beating the generic-baseline control (check.py "
-                      "VALIDATED_GATING_AXES — currently SCOPE, ISSUES); other axes are advisory",
+            "gating": "an axis gates only after passing BOTH controls — recall lift AND "
+                      "out-of-domain specificity (check.py VALIDATED_GATING_AXES — currently "
+                      "SCOPE only); other axes are advisory",
             "exit_codes": {"0": "ok", "1": "usage/err", "2": "not_found", "3": "empty"}}
 
 

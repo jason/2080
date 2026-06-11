@@ -49,8 +49,8 @@ def capability_map():
 def category_keywords(cat):
     """Deterministic search terms for a category: domain words from category + aliases + the
     one-line `what` description, minus change-words (fix/update/...) that would match every
-    commit-shaped string. `what` is load-bearing: SCOPE/ISSUES spines (the axes that GATE)
-    carry no aliases, so without it the evidence search for exactly those axes ran on the 2-3
+    commit-shaped string. `what` is load-bearing: SCOPE-axis spines (the axis that GATES) carry
+    no aliases, so without it the evidence search for exactly the gating axis ran on the 2-3
     words of the category name alone — minimum vocabulary on the gating verdicts."""
     aliases = cat.get("aliases", "")
     if isinstance(aliases, list):

@@ -1,0 +1,89 @@
+{
+  "app_type": "telegram-llm-bot",
+  "lens": "discussions-surface",
+  "axis": "DISCUSSIONS",
+  "baseline_merged": false,
+  "scope_note": "DISCUSSIONS-axis spine for telegram-llm-bot, mined via the discussions-surface lens (gaps users asked about that never got closed (GitHub discussions, unanswered, upvote+comment-weighted)) from ['AstrBot', 'LangBot']. Does NOT predict project-specific product direction \u2014 that is strategy, not completeness. An axis gates only after beating the generic-baseline control (check.py VALIDATED_GATING_AXES); the rest are advisory.",
+  "derived_from": [
+    "AstrBot",
+    "LangBot"
+  ],
+  "required": [
+    {
+      "category": "Model/provider compatibility diagnostics",
+      "what": "Users hit opaque failures when connecting relay, local, or third-party LLM providers despite configuration tests passing; docs need provider-specific compatibility and error-debug guidance.",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Follow the documented setup for one relay provider, one local provider, and one third-party provider; intentionally trigger a failed chat request after each config test passes and confirm the docs explain the provider-specific compatibility limits, likely error cause, and debug steps."
+    },
+    {
+      "category": "Platform adapter behavior and permissions",
+      "what": "Users encounter unexplained differences across chat surfaces such as group @ replies, private chat, official accounts, personal WeChat, Enterprise WeChat files, and admin identity configuration.",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Test each supported chat adapter surface on day 1\u2014group @ reply, private chat, official account, personal WeChat, Enterprise WeChat file upload, and admin identity setup\u2014and confirm the docs state the expected behavior, permission requirements, and known differences for each."
+    },
+    {
+      "category": "Plugin lifecycle and developer docs",
+      "what": "Users lack clear guidance for plugin discovery, installed-plugin introspection, publishing, updating, and debugging custom plugins that fail to run.",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Install a sample plugin, list installed plugins from the product UI/CLI/API, update it, publish or package it, then break it intentionally and confirm the docs explain discovery, introspection, publishing, updating, logs, and debugging steps."
+    },
+    {
+      "category": "Multimodal I/O setup",
+      "what": "Voice, TTS, and chat-file handling are under-documented, with users unsure when conversion, triggering, file retrieval, or platform support should work.",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Configure voice input, TTS output, and chat-file handling on a supported platform; send a voice message and a file, then confirm the docs explain required conversion services, trigger conditions, retrieval behavior, and platform support limits."
+    }
+  ],
+  "optional": [
+    {
+      "category": "Tool/function calling and retrieval capabilities",
+      "what": "Users ask how to make tools, search, embeddings, or local/vector providers work, revealing gaps in capability matrix and setup recipes.",
+      "projects": [
+        "AstrBot"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Enable one tool/function call, one search capability, and one embedding/vector provider using only the docs, then run a prompt that should invoke each and confirm the docs include a capability matrix plus working setup recipes and troubleshooting."
+    },
+    {
+      "category": "Response formatting and runtime behavior controls",
+      "what": "Users cannot predict or control behaviors like segmented replies, temporary model switching, or time/context handling, suggesting missing behavior semantics documentation.",
+      "projects": [
+        "AstrBot"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Send prompts that should produce segmented replies, temporary model switching, and time/context-sensitive answers, then confirm the docs define when each runtime behavior occurs and how users can configure, disable, or predict it."
+    },
+    {
+      "category": "Deployment behind reverse proxy",
+      "what": "Users need documented support for sub-path reverse proxy deployment, static/API routing, and expected URL base configuration.",
+      "projects": [
+        "AstrBot"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Deploy the product behind a reverse proxy at a non-root sub-path such as /bot, open the UI, call the API, and load static assets; confirm the docs specify the required base URL, static routing, API routing, and proxy headers."
+    }
+  ]
+}
