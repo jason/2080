@@ -1,0 +1,33 @@
+{
+  "app_type": "ai-agent-cli",
+  "lens": "discussions-surface",
+  "axis": "DISCUSSIONS",
+  "baseline_merged": false,
+  "scope_note": "DISCUSSIONS-axis spine for ai-agent-cli, mined via the discussions-surface lens (gaps users asked about that never got closed (GitHub discussions, unanswered, upvote+comment-weighted)) from ['gptme']. Does NOT predict project-specific product direction \u2014 that is strategy, not completeness. An axis gates only after beating the generic-baseline control (check.py VALIDATED_GATING_AXES); the rest are advisory.",
+  "derived_from": [
+    "gptme"
+  ],
+  "required": [],
+  "optional": [
+    {
+      "category": "Tool usage and agent autonomy",
+      "what": "Users need clearer documentation on how tools are selected, invoked, and controlled: whether the human chooses tools explicitly or the agent decides automatically.",
+      "projects": [
+        "gptme"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Follow the README quickstart and verify it explicitly states whether tools are selected by the user or autonomously by the agent, including a minimal example showing how a tool is invoked and controlled."
+    },
+    {
+      "category": "Alternative OpenAI-compatible provider setup",
+      "what": "Users need guidance for configuring non-OpenAI/OpenAI-compatible APIs such as Groq, including required environment variables, base URLs, and model names.",
+      "projects": [
+        "gptme"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Configure the product from scratch using a Groq/OpenAI-compatible endpoint and verify the docs provide the exact required environment variables, base URL, and model name needed for a successful first request."
+    }
+  ]
+}

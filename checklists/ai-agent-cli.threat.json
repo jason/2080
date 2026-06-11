@@ -1,0 +1,159 @@
+{
+  "app_type": "ai-agent-cli",
+  "lens": "threat-surface",
+  "axis": "SECURITY",
+  "scope_note": "SECURITY-axis spine for ai-agent-cli: deterministic OSV mining over ['aider', 'gptme', 'openinterpreter'] \u2014 which vulnerability classes hit the dependency stacks this category converges on. Advisory in check.py until this lens beats the generic-baseline control.",
+  "derived_from": [
+    "aider",
+    "gptme",
+    "openinterpreter"
+  ],
+  "stats": {
+    "deps_queried": 503,
+    "vulns_found": 751,
+    "vulns_classified": 83
+  },
+  "required": [
+    {
+      "category": "injection defenses",
+      "what": "Injection vulnerabilities (SQL/command/code/template) have empirically hit this category's dependency stack.",
+      "aliases": "sql injection / command injection / code injection / template injection",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "example": "transformers: PYSEC-2025-216",
+      "day1_tell": "Run a dependency audit (osv-scanner / npm audit / pip-audit) in CI and confirm it fails the build on a known-vulnerable pin; fuzz every input that reaches a query, shell, or template sink."
+    },
+    {
+      "category": "deserialization defenses",
+      "what": "Unsafe-deserialization vulnerabilities (pickle/prototype pollution) have empirically hit this category's dependency stack.",
+      "aliases": "unsafe deserialization / pickle / prototype pollution / object injection",
+      "projects": [
+        "aider",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "example": "cryptography: PYSEC-2023-254",
+      "day1_tell": "Run a dependency audit (osv-scanner / npm audit / pip-audit) in CI and confirm it fails the build on a known-vulnerable pin; feed crafted payloads to every deserialization entry point and confirm unsafe loaders are absent."
+    },
+    {
+      "category": "DoS/resource-exhaustion defenses",
+      "what": "Denial-of-service / resource-exhaustion vulnerabilities have empirically hit this category's dependency stack.",
+      "aliases": "denial of service / resource exhaustion / memory exhaustion / flood",
+      "projects": [
+        "aider",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "example": "gitpython: PYSEC-2023-165",
+      "day1_tell": "Run a dependency audit (osv-scanner / npm audit / pip-audit) in CI and confirm it fails the build on a known-vulnerable pin; replay oversized and flood inputs against the busiest endpoint and confirm size, rate, and timeout limits hold."
+    },
+    {
+      "category": "secrets/credential-exposure defenses",
+      "what": "Credential/secret-exposure vulnerabilities have empirically hit this category's dependency stack.",
+      "aliases": "credential exposure / secret leak / sensitive information disclosure",
+      "projects": [
+        "aider",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "example": "litellm: PYSEC-2026-2",
+      "day1_tell": "Run a dependency audit (osv-scanner / npm audit / pip-audit) in CI and confirm it fails the build on a known-vulnerable pin; force a failure path and grep logs and error responses to confirm no tokens or credentials leak."
+    },
+    {
+      "category": "memory-safety defenses",
+      "what": "Memory-safety vulnerabilities (overflow/UAF/OOB) have empirically hit this category's dependency stack.",
+      "aliases": "buffer overflow / use after free / out-of-bounds read or write",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "example": "cryptography: PYSEC-2026-36",
+      "day1_tell": "Run a dependency audit (osv-scanner / npm audit / pip-audit) in CI and confirm it fails the build on a known-vulnerable pin; run the native-code surface under a fuzzer with sanitizers and confirm no crashes on malformed input."
+    }
+  ],
+  "optional": [
+    {
+      "category": "XSS defenses",
+      "what": "Cross-site scripting vulnerabilities have empirically hit this category's dependency stack.",
+      "aliases": "cross-site scripting / xss / script injection / output escaping",
+      "projects": [
+        "aider"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "example": "streamlit: PYSEC-2023-50",
+      "day1_tell": "Run a dependency audit (osv-scanner / npm audit / pip-audit) in CI and confirm it fails the build on a known-vulnerable pin; render hostile markup through every user-content path and confirm it is escaped."
+    },
+    {
+      "category": "path traversal defenses",
+      "what": "Path traversal / arbitrary-file vulnerabilities have empirically hit this category's dependency stack.",
+      "aliases": "path traversal / directory traversal / zip slip / arbitrary file read or write",
+      "projects": [
+        "aider"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "example": "aiohttp: PYSEC-2024-24",
+      "day1_tell": "Run a dependency audit (osv-scanner / npm audit / pip-audit) in CI and confirm it fails the build on a known-vulnerable pin; request `../`-style paths through every file-serving route and confirm they are rejected."
+    },
+    {
+      "category": "ReDoS defenses",
+      "what": "Regular-expression denial-of-service vulnerabilities have empirically hit this category's dependency stack.",
+      "aliases": "redos / catastrophic backtracking / inefficient regular expression",
+      "projects": [
+        "aider"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "example": "fastapi: PYSEC-2024-38",
+      "day1_tell": "Run a dependency audit (osv-scanner / npm audit / pip-audit) in CI and confirm it fails the build on a known-vulnerable pin; run pathological inputs against user-facing regexes and confirm matching is time-bounded."
+    },
+    {
+      "category": "auth/authz bypass defenses",
+      "what": "Authentication/authorization-bypass vulnerabilities have empirically hit this category's dependency stack.",
+      "aliases": "authentication bypass / authorization bypass / access control / privilege escalation",
+      "projects": [
+        "aider"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "example": "starlette: PYSEC-2026-161",
+      "day1_tell": "Run a dependency audit (osv-scanner / npm audit / pip-audit) in CI and confirm it fails the build on a known-vulnerable pin; replay a privileged request with no session and a downgraded session and confirm both are denied."
+    },
+    {
+      "category": "supply-chain defenses",
+      "what": "Supply-chain attacks (malicious/typosquatted packages) have empirically hit this category's dependency stack.",
+      "aliases": "malicious package / typosquatting / dependency confusion / lockfile pinning",
+      "projects": [
+        "aider"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "example": "nltk: PYSEC-2026-96",
+      "day1_tell": "Run a dependency audit (osv-scanner / npm audit / pip-audit) in CI and confirm it fails the build on a known-vulnerable pin; verify lockfile pinning and provenance (hashes, registry provenance) for every direct dependency."
+    },
+    {
+      "category": "crypto-weakness defenses",
+      "what": "Cryptographic-weakness vulnerabilities have empirically hit this category's dependency stack.",
+      "aliases": "weak cryptography / weak cipher / insecure randomness / timing attack",
+      "projects": [
+        "aider"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "example": "cryptography: PYSEC-2026-35",
+      "day1_tell": "Run a dependency audit (osv-scanner / npm audit / pip-audit) in CI and confirm it fails the build on a known-vulnerable pin; inventory cipher, hash, and randomness usage and confirm no deprecated primitives remain."
+    }
+  ]
+}

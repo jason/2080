@@ -1,0 +1,246 @@
+{
+  "app_type": "ai-agent-cli",
+  "lens": "test-surface",
+  "axis": "TESTS",
+  "baseline_merged": false,
+  "scope_note": "TESTS-axis spine for ai-agent-cli, mined via the test-surface lens (behaviors mature ai-agent-clis actually test (test files + test names)) from ['aider', 'gptme', 'openinterpreter']. Does NOT predict project-specific product direction \u2014 that is strategy, not completeness. An axis gates only after beating the generic-baseline control (check.py VALIDATED_GATING_AXES); the rest are advisory.",
+  "derived_from": [
+    "aider",
+    "gptme",
+    "openinterpreter"
+  ],
+  "required": [
+    {
+      "category": "CLI/session lifecycle",
+      "what": "Startup, onboarding, command dispatch, interactive flow, interruption, shutdown, and smoke/integration behavior.",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "a test that starts a fresh CLI session, completes onboarding, dispatches a command, interrupts it with Ctrl-C, and asserts graceful shutdown"
+    },
+    {
+      "category": "Agent protocol/runtime",
+      "what": "Agent session APIs, adapters, protocol messages, runtime state, stdout/wire behavior, and service timeouts.",
+      "projects": [
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "a test that opens an agent session through the public API, sends a protocol message, forces a service timeout, and asserts runtime state and wire output remain consistent"
+    },
+    {
+      "category": "Chat and conversation handling",
+      "what": "Chat history, message sending, conversation summaries, naming, compaction, and context-window management.",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "a test that sends messages until the context window requires compaction and asserts history, summary, conversation name, and retained context are correct"
+    },
+    {
+      "category": "Model/provider integration",
+      "what": "Model metadata, provider routing, model lists, auth-dependent access, and provider-specific configuration.",
+      "projects": [
+        "aider",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "a test that authenticates with two providers, lists available models, routes a request to a provider-specific model, and asserts metadata and config are respected"
+    },
+    {
+      "category": "Configuration management",
+      "what": "Config files, environment-derived settings, CLI flags, workspace config, and remote/config RPC behavior.",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "a test that loads config from file, environment, CLI flags, workspace config, and remote RPC, then asserts the documented precedence order"
+    },
+    {
+      "category": "Authentication and credentials",
+      "what": "API keys, cloud credentials, auth fixtures, account state, SSL verification, and secure credential handling.",
+      "projects": [
+        "aider",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "a test that uses fixture API keys and cloud credentials, verifies account state, rejects invalid SSL, and asserts secrets are never logged"
+    },
+    {
+      "category": "Repository/workspace awareness",
+      "what": "Repo detection, current working directory awareness, workspace agents, file discovery, and project-scoped context.",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "a test that runs inside and outside a git repo and asserts repo root, cwd, workspace agent, file discovery, and project context are correct"
+    },
+    {
+      "category": "File editing and patch application",
+      "what": "Whole-file edits, diff/edit-block parsing, patch codeblocks, search/replace, and malformed edit edge cases.",
+      "projects": [
+        "aider",
+        "gptme"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "a test that applies whole-file edits, diff blocks, patch codeblocks, and search/replace edits, then asserts malformed edits are rejected safely"
+    },
+    {
+      "category": "Command/tool execution",
+      "what": "Shell command execution, tool target instructions, confirmation gates, command RPC, and execution result handling.",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "a test that executes a shell command behind a confirmation gate and asserts command RPC request, target instructions, stdout/stderr, exit code, and result handling"
+    },
+    {
+      "category": "User confirmation and elicitation",
+      "what": "Auto-confirm, CLI/server confirmation, elicitation prompts, and safety gates before actions.",
+      "projects": [
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "a test that exercises auto-confirm, CLI confirmation, server confirmation, and elicitation prompts before a destructive action and asserts the action only runs after approval"
+    },
+    {
+      "category": "Safety and injection resistance",
+      "what": "Prompt-injection screening, markdown/tool validation, sandbox-sensitive operations, and guarded execution paths.",
+      "projects": [
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "a test that feeds prompt-injection markdown attempting tool misuse and asserts validation blocks sandbox-sensitive operations"
+    },
+    {
+      "category": "Context construction and compression",
+      "what": "Active context, adaptive compression, token awareness, cache awareness, task analysis, and repo maps.",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "a test that builds active context for a large repo, triggers adaptive compression, and asserts token budget, cache keys, task analysis, and repo map contents"
+    },
+    {
+      "category": "Error handling and recovery",
+      "what": "Exceptions, interrupted sessions, behavioral error handling, reconnect/connection handling, and timeout recovery.",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "a test that kills the connection mid-stream during an agent response and asserts reconnect, timeout recovery, and user-visible error handling"
+    },
+    {
+      "category": "Parsing and format edge cases",
+      "what": "Markdown, URLs, diffs, language fixtures, schema fixtures, logs, and structured protocol parsing.",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "a test that parses markdown containing URLs, diffs, logs, schemas, and code fences and asserts structured protocol fields are preserved"
+    },
+    {
+      "category": "Observability and analytics",
+      "what": "Analytics clients, protocol logging, tracing, cost awareness, and telemetry-related behavior.",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "a test that runs a traced request and asserts analytics events, protocol logs, telemetry fields, and cost accounting are emitted without secrets"
+    },
+    {
+      "category": "UI and browser/app surfaces",
+      "what": "Browser tests, desktop/web app smoke flows, chat UI behavior, and notification capture.",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "a test that opens the browser chat UI, sends a message, receives a response, captures a notification, and asserts the desktop/web smoke flow succeeds"
+    },
+    {
+      "category": "External integrations",
+      "what": "GitHub/PR watching, MCP or external agent config, browser/server transports, and third-party service boundaries.",
+      "projects": [
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "a test that configures a GitHub PR watcher and an external MCP agent, simulates third-party failure, and asserts boundary errors are isolated"
+    },
+    {
+      "category": "Cross-platform and CI packaging",
+      "what": "Linux/Windows workflows, Docker builds, integration scripts, Bazel/Cargo fixtures, and platform-specific test runs.",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "a test that runs the packaged CLI in Linux, Windows, and Docker CI jobs and asserts Bazel/Cargo fixture integration scripts pass"
+    },
+    {
+      "category": "Performance/evaluation benchmarks",
+      "what": "Benchmark suites, SWE-style task specs, behavioral evals, and regression-oriented scoring.",
+      "projects": [
+        "aider",
+        "gptme"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "a test that runs a fixed SWE-style benchmark task suite and asserts regression scores and behavioral metrics meet the baseline"
+    },
+    {
+      "category": "Domain/language coverage",
+      "what": "Language-specific fixtures, linting behavior, syntax-aware file handling, and multi-language edit validation.",
+      "projects": [
+        "aider",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "a test that edits fixtures in Python, JavaScript, Go, and Rust, runs language-specific linting, and asserts syntax-aware edits remain valid"
+    }
+  ],
+  "optional": []
+}

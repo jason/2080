@@ -1,0 +1,200 @@
+{
+  "app_type": "ai-agent-cli",
+  "lens": "operability-surface",
+  "axis": "OPERABILITY",
+  "scope_note": "OPERABILITY-axis spine for ai-agent-cli: deterministic artifact-presence mining over ['aider', 'gptme', 'openinterpreter'] \u2014 what mature neighbors ship AROUND the code. Advisory in check.py until this lens beats the generic-baseline control.",
+  "derived_from": [
+    "aider",
+    "gptme",
+    "openinterpreter"
+  ],
+  "required": [
+    {
+      "category": "containerization",
+      "what": "Ships a container image definition.",
+      "aliases": "docker / container image / dockerfile",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "example": "benchmark/Dockerfile",
+      "day1_tell": "Build the container image from the repo's Dockerfile and run it."
+    },
+    {
+      "category": "CI pipeline",
+      "what": "Ships continuous-integration automation.",
+      "aliases": "continuous integration / github actions / build pipeline",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "example": ".github/workflows/check_pypi_version.yml",
+      "day1_tell": "Push a commit and confirm CI runs the test suite automatically."
+    },
+    {
+      "category": "release automation",
+      "what": "Automates releases/publishing (tagged builds, changelog, registry push).",
+      "aliases": "release workflow / publish pipeline / goreleaser / semantic release",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "example": ".github/workflows/docker-release.yml",
+      "day1_tell": "Tag a version and confirm an automated release (artifact/registry/changelog) is produced."
+    },
+    {
+      "category": "healthcheck endpoint",
+      "what": "Exposes a liveness/readiness signal.",
+      "aliases": "healthcheck / liveness / readiness probe",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "example": "aider/website/docs/usage/not-code.md",
+      "day1_tell": "Hit the health endpoint (or healthcheck command) and confirm it reports status."
+    },
+    {
+      "category": "packaging metadata",
+      "what": "Installable via standard packaging (not just git clone).",
+      "aliases": "package metadata / installable package / distribution",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "example": "aider/website/Gemfile",
+      "day1_tell": "Install the tool through its package manager entry point and run the binary."
+    },
+    {
+      "category": "task runner",
+      "what": "Ships a developer task entry point (make/just/task).",
+      "aliases": "makefile / justfile / task runner / dev commands",
+      "projects": [
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "example": "Makefile",
+      "day1_tell": "Run the default dev task (e.g. `make test`) and confirm it works from a fresh clone."
+    },
+    {
+      "category": "install script",
+      "what": "Ships a one-command installer.",
+      "aliases": "install script / one-line install / setup script",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "example": "aider/website/install.ps1",
+      "day1_tell": "Run the install script on a clean machine/container and confirm a working binary."
+    },
+    {
+      "category": "migration/upgrade guides",
+      "what": "Supports users through breaking changes (upgrade guides / deprecation lifecycle).",
+      "aliases": "upgrade guide / migration guide / deprecation policy",
+      "projects": [
+        "aider",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "example": "tests/fixtures/chat-history.md",
+      "day1_tell": "Follow the upgrade guide across one breaking version bump and confirm the documented steps work."
+    },
+    {
+      "category": "telemetry/observability instrumentation",
+      "what": "Instruments itself (metrics/traces/structured logs), not just prints.",
+      "aliases": "metrics / tracing / structured logging / observability",
+      "projects": [
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "example": ".pre-commit-config.yaml",
+      "day1_tell": "Run the service and confirm metrics or traces are emitted to the configured sink."
+    },
+    {
+      "category": "CLI polish (completions/man pages)",
+      "what": "Ships shell completions and/or man pages.",
+      "aliases": "shell completions / man pages / cli ergonomics",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "example": "aider/args.py",
+      "day1_tell": "Install the shipped shell completion (or open the man page) and confirm it works for the binary."
+    }
+  ],
+  "optional": [
+    {
+      "category": "compose/orchestration",
+      "what": "Ships multi-service orchestration (compose/helm/k8s).",
+      "aliases": "docker compose / helm chart / kubernetes manifests",
+      "projects": [
+        "gptme"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "example": "docker-compose.yml",
+      "day1_tell": "Bring the stack up with one orchestration command (compose up or helm install)."
+    },
+    {
+      "category": "config example",
+      "what": "Ships a copyable configuration template.",
+      "aliases": "env example / sample config / configuration template",
+      "projects": [
+        "gptme"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "example": ".env.example",
+      "day1_tell": "Copy the shipped config example, fill the minimum values, and boot successfully from it."
+    },
+    {
+      "category": "schema/data migrations",
+      "what": "Ships database/data migration machinery.",
+      "aliases": "schema migration / database migration / alembic",
+      "projects": [
+        "openinterpreter"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "example": "codex-rs/state/migrations/0001_threads.sql",
+      "day1_tell": "Run the migration command against an old-schema database and confirm it upgrades cleanly."
+    },
+    {
+      "category": "changelog/versioning",
+      "what": "Keeps a user-facing change history.",
+      "aliases": "changelog / release notes / version history",
+      "projects": [
+        "openinterpreter"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "example": "CHANGELOG.md",
+      "day1_tell": "Open the changelog and confirm the latest released version has an entry."
+    }
+  ]
+}

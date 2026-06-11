@@ -1,0 +1,139 @@
+{
+  "app_type": "ai-agent-cli",
+  "lens": "config-surface",
+  "axis": "CONFIG",
+  "baseline_merged": false,
+  "scope_note": "CONFIG-axis spine for ai-agent-cli, mined via the config-surface lens (configuration knobs a mature ai-agent-cli exposes (config files + env keys)) from ['aider', 'gptme', 'openinterpreter']. Does NOT predict project-specific product direction \u2014 that is strategy, not completeness. An axis gates only after beating the generic-baseline control (check.py VALIDATED_GATING_AXES); the rest are advisory.",
+  "derived_from": [
+    "aider",
+    "gptme",
+    "openinterpreter"
+  ],
+  "required": [
+    {
+      "category": "developer quality gates",
+      "what": "Pre-commit, lint, and repository hygiene configuration used around the CLI codebase.",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Run the repository pre-commit or lint command on a deliberately malformed file and confirm the configured quality gate fails."
+    },
+    {
+      "category": "build/typecheck toolchain",
+      "what": "Language/toolchain configuration for packaged clients, servers, or web UIs.",
+      "projects": [
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Run the project build or typecheck command after introducing a simple type error and confirm the configured toolchain reports it."
+    }
+  ],
+  "optional": [
+    {
+      "category": "provider credentials",
+      "what": "API keys/tokens for LLM providers and hosted backends.",
+      "projects": [
+        "gptme"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Set a fake LLM provider API key in config, restart the agent, and confirm the provider client attempts authentication with that configured key."
+    },
+    {
+      "category": "server exposure",
+      "what": "Ports, CORS origins, and server access tokens for running an agent service.",
+      "projects": [
+        "gptme"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Change the service port and allowed CORS origin in config, start the server, and confirm it listens on the new port and rejects a request from a disallowed origin."
+    },
+    {
+      "category": "deployment environment",
+      "what": "Environment-file and compose-level settings for local or containerized deployment.",
+      "projects": [
+        "gptme"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Set a deployment value in the environment file or compose config, launch the local/container deployment, and confirm the running service uses that value."
+    },
+    {
+      "category": "agent workspace home",
+      "what": "Configurable home/config directory for storing agent state and settings.",
+      "projects": [
+        "openinterpreter"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Set the agent home/config directory to a temporary path, start the agent, and confirm state or settings files are created there."
+    },
+    {
+      "category": "agent instructions",
+      "what": "Project or workspace instruction files that shape agent behavior.",
+      "projects": [
+        "openinterpreter"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Add a workspace instruction file with a unique directive, run the agent in that workspace, and confirm its response follows the directive."
+    },
+    {
+      "category": "tool/server integrations",
+      "what": "Configuration for external tool servers such as MCP endpoints.",
+      "projects": [
+        "openinterpreter"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Configure a test MCP/tool server endpoint, start the agent, and confirm the external tool appears in the available tool list."
+    },
+    {
+      "category": "skills/extensions",
+      "what": "Knobs for enabling or writing agent skills and extension behavior.",
+      "projects": [
+        "openinterpreter"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Enable or add a simple custom skill/extension, restart the agent, and confirm the skill is discovered and can be invoked."
+    },
+    {
+      "category": "external agent import",
+      "what": "Detection and import of configuration from other agent setups.",
+      "projects": [
+        "openinterpreter"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Place a known external-agent config file in its expected location, run the import/detection flow, and confirm the settings are imported."
+    },
+    {
+      "category": "config API lifecycle",
+      "what": "Structured read/write, batch updates, validation, warnings, and requirements for config values.",
+      "projects": [
+        "openinterpreter"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Use the config API to batch-write valid and invalid values, then confirm valid values persist while invalid values return validation errors or warnings."
+    },
+    {
+      "category": "documentation/site config",
+      "what": "Static site or documentation configuration shipped with the project.",
+      "projects": [
+        "aider"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Change a static site/docs config value such as title or base URL, build the docs, and confirm the generated site reflects the change."
+    }
+  ]
+}

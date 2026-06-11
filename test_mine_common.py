@@ -117,6 +117,33 @@ def test_configured_key_and_base_url_reach_the_request():
             env(k, v)
 
 
+def test_fan_subprocess_ceiling_scales_with_batch_size():
+    # intent: a flat subprocess timeout killed a 900-call judge batch live (2026-06-11) while
+    # fan was healthy — the ceiling must grow with the number of waves (calls/concurrency), or
+    # the prepare-once-judge-N speedup caps out at ~2 waves of work.
+    old_b, old_run = os.environ.get("LLM_2080_BACKEND"), mine_common.subprocess.run
+    seen = {}
+
+    class FakeDone:
+        stdout = '{"results": []}'
+        stderr = ""
+
+    def fake_run(cmd, **kw):
+        seen["timeout"] = kw.get("timeout")
+        return FakeDone()
+
+    try:
+        env("LLM_2080_BACKEND", "fan")
+        mine_common.subprocess.run = fake_run
+        fan_batch([{"id": str(i), "prompt": "x"} for i in range(320)],
+                  timeout_ms=180000, concurrency=16, retries=0)
+        assert seen["timeout"] >= 180 + 60 * 20  # 320/16 = 20 waves
+        fan_batch([{"id": "1", "prompt": "x"}], timeout_ms=180000, concurrency=16, retries=0)
+        assert seen["timeout"] < 300 + 1  # small batch keeps a tight hang backstop
+    finally:
+        mine_common.subprocess.run = old_run; env("LLM_2080_BACKEND", old_b)
+
+
 def test_model_env_override_reaches_backend():
     # intent: LLM_2080_MODEL is the documented one-knob BYOK model selector for every tool;
     # if a script's hardcoded default wins, the knob is a lie.

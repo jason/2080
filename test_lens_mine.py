@@ -21,7 +21,8 @@ def test_registry_every_lens_is_complete():
 # Lenses that PASSED the generic-baseline control (measure.py, strict judges, ×3 each).
 # Promoting a lens here without that measurement is the exact failure the tripwire prevents.
 CONTROL_PASSED = {"feature-surface",  # SCOPE  +0.27 ±0.05 (2026-06)
-                  "issue-surface"}    # ISSUES +0.41 ±0.06 on scope-layer work (2026-06-11)
+                  "issue-surface",    # ISSUES +0.41 ±0.06 on scope-layer work (2026-06-11)
+                  "test-surface"}     # TESTS  +0.61 ±0.01 scope AND +0.28 ±0.00 robustness (2026-06-11)
 
 
 def test_registry_only_control_passed_lenses_may_gate():
@@ -113,6 +114,85 @@ def test_synth_prompt_uses_lens_prose_and_constrains_neighbors():
     p = synth_prompt(mats, "telegram-llm-bot", LENSES["issue-surface"])
     assert "alpha" in p and "beta" in p and "invent no others" in p
     assert "USERS" in p  # the issue lens's own abstract prose, not feature-surface's
+
+
+def test_discussions_surface_registered_and_advisory_only():
+    # intent: an unvalidated demand lens must never gate the day-1 map — DISCUSSIONS stays out of
+    # check.py's validated set and out of CONTROL_PASSED until it beats the generic-baseline
+    # control in measure.py (the same bar SCOPE and ISSUES passed).
+    from check import VALIDATED_GATING_AXES
+    lens = LENSES["discussions-surface"]
+    assert lens["axis"] == "DISCUSSIONS"
+    assert "DISCUSSIONS" not in VALIDATED_GATING_AXES
+    assert "discussions-surface" not in CONTROL_PASSED
+
+
+def _run_discussions_source(fake_run, repo):
+    """Patch the gh/git subprocess seam + cache dir, run the discussions source, return
+    (block, stderr_text). Same attribute-patch/finally-restore style as test_mine_common."""
+    import contextlib, io, os, tempfile
+    import lens_mine
+    real_run, real_cache = lens_mine.subprocess.run, os.environ.get("CACHE_2080")
+    err = io.StringIO()
+    with tempfile.TemporaryDirectory() as d:
+        os.environ["CACHE_2080"] = d
+        lens_mine.subprocess.run = fake_run
+        try:
+            with contextlib.redirect_stderr(err):
+                block = lens_mine._discussions_surface_source(repo)
+        finally:
+            lens_mine.subprocess.run = real_run
+            if real_cache is None:
+                os.environ.pop("CACHE_2080", None)
+            else:
+                os.environ["CACHE_2080"] = real_cache
+    return block, err.getvalue()
+
+
+def test_discussions_source_filters_answered_and_ranks_by_weight():
+    # intent: an answered discussion is a CLOSED gap — mining it reports resolved demand as a
+    # missing capability; and upvote+comment weighting must rank persistent demands above
+    # one-off questions so the material cap keeps the right threads.
+    import json as _json
+    from subprocess import CompletedProcess
+    nodes = [
+        {"title": "how do I deploy this", "body": "x" * 500, "upvoteCount": 2,
+         "isAnswered": False, "category": {"name": "Q&A"}, "comments": {"totalCount": 1}},
+        {"title": "already solved question", "body": "", "upvoteCount": 50,
+         "isAnswered": True, "category": {"name": "Q&A"}, "comments": {"totalCount": 9}},
+        {"title": "webhook support", "body": "please add", "upvoteCount": 7,
+         "isAnswered": False, "category": {"name": "Ideas"}, "comments": {"totalCount": 5}},
+        {"not_a_discussion": True},
+    ]
+    payload = {"data": {"repository": {"discussions": {"nodes": nodes}}}}
+
+    def fake_run(cmd, **kw):
+        if cmd[0] == "git":
+            return CompletedProcess(cmd, 0, "https://github.com/owner/repo.git\n", "")
+        assert cmd[:3] == ["gh", "api", "graphql"]
+        return CompletedProcess(cmd, 0, _json.dumps(payload), "")
+
+    block, _ = _run_discussions_source(fake_run, "/tmp/neighbors/repo")
+    lines = block.splitlines()
+    assert len(lines) == 2 and "already solved" not in block
+    assert "webhook support" in lines[0] and "(+12)" in lines[0]  # 7 upvotes + 5 comments first
+    assert "deploy" in lines[1] and "(+3)" in lines[1]
+    assert "x" * 120 in lines[1] and "x" * 121 not in lines[1]  # body truncated like issue titles
+
+
+def test_discussions_disabled_neighbor_is_skipped_not_fatal():
+    # intent: one neighbor without Discussions must not kill the whole mine — a gh GraphQL error
+    # degrades to a logged empty block (main() drops that neighbor; only ALL-empty exits 3).
+    from subprocess import CompletedProcess
+
+    def fake_run(cmd, **kw):
+        if cmd[0] == "git":
+            return CompletedProcess(cmd, 0, "https://github.com/owner/nodisc.git\n", "")
+        return CompletedProcess(cmd, 1, "", "GraphQL: Discussions are disabled for this repository")
+
+    block, err = _run_discussions_source(fake_run, "/tmp/neighbors/nodisc")
+    assert block == ""
+    assert "nodisc" in err and "skip" in err.lower()
 
 
 if __name__ == "__main__":

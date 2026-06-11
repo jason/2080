@@ -58,8 +58,14 @@ def die(msg, code, as_json):
 #   SCOPE  +0.27 ±0.05 (2026-06, feature-surface, ai-agent-tool targets dexto/goose/cline)
 #   ISSUES +0.41 ±0.06 on scope-layer work; +0.02 ±0.03 (baseline-parity, not harmful) on
 #          robustness-layer (2026-06-11, issue-surface ai-agent-cli spine, same targets/protocol)
+#   TESTS  +0.61 ±0.01 scope-layer AND +0.28 ±0.00 robustness-layer (2026-06-11, test-surface
+#          ai-agent-cli spine, same protocol — the only axis positive on BOTH layers)
+# Measured and NOT promoted (2026-06-11 battery, same protocol): DOCS +0.43 scope but −0.27
+# robustness (material loss, unlike ISSUES' parity); CONFIG +0.10 (thin spine); OPERABILITY and
+# SECURITY negative — feat/fix-commit answer keys structurally undersample artifact-presence and
+# vuln-class work (instrument mismatch, not necessarily lens failure).
 # Every other axis is advisory until it passes the same bar.
-VALIDATED_GATING_AXES = {"SCOPE", "ISSUES"}
+VALIDATED_GATING_AXES = {"SCOPE", "ISSUES", "TESTS"}
 
 
 def evaluate(result, fail_on, axis=None, enforce_mined_robustness=False):

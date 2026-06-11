@@ -1,0 +1,242 @@
+{
+  "app_type": "ai-agent-cli",
+  "lens": "docs-surface",
+  "axis": "DOCS",
+  "baseline_merged": false,
+  "scope_note": "DOCS-axis spine for ai-agent-cli, mined via the docs-surface lens (support/doc sections a mature ai-agent-cli ships (markdown headings)) from ['aider', 'gptme', 'openinterpreter']. Does NOT predict project-specific product direction \u2014 that is strategy, not completeness. An axis gates only after beating the generic-baseline control (check.py VALIDATED_GATING_AXES); the rest are advisory.",
+  "derived_from": [
+    "aider",
+    "gptme",
+    "openinterpreter"
+  ],
+  "required": [
+    {
+      "category": "getting-started",
+      "what": "Prerequisites, installation paths, quickstart, and first successful run.",
+      "projects": [
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Open the docs and verify there is a getting-started section that lists prerequisites, installation steps, a quickstart command, and an example showing a first successful run."
+    },
+    {
+      "category": "installation-matrix",
+      "what": "Supported install methods, optional extras, source installs, package managers, and platform notes.",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Open the docs and find an installation matrix/table that compares supported install methods, package managers, optional extras, source installs, and platform-specific notes."
+    },
+    {
+      "category": "configuration-reference",
+      "what": "Config files, environment variables, model/provider defaults, and runtime options.",
+      "projects": [
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Open the docs and verify a configuration reference exists listing config files, environment variables, provider/model defaults, and runtime options."
+    },
+    {
+      "category": "usage-guide",
+      "what": "Core CLI workflows, example commands, interaction modes, and automation patterns.",
+      "projects": [
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Open the docs and find a usage guide with concrete CLI commands, interaction modes, workflow examples, and at least one automation/non-manual usage pattern."
+    },
+    {
+      "category": "tools-and-capabilities",
+      "what": "Documented agent tools, computer-use features, MCP/ACP integrations, and supported actions.",
+      "projects": [
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Open the docs and verify a tools/capabilities section documents agent tools, computer-use features, MCP/ACP integrations, and supported actions."
+    },
+    {
+      "category": "autonomous-mode",
+      "what": "Non-interactive operation, agent creation, guardrails, monitoring loops, and stop conditions.",
+      "projects": [
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Open the docs and find an autonomous or non-interactive mode section covering agent creation, guardrails, monitoring loops, and stop conditions."
+    },
+    {
+      "category": "developer-setup",
+      "what": "Local development environment, editable installs, dependency setup, and contributor bootstrap.",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Open the docs and verify a developer setup section explains local environment setup, editable installs, dependencies, and contributor bootstrap steps."
+    },
+    {
+      "category": "contributing-guide",
+      "what": "Contribution workflow, pull request expectations, issue reporting, and contributor rules.",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Open the docs and find a contributing guide covering contribution workflow, PR expectations, issue reporting, and contributor rules."
+    },
+    {
+      "category": "coding-standards",
+      "what": "Project style rules, language/version compatibility, organization conventions, and tactical implementation guidance.",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Open the docs and verify a coding standards section describes style rules, supported language/runtime versions, project organization conventions, and implementation guidance."
+    },
+    {
+      "category": "testing-guide",
+      "what": "How to run tests, test expectations, assertions, flaky handling, and CI-oriented test workflows.",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Open the docs and find a testing guide explaining how to run tests, expected assertions, flaky-test handling, and CI-oriented test workflows."
+    },
+    {
+      "category": "ci-and-pr-operations",
+      "what": "PR checks, CI failure classification, reruns, review handling, merge workflow, and release validation.",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Open the docs and verify a CI/PR operations section covers PR checks, CI failure types, reruns, review handling, merge workflow, and release validation."
+    },
+    {
+      "category": "build-and-packaging",
+      "what": "Building docs, Docker images, binaries/packages, npm releases, and distributable artifacts.",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Open the docs and find build/packaging instructions for docs, Docker images, binaries/packages, npm releases, or other distributable artifacts."
+    },
+    {
+      "category": "containerized-development",
+      "what": "Docker-based development, isolated profiles, secure/customer environments, and container workflows.",
+      "projects": [
+        "aider",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Open the docs and verify a containerized development section explains Docker-based development, isolated profiles, secure/customer environments, and container workflows."
+    },
+    {
+      "category": "security-and-safety",
+      "what": "Security policy, vulnerability reporting, safe operation, permissions, guardrails, and approval modes.",
+      "projects": [
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Open the docs and find a security/safety section covering vulnerability reporting, safe operation, permissions, guardrails, and approval modes."
+    },
+    {
+      "category": "provider-and-model-support",
+      "what": "Supported AI providers, model selection, local models, and model-specific configuration.",
+      "projects": [
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Open the docs and verify a provider/model support section lists supported AI providers, model selection instructions, local model support, and model-specific configuration."
+    },
+    {
+      "category": "ecosystem-and-integrations",
+      "what": "Plugins, skills, lessons, MCP support, web UI/server modes, and extension surfaces.",
+      "projects": [
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Open the docs and find an ecosystem/integrations section documenting plugins, skills, lessons, MCP support, web UI/server modes, or extension APIs."
+    },
+    {
+      "category": "release-notes",
+      "what": "Version history, news, changelog entries, and notable changes across releases.",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Open the docs and find release notes or a changelog with version history, news, and notable changes across releases."
+    },
+    {
+      "category": "licensing",
+      "what": "Project license and legal-use documentation.",
+      "projects": [
+        "aider",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Open the docs and find a licensing section or LICENSE page that states the project license and legal-use terms."
+    }
+  ],
+  "optional": [
+    {
+      "category": "faq",
+      "what": "Common user questions about purpose, installation, providers, tools, comparisons, and usage.",
+      "projects": [
+        "gptme"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Open the docs and verify an FAQ exists with common questions about purpose, installation, providers, tools, comparisons, and usage."
+    },
+    {
+      "category": "community-and-links",
+      "what": "Community channels, demos, statistics, external links, and project discovery resources.",
+      "projects": [
+        "gptme"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Open the docs and verify a community/links section lists community channels, demos, statistics, external links, or project discovery resources."
+    }
+  ]
+}

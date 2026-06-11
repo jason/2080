@@ -183,6 +183,53 @@ def _docs_surface_source(repo):
     return "doc headings:\n" + "\n".join(heads)
 
 
+def _discussions_surface_source(repo):
+    """Unanswered discussions = gaps users ASKED about that maintainers never closed. Fetched via
+    gh GraphQL (answered:false where supported, isAnswered re-filtered in code), cached; a neighbor
+    with Discussions disabled (GraphQL error) logs to stderr and yields an empty block — the lens
+    then just sees fewer neighbors, never crashes the mine (ALL empty → main()'s EXIT_EMPTY path)."""
+    name = neighbor_name(repo)
+    cache = Path(os.environ.get("CACHE_2080", os.path.expanduser("~/.cache/2080"))) / "discussions"
+    cache.mkdir(parents=True, exist_ok=True)
+    cached = cache / f"{name}.json"
+    if cached.exists():
+        nodes = json.loads(cached.read_text())
+    else:
+        slug = slug_from_url(_git(repo, "remote", "get-url", "origin").strip())
+        if not slug:
+            return ""
+        owner, repo_name = slug.split("/", 1)
+        query = ("query($owner:String!,$name:String!){repository(owner:$owner,name:$name){"
+                 "discussions(first:100,answered:false){nodes{title body upvoteCount isAnswered "
+                 "category{name} comments{totalCount}}}}}")
+        r = subprocess.run(["gh", "api", "graphql", "-f", f"query={query}",
+                            "-f", f"owner={owner}", "-f", f"name={repo_name}"],
+                           capture_output=True, text=True)
+        if r.returncode != 0:
+            print(f"discussions unavailable for {name} (disabled or gh error) — skipping",
+                  file=sys.stderr)
+            nodes = []
+        else:
+            try:
+                payload = json.loads(r.stdout)
+            except json.JSONDecodeError:
+                payload = {}
+            nodes = ((((payload.get("data") or {}).get("repository") or {})
+                      .get("discussions") or {}).get("nodes") or [])
+        cached.write_text(json.dumps(nodes))
+    ranked = []
+    for d in nodes:
+        if not isinstance(d, dict) or d.get("isAnswered") or not d.get("title"):
+            continue
+        w = int(d.get("upvoteCount") or 0) + int((d.get("comments") or {}).get("totalCount") or 0)
+        cat = (d.get("category") or {}).get("name") or "?"
+        body = " ".join(str(d.get("body") or "").split())[:120]
+        ranked.append((w, f"- [{cat}] (+{w}) {str(d['title']).strip()[:120]}"
+                          + (f" — {body}" if body else "")))
+    ranked.sort(key=lambda t: -t[0])
+    return "\n".join(line for _, line in ranked[:120])
+
+
 LENSES = {
     "feature-surface": {
         "axis": "SCOPE",
@@ -251,6 +298,21 @@ LENSES = {
         "day1_kind": "reveals whether the doc section exists and is real (e.g. 'open docs and find a "
                      "troubleshooting section that covers a failed connection')",
     },
+    "discussions-surface": {
+        "axis": "DISCUSSIONS",
+        "desc": "gaps users asked about that never got closed (GitHub discussions, unanswered, "
+                "upvote+comment-weighted)",
+        "source": _discussions_surface_source,
+        "material_label": "DISCUSSION surfaces (unanswered GitHub discussion titles+bodies, "
+                          "[category] (+upvotes+comments))",
+        "abstract": ("the capability and documentation gaps USERS of a {app_type} actually "
+                     "EXPERIENCED but maintainers never closed — recurring unanswered-discussion "
+                     "themes, weighted toward high-upvote and high-comment threads; abstract each "
+                     "into the capability or doc area it reveals missing, NOT one-off questions"),
+        "day1_kind": "reveals whether the product would leave users asking this same unanswered "
+                     "question (e.g. 'follow the README install and confirm the step users keep "
+                     "asking about is actually documented')",
+    },
     # deterministic operability-surface lens lives in surface_mine.py (no LLM needed)
 }
 
@@ -268,8 +330,9 @@ def merge_baseline(cats, baseline_cats):
         if set(category_keywords(b)) & mined_kws:
             continue
         cats.append({"category": b["category"], "aliases": b.get("aliases", b["category"]),
-                     "tier": "required", "origin": "generic-baseline",
-                     "projects": [], "recurrence_projects": 0, "day1_tell": ""})
+                     "tier": b.get("tier", "required"), "origin": "generic-baseline",
+                     "projects": [], "recurrence_projects": 0,
+                     "day1_tell": b.get("day1_tell", "")})
         added += 1
     return added
 
@@ -308,8 +371,9 @@ def main():
     ap.add_argument("--model", default="gpt-5.5")
     ap.add_argument("--provider", default="openai-codex")
     ap.add_argument("--reasoning", default="low")
-    ap.add_argument("--baseline", default=str(Path(__file__).resolve().parent / "checklists/generic-software.baseline.json"),
-                    help="generic baseline merged into ROBUSTNESS-axis spines as the gating floor")
+    ap.add_argument("--baseline", default=str(Path(__file__).resolve().parent / "checklists/generic-software.floor.json"),
+                    help="gating floor merged into ROBUSTNESS-axis spines (industry-curated superset; "
+                         "generic-software.baseline.json stays the FROZEN measurement control)")
     ap.add_argument("--no-baseline", action="store_true", help="skip the baseline merge (measurement runs)")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()

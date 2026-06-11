@@ -1,6 +1,83 @@
 # 2080 — Handoff
 
-_Last updated: 2026-06-10 (session 5)_
+_Last updated: 2026-06-11 (session 6 + lens-control battery)_
+
+## 🧪 Five-lens control battery (2026-06-11, fast path: 5m17s for 5 lenses × both layers × 3 repeats)
+
+One measure.py run (5 variants in both layer slots, frozen baseline control, ×3 repeats, one
+~900-call judge batch — which exposed and fixed a flat fan subprocess-timeout ceiling; it now
+scales with wave count, tripwire-tested):
+
+| lens | robustness-layer lift | scope-layer lift | verdict |
+|---|---|---|---|
+| **test-surface** | **+0.28 ±0.00** | **+0.61 ±0.01** | **PROMOTED** — only axis positive on BOTH layers |
+| docs-surface | −0.27 ±0.03 | +0.43 ±0.07 | advisory — scope pass but material robustness loss (ISSUES precedent was parity, not loss) |
+| config-surface | −0.38 ±0.00 | +0.10 ±0.02 | advisory — marginal, and the cli-pool spine mined dev-tooling config, not product knobs; re-test after lens improvement |
+| operability | −0.54 ±0.02 | −0.33 ±0.02 | advisory — instrument mismatch: feat/fix-commit answer keys undersample artifact work |
+| threat (SECURITY) | −0.63 ±0.01 | −0.33 ±0.02 | advisory — same instrument caveat, vuln classes ~never commit subjects |
+
+`VALIDATED_GATING_AXES = {SCOPE, ISSUES, TESTS}`. Honest caveat on TESTS recorded here: its
+absolute recall is very high (0.94–0.95) and test categories partially mirror the whole work
+surface (behavior-area labels), so some of its lift may be breadth rather than foresight — the
+control corrects judge leniency, not spine breadth. It passed the same bar as every promotion;
+flagging for a breadth-normalized follow-up instrument if it ever gates noisily in practice.
+DISCUSSIONS control was attempted and is UNRUNNABLE on the cli pool: only gptme has GitHub
+Discussions enabled — needs a pool with ≥2 Discussions-enabled neighbors. Battery JSON:
+docs/measurements/lens-controls-battery.json.
+
+## ⏩ Session-6: industry floor + three new source-of-truth families (109 tests green)
+
+Research finding that framed the work: all prior lenses mine ONE source of truth (neighbor git
+repos = the supply side). Built the first lenses over three missing families — curated industry
+floors, demand-side voices, and the threat landscape. Prior art absorbed, not reinvented:
+OpenSSF Scorecard already productizes deterministic repo-floor scoring; LLM-Cure
+(arXiv 2409.15724) is peer-reviewed neighbor-review mining (73% of proposals later shipped).
+
+- **Industry-curated gating floor** (`checklists/generic-software.floor.json`): 25 required +
+  5 optional, every entry with a verifiable day1_tell. Superset of the 20-category baseline —
+  new categories distilled from OpenSSF Scorecard / Best Practices Badge / GitHub community
+  profile (security policy, license clarity, contribution docs, changelog discipline, static
+  analysis; release integrity / SBOM / fuzzing / deprecation policy / privacy as optional).
+  `lens_mine --baseline` default now points here and `merge_baseline` carries day1_tell/tier
+  through. **`generic-software.baseline.json` is FROZEN as the measurement control** — every
+  historical lift number was measured against it; the floor/control role split is deliberate.
+- **SECURITY axis exists now** (`threat_mine.py`, `./2080 threat`, deterministic, no LLM):
+  neighbor manifests (npm/PyPI/crates.io/Go) → OSV querybatch → ordered keyword classification
+  → per-vulnerability-class spine (required at ≥2 affected neighbors). Live smoke: 2-dep repo →
+  21 vulns → deserialization + secrets-exposure categories with real PYSEC examples. Advisory
+  until it beats the control (tripwire-tested like every unvalidated axis).
+- **discussions-surface lens** (`lens_mine.py`, axis DISCUSSIONS, advisory): the demand-side
+  sibling of the gate-earning ISSUES lens — unanswered GitHub Discussions ranked by
+  upvotes+comments, gh GraphQL, cached, degrades gracefully when a neighbor has Discussions
+  off. Candidate for the next measure.py control run (ISSUES protocol, same pools).
+- **operability lens: 11 → 16 probes** (`surface_mine.py`, probe shape generalized to optional
+  content regexes): distribution channels (brew/deb/winget/snap/PKGBUILD/goreleaser),
+  changelog discipline (Keep-a-Changelog structure, presence ≠ contract), migration/upgrade
+  guides + deprecation lifecycle, telemetry instrumentation, CLI polish (completions/man).
+- Deliberately descoped: G2/Capterra category feature lists (DataDome WAF + ToS; and the
+  dev-tool control pools can't validate them). Next demand-side tier if wanted: SO-tag mining
+  (LiFUSO), HN Show-HN critique, app-store review mining (LLM-Cure protocol).
+- **All four golden paths live-verified on real corpora (not just the 110-test suite):**
+  - `threat` on the 4 telegram neighbors: 308 deps → 662 OSV vulns → 9 convergent required
+    classes (ReDoS/DoS/secrets-exposure/memory-safety at 4/4) with real PYSEC examples.
+  - `surface` on the same corpus **found 4 precision bugs the synthetic tests missed** — CLI
+    polish matched `changelogs/v3.4.1.md` as a man page; `### Added` in random docs scored
+    changelog discipline; `@deprecated` in source claimed upgrade guides; opentelemetry in
+    `uv.lock` claimed instrumentation; `generate_completion` in a bundled shiki runtime is LLM
+    vocabulary, not shell completions. Fixed via content-hit hygiene (`filter_content_hit`:
+    lockfile + vendored-bundle exclusions, per-probe path filters) + regex tightening; the
+    post-fix live run cites only real evidence (`docs/MIGRATION_SUMMARY.md`, honest zeros).
+  - `mine --lens discussions-surface` end-to-end (gh GraphQL + fan synthesis): 3 convergent +
+    7 optional, face-valid demand ("Model/API compatibility diagnostics", "plugin lifecycle").
+  - **Floor dogfood:** `check . --spine generic-software.floor.json` → 22/25 blocking on 2080
+    itself. Verdicts are evidence-grounded and largely TRUE (no release artifacts, no security
+    policy, no changelog…) — the floor IS the second-85% map for this repo. Calibration flag:
+    i18n and UI/UX polish blocked on a developer CLI — na_by_design / sub-type interpretation
+    may need a floor-aware pass before the floor blocks CI anywhere.
+- Next steps: run the DISCUSSIONS control (measure.py, ISSUES protocol); decide floor gate
+  calibration (strict day1_tells make partials block — feature or bug?); re-run a battery on a
+  real external target with floor+threat included; consider OSV-scanning the TARGET's own
+  lockfile in check.py (target-side, not neighbor-side — different tool shape).
 
 ## ⏩ Session-5c: ISSUES lens EARNS the gate (+0.41 ×3); battery day-1 map; consolidation
 

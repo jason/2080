@@ -1,0 +1,857 @@
+{
+  "targets": [
+    "dexto",
+    "goose",
+    "cline"
+  ],
+  "judges": 2,
+  "repeats": 3,
+  "ml_threshold": 0.45,
+  "control": "null spine = mined spine checklists/generic-software.baseline.json",
+  "spines": {
+    "robustness": {
+      "ai-agent-cli.operability": "checklists/ai-agent-cli.operability.json",
+      "ai-agent-cli.config": "checklists/ai-agent-cli.config.json",
+      "ai-agent-cli.test": "checklists/ai-agent-cli.test.json",
+      "ai-agent-cli.threat": "checklists/ai-agent-cli.threat.json",
+      "ai-agent-cli.docs": "checklists/ai-agent-cli.docs.json"
+    },
+    "scope": {
+      "ai-agent-cli.operability": "checklists/ai-agent-cli.operability.json",
+      "ai-agent-cli.config": "checklists/ai-agent-cli.config.json",
+      "ai-agent-cli.test": "checklists/ai-agent-cli.test.json",
+      "ai-agent-cli.threat": "checklists/ai-agent-cli.threat.json",
+      "ai-agent-cli.docs": "checklists/ai-agent-cli.docs.json"
+    }
+  },
+  "per_target": {
+    "dexto": {
+      "robustness": {
+        "n": 61,
+        "variants": {
+          "ai-agent-cli.operability": {
+            "ml_real": 0.07,
+            "ml_null": 0.18,
+            "ml_lift": -0.11,
+            "llm_runs": [
+              {
+                "llm_real": 0.31,
+                "llm_null": 0.69,
+                "llm_lift": -0.38
+              },
+              {
+                "llm_real": 0.28,
+                "llm_null": 0.7,
+                "llm_lift": -0.42
+              },
+              {
+                "llm_real": 0.21,
+                "llm_null": 0.75,
+                "llm_lift": -0.54
+              }
+            ]
+          },
+          "ai-agent-cli.config": {
+            "ml_real": 0.0,
+            "ml_null": 0.18,
+            "ml_lift": -0.18,
+            "llm_runs": [
+              {
+                "llm_real": 0.21,
+                "llm_null": 0.69,
+                "llm_lift": -0.48
+              },
+              {
+                "llm_real": 0.26,
+                "llm_null": 0.7,
+                "llm_lift": -0.44
+              },
+              {
+                "llm_real": 0.21,
+                "llm_null": 0.75,
+                "llm_lift": -0.54
+              }
+            ]
+          },
+          "ai-agent-cli.test": {
+            "ml_real": 0.08,
+            "ml_null": 0.18,
+            "ml_lift": -0.1,
+            "llm_runs": [
+              {
+                "llm_real": 0.95,
+                "llm_null": 0.69,
+                "llm_lift": 0.26
+              },
+              {
+                "llm_real": 0.95,
+                "llm_null": 0.7,
+                "llm_lift": 0.25
+              },
+              {
+                "llm_real": 0.93,
+                "llm_null": 0.75,
+                "llm_lift": 0.18
+              }
+            ]
+          },
+          "ai-agent-cli.threat": {
+            "ml_real": 0.02,
+            "ml_null": 0.18,
+            "ml_lift": -0.16,
+            "llm_runs": [
+              {
+                "llm_real": 0.03,
+                "llm_null": 0.69,
+                "llm_lift": -0.66
+              },
+              {
+                "llm_real": 0.03,
+                "llm_null": 0.7,
+                "llm_lift": -0.67
+              },
+              {
+                "llm_real": 0.03,
+                "llm_null": 0.75,
+                "llm_lift": -0.72
+              }
+            ]
+          },
+          "ai-agent-cli.docs": {
+            "ml_real": 0.02,
+            "ml_null": 0.18,
+            "ml_lift": -0.16,
+            "llm_runs": [
+              {
+                "llm_real": 0.38,
+                "llm_null": 0.69,
+                "llm_lift": -0.31
+              },
+              {
+                "llm_real": 0.25,
+                "llm_null": 0.7,
+                "llm_lift": -0.45
+              },
+              {
+                "llm_real": 0.33,
+                "llm_null": 0.75,
+                "llm_lift": -0.42
+              }
+            ]
+          }
+        }
+      },
+      "scope": {
+        "n": 38,
+        "variants": {
+          "ai-agent-cli.operability": {
+            "ml_real": 0.0,
+            "ml_null": 0.08,
+            "ml_lift": -0.08,
+            "llm_runs": [
+              {
+                "llm_real": 0.0,
+                "llm_null": 0.24,
+                "llm_lift": -0.24
+              },
+              {
+                "llm_real": 0.0,
+                "llm_null": 0.26,
+                "llm_lift": -0.26
+              },
+              {
+                "llm_real": 0.0,
+                "llm_null": 0.26,
+                "llm_lift": -0.26
+              }
+            ]
+          },
+          "ai-agent-cli.config": {
+            "ml_real": 0.21,
+            "ml_null": 0.08,
+            "ml_lift": 0.13,
+            "llm_runs": [
+              {
+                "llm_real": 0.5,
+                "llm_null": 0.24,
+                "llm_lift": 0.26
+              },
+              {
+                "llm_real": 0.45,
+                "llm_null": 0.26,
+                "llm_lift": 0.19
+              },
+              {
+                "llm_real": 0.39,
+                "llm_null": 0.26,
+                "llm_lift": 0.13
+              }
+            ]
+          },
+          "ai-agent-cli.test": {
+            "ml_real": 0.26,
+            "ml_null": 0.08,
+            "ml_lift": 0.18,
+            "llm_runs": [
+              {
+                "llm_real": 0.92,
+                "llm_null": 0.24,
+                "llm_lift": 0.68
+              },
+              {
+                "llm_real": 0.92,
+                "llm_null": 0.26,
+                "llm_lift": 0.66
+              },
+              {
+                "llm_real": 0.89,
+                "llm_null": 0.26,
+                "llm_lift": 0.63
+              }
+            ]
+          },
+          "ai-agent-cli.threat": {
+            "ml_real": 0.0,
+            "ml_null": 0.08,
+            "ml_lift": -0.08,
+            "llm_runs": [
+              {
+                "llm_real": 0.0,
+                "llm_null": 0.24,
+                "llm_lift": -0.24
+              },
+              {
+                "llm_real": 0.0,
+                "llm_null": 0.26,
+                "llm_lift": -0.26
+              },
+              {
+                "llm_real": 0.0,
+                "llm_null": 0.26,
+                "llm_lift": -0.26
+              }
+            ]
+          },
+          "ai-agent-cli.docs": {
+            "ml_real": 0.29,
+            "ml_null": 0.08,
+            "ml_lift": 0.21,
+            "llm_runs": [
+              {
+                "llm_real": 0.68,
+                "llm_null": 0.24,
+                "llm_lift": 0.44
+              },
+              {
+                "llm_real": 0.74,
+                "llm_null": 0.26,
+                "llm_lift": 0.48
+              },
+              {
+                "llm_real": 0.68,
+                "llm_null": 0.26,
+                "llm_lift": 0.42
+              }
+            ]
+          }
+        }
+      }
+    },
+    "goose": {
+      "robustness": {
+        "n": 99,
+        "variants": {
+          "ai-agent-cli.operability": {
+            "ml_real": 0.01,
+            "ml_null": 0.11,
+            "ml_lift": -0.1,
+            "llm_runs": [
+              {
+                "llm_real": 0.03,
+                "llm_null": 0.64,
+                "llm_lift": -0.61
+              },
+              {
+                "llm_real": 0.03,
+                "llm_null": 0.64,
+                "llm_lift": -0.61
+              },
+              {
+                "llm_real": 0.02,
+                "llm_null": 0.64,
+                "llm_lift": -0.62
+              }
+            ]
+          },
+          "ai-agent-cli.config": {
+            "ml_real": 0.03,
+            "ml_null": 0.11,
+            "ml_lift": -0.08,
+            "llm_runs": [
+              {
+                "llm_real": 0.39,
+                "llm_null": 0.64,
+                "llm_lift": -0.25
+              },
+              {
+                "llm_real": 0.4,
+                "llm_null": 0.64,
+                "llm_lift": -0.24
+              },
+              {
+                "llm_real": 0.45,
+                "llm_null": 0.64,
+                "llm_lift": -0.19
+              }
+            ]
+          },
+          "ai-agent-cli.test": {
+            "ml_real": 0.05,
+            "ml_null": 0.11,
+            "ml_lift": -0.06,
+            "llm_runs": [
+              {
+                "llm_real": 0.95,
+                "llm_null": 0.64,
+                "llm_lift": 0.31
+              },
+              {
+                "llm_real": 0.94,
+                "llm_null": 0.64,
+                "llm_lift": 0.3
+              },
+              {
+                "llm_real": 0.96,
+                "llm_null": 0.64,
+                "llm_lift": 0.32
+              }
+            ]
+          },
+          "ai-agent-cli.threat": {
+            "ml_real": 0.02,
+            "ml_null": 0.11,
+            "ml_lift": -0.09,
+            "llm_runs": [
+              {
+                "llm_real": 0.07,
+                "llm_null": 0.64,
+                "llm_lift": -0.57
+              },
+              {
+                "llm_real": 0.06,
+                "llm_null": 0.64,
+                "llm_lift": -0.58
+              },
+              {
+                "llm_real": 0.06,
+                "llm_null": 0.64,
+                "llm_lift": -0.58
+              }
+            ]
+          },
+          "ai-agent-cli.docs": {
+            "ml_real": 0.03,
+            "ml_null": 0.11,
+            "ml_lift": -0.08,
+            "llm_runs": [
+              {
+                "llm_real": 0.51,
+                "llm_null": 0.64,
+                "llm_lift": -0.13
+              },
+              {
+                "llm_real": 0.53,
+                "llm_null": 0.64,
+                "llm_lift": -0.11
+              },
+              {
+                "llm_real": 0.48,
+                "llm_null": 0.64,
+                "llm_lift": -0.16
+              }
+            ]
+          }
+        }
+      },
+      "scope": {
+        "n": 18,
+        "variants": {
+          "ai-agent-cli.operability": {
+            "ml_real": 0.11,
+            "ml_null": 0.06,
+            "ml_lift": 0.05,
+            "llm_runs": [
+              {
+                "llm_real": 0.06,
+                "llm_null": 0.44,
+                "llm_lift": -0.38
+              },
+              {
+                "llm_real": 0.0,
+                "llm_null": 0.5,
+                "llm_lift": -0.5
+              },
+              {
+                "llm_real": 0.0,
+                "llm_null": 0.44,
+                "llm_lift": -0.44
+              }
+            ]
+          },
+          "ai-agent-cli.config": {
+            "ml_real": 0.06,
+            "ml_null": 0.06,
+            "ml_lift": 0.0,
+            "llm_runs": [
+              {
+                "llm_real": 0.5,
+                "llm_null": 0.44,
+                "llm_lift": 0.06
+              },
+              {
+                "llm_real": 0.39,
+                "llm_null": 0.5,
+                "llm_lift": -0.11
+              },
+              {
+                "llm_real": 0.5,
+                "llm_null": 0.44,
+                "llm_lift": 0.06
+              }
+            ]
+          },
+          "ai-agent-cli.test": {
+            "ml_real": 0.33,
+            "ml_null": 0.06,
+            "ml_lift": 0.27,
+            "llm_runs": [
+              {
+                "llm_real": 0.89,
+                "llm_null": 0.44,
+                "llm_lift": 0.45
+              },
+              {
+                "llm_real": 0.94,
+                "llm_null": 0.5,
+                "llm_lift": 0.44
+              },
+              {
+                "llm_real": 0.94,
+                "llm_null": 0.44,
+                "llm_lift": 0.5
+              }
+            ]
+          },
+          "ai-agent-cli.threat": {
+            "ml_real": 0.0,
+            "ml_null": 0.06,
+            "ml_lift": -0.06,
+            "llm_runs": [
+              {
+                "llm_real": 0.06,
+                "llm_null": 0.44,
+                "llm_lift": -0.38
+              },
+              {
+                "llm_real": 0.0,
+                "llm_null": 0.5,
+                "llm_lift": -0.5
+              },
+              {
+                "llm_real": 0.0,
+                "llm_null": 0.44,
+                "llm_lift": -0.44
+              }
+            ]
+          },
+          "ai-agent-cli.docs": {
+            "ml_real": 0.22,
+            "ml_null": 0.06,
+            "ml_lift": 0.16,
+            "llm_runs": [
+              {
+                "llm_real": 0.89,
+                "llm_null": 0.44,
+                "llm_lift": 0.45
+              },
+              {
+                "llm_real": 0.61,
+                "llm_null": 0.5,
+                "llm_lift": 0.11
+              },
+              {
+                "llm_real": 0.78,
+                "llm_null": 0.44,
+                "llm_lift": 0.34
+              }
+            ]
+          }
+        }
+      }
+    },
+    "cline": {
+      "robustness": {
+        "n": 89,
+        "variants": {
+          "ai-agent-cli.operability": {
+            "ml_real": 0.02,
+            "ml_null": 0.16,
+            "ml_lift": -0.14,
+            "llm_runs": [
+              {
+                "llm_real": 0.1,
+                "llm_null": 0.66,
+                "llm_lift": -0.56
+              },
+              {
+                "llm_real": 0.1,
+                "llm_null": 0.67,
+                "llm_lift": -0.57
+              },
+              {
+                "llm_real": 0.1,
+                "llm_null": 0.63,
+                "llm_lift": -0.53
+              }
+            ]
+          },
+          "ai-agent-cli.config": {
+            "ml_real": 0.02,
+            "ml_null": 0.16,
+            "ml_lift": -0.14,
+            "llm_runs": [
+              {
+                "llm_real": 0.25,
+                "llm_null": 0.66,
+                "llm_lift": -0.41
+              },
+              {
+                "llm_real": 0.22,
+                "llm_null": 0.67,
+                "llm_lift": -0.45
+              },
+              {
+                "llm_real": 0.24,
+                "llm_null": 0.63,
+                "llm_lift": -0.39
+              }
+            ]
+          },
+          "ai-agent-cli.test": {
+            "ml_real": 0.09,
+            "ml_null": 0.16,
+            "ml_lift": -0.07,
+            "llm_runs": [
+              {
+                "llm_real": 0.94,
+                "llm_null": 0.66,
+                "llm_lift": 0.28
+              },
+              {
+                "llm_real": 0.96,
+                "llm_null": 0.67,
+                "llm_lift": 0.29
+              },
+              {
+                "llm_real": 0.96,
+                "llm_null": 0.63,
+                "llm_lift": 0.33
+              }
+            ]
+          },
+          "ai-agent-cli.threat": {
+            "ml_real": 0.01,
+            "ml_null": 0.16,
+            "ml_lift": -0.15,
+            "llm_runs": [
+              {
+                "llm_real": 0.02,
+                "llm_null": 0.66,
+                "llm_lift": -0.64
+              },
+              {
+                "llm_real": 0.02,
+                "llm_null": 0.67,
+                "llm_lift": -0.65
+              },
+              {
+                "llm_real": 0.02,
+                "llm_null": 0.63,
+                "llm_lift": -0.61
+              }
+            ]
+          },
+          "ai-agent-cli.docs": {
+            "ml_real": 0.03,
+            "ml_null": 0.16,
+            "ml_lift": -0.13,
+            "llm_runs": [
+              {
+                "llm_real": 0.37,
+                "llm_null": 0.66,
+                "llm_lift": -0.29
+              },
+              {
+                "llm_real": 0.35,
+                "llm_null": 0.67,
+                "llm_lift": -0.32
+              },
+              {
+                "llm_real": 0.38,
+                "llm_null": 0.63,
+                "llm_lift": -0.25
+              }
+            ]
+          }
+        }
+      },
+      "scope": {
+        "n": 22,
+        "variants": {
+          "ai-agent-cli.operability": {
+            "ml_real": 0.05,
+            "ml_null": 0.14,
+            "ml_lift": -0.09,
+            "llm_runs": [
+              {
+                "llm_real": 0.0,
+                "llm_null": 0.32,
+                "llm_lift": -0.32
+              },
+              {
+                "llm_real": 0.0,
+                "llm_null": 0.27,
+                "llm_lift": -0.27
+              },
+              {
+                "llm_real": 0.0,
+                "llm_null": 0.27,
+                "llm_lift": -0.27
+              }
+            ]
+          },
+          "ai-agent-cli.config": {
+            "ml_real": 0.14,
+            "ml_null": 0.14,
+            "ml_lift": 0.0,
+            "llm_runs": [
+              {
+                "llm_real": 0.36,
+                "llm_null": 0.32,
+                "llm_lift": 0.04
+              },
+              {
+                "llm_real": 0.5,
+                "llm_null": 0.27,
+                "llm_lift": 0.23
+              },
+              {
+                "llm_real": 0.32,
+                "llm_null": 0.27,
+                "llm_lift": 0.05
+              }
+            ]
+          },
+          "ai-agent-cli.test": {
+            "ml_real": 0.27,
+            "ml_null": 0.14,
+            "ml_lift": 0.13,
+            "llm_runs": [
+              {
+                "llm_real": 1.0,
+                "llm_null": 0.32,
+                "llm_lift": 0.68
+              },
+              {
+                "llm_real": 0.95,
+                "llm_null": 0.27,
+                "llm_lift": 0.68
+              },
+              {
+                "llm_real": 1.0,
+                "llm_null": 0.27,
+                "llm_lift": 0.73
+              }
+            ]
+          },
+          "ai-agent-cli.threat": {
+            "ml_real": 0.0,
+            "ml_null": 0.14,
+            "ml_lift": -0.14,
+            "llm_runs": [
+              {
+                "llm_real": 0.0,
+                "llm_null": 0.32,
+                "llm_lift": -0.32
+              },
+              {
+                "llm_real": 0.0,
+                "llm_null": 0.27,
+                "llm_lift": -0.27
+              },
+              {
+                "llm_real": 0.0,
+                "llm_null": 0.27,
+                "llm_lift": -0.27
+              }
+            ]
+          },
+          "ai-agent-cli.docs": {
+            "ml_real": 0.14,
+            "ml_null": 0.14,
+            "ml_lift": 0.0,
+            "llm_runs": [
+              {
+                "llm_real": 0.86,
+                "llm_null": 0.32,
+                "llm_lift": 0.54
+              },
+              {
+                "llm_real": 0.73,
+                "llm_null": 0.27,
+                "llm_lift": 0.46
+              },
+              {
+                "llm_real": 0.86,
+                "llm_null": 0.27,
+                "llm_lift": 0.59
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "aggregate": {
+    "robustness": {
+      "n_total": 249,
+      "variants": {
+        "ai-agent-cli.operability": {
+          "ml_lift": -0.117,
+          "llm_lift_runs": [
+            -0.517,
+            -0.533,
+            -0.563
+          ],
+          "llm_lift_mean": -0.538,
+          "llm_lift_sd": 0.023,
+          "llm_real_mean": 0.131,
+          "llm_null_mean": 0.669
+        },
+        "ai-agent-cli.config": {
+          "ml_lift": -0.133,
+          "llm_lift_runs": [
+            -0.38,
+            -0.377,
+            -0.373
+          ],
+          "llm_lift_mean": -0.377,
+          "llm_lift_sd": 0.004,
+          "llm_real_mean": 0.292,
+          "llm_null_mean": 0.669
+        },
+        "ai-agent-cli.test": {
+          "ml_lift": -0.077,
+          "llm_lift_runs": [
+            0.283,
+            0.28,
+            0.277
+          ],
+          "llm_lift_mean": 0.28,
+          "llm_lift_sd": 0.003,
+          "llm_real_mean": 0.949,
+          "llm_null_mean": 0.669
+        },
+        "ai-agent-cli.threat": {
+          "ml_lift": -0.133,
+          "llm_lift_runs": [
+            -0.623,
+            -0.633,
+            -0.637
+          ],
+          "llm_lift_mean": -0.631,
+          "llm_lift_sd": 0.007,
+          "llm_real_mean": 0.038,
+          "llm_null_mean": 0.669
+        },
+        "ai-agent-cli.docs": {
+          "ml_lift": -0.123,
+          "llm_lift_runs": [
+            -0.243,
+            -0.293,
+            -0.277
+          ],
+          "llm_lift_mean": -0.271,
+          "llm_lift_sd": 0.026,
+          "llm_real_mean": 0.398,
+          "llm_null_mean": 0.669
+        }
+      }
+    },
+    "scope": {
+      "n_total": 78,
+      "variants": {
+        "ai-agent-cli.operability": {
+          "ml_lift": -0.04,
+          "llm_lift_runs": [
+            -0.313,
+            -0.343,
+            -0.323
+          ],
+          "llm_lift_mean": -0.326,
+          "llm_lift_sd": 0.015,
+          "llm_real_mean": 0.007,
+          "llm_null_mean": 0.333
+        },
+        "ai-agent-cli.config": {
+          "ml_lift": 0.043,
+          "llm_lift_runs": [
+            0.12,
+            0.103,
+            0.08
+          ],
+          "llm_lift_mean": 0.101,
+          "llm_lift_sd": 0.02,
+          "llm_real_mean": 0.434,
+          "llm_null_mean": 0.333
+        },
+        "ai-agent-cli.test": {
+          "ml_lift": 0.193,
+          "llm_lift_runs": [
+            0.603,
+            0.593,
+            0.62
+          ],
+          "llm_lift_mean": 0.605,
+          "llm_lift_sd": 0.014,
+          "llm_real_mean": 0.939,
+          "llm_null_mean": 0.333
+        },
+        "ai-agent-cli.threat": {
+          "ml_lift": -0.093,
+          "llm_lift_runs": [
+            -0.313,
+            -0.343,
+            -0.323
+          ],
+          "llm_lift_mean": -0.326,
+          "llm_lift_sd": 0.015,
+          "llm_real_mean": 0.007,
+          "llm_null_mean": 0.333
+        },
+        "ai-agent-cli.docs": {
+          "ml_lift": 0.123,
+          "llm_lift_runs": [
+            0.477,
+            0.35,
+            0.45
+          ],
+          "llm_lift_mean": 0.426,
+          "llm_lift_sd": 0.067,
+          "llm_real_mean": 0.759,
+          "llm_null_mean": 0.333
+        }
+      }
+    }
+  }
+}

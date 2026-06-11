@@ -80,8 +80,14 @@ def _fan_once(calls, model, provider, reasoning, timeout_ms, concurrency):
            "calls": [{"id": str(c["id"]), "provider": provider, "model": model, "reasoning": reasoning,
                       "prompt": c["prompt"], "maxTokens": c.get("maxTokens", 3000), "timeoutMs": timeout_ms}
                      for c in calls]}
+    # The subprocess ceiling must scale with batch size: a batch runs in ceil(n/concurrency)
+    # waves, so a flat ceiling kills any batch larger than ~2 waves of slow calls (hit live
+    # 2026-06-11: a 900-call judge batch died at a flat 300s while fan was working fine).
+    # Per-call timeouts are enforced INSIDE fan via timeoutMs; this is only the hang backstop.
+    waves = -(-len(calls) // max(1, concurrency))
+    ceiling = timeout_ms / 1000 + 60 * waves
     r = subprocess.run(["fan"], input=json.dumps(cfg), capture_output=True, text=True,
-                       timeout=timeout_ms / 1000 + 120)
+                       timeout=ceiling)
     if not r.stdout:
         raise RuntimeError(f"fan failed: {(r.stderr or '')[:300]}")
     out = {}
