@@ -1,0 +1,274 @@
+{
+  "app_type": "ai-agent-cli",
+  "lens": "robustness-surface",
+  "axis": "ROBUSTNESS",
+  "scope_note": "ROBUSTNESS-axis spine for ai-agent-cli, mined via the robustness-surface lens (capability-phrased hardening a mature ai-agent-cli converges on (fix commits)) from ['aider', 'gptme', 'openinterpreter']. Does NOT predict project-specific product direction \u2014 that is strategy, not completeness. An axis gates only after beating the generic-baseline control (check.py VALIDATED_GATING_AXES); the rest are advisory.",
+  "derived_from": [
+    "aider",
+    "gptme",
+    "openinterpreter"
+  ],
+  "required": [
+    {
+      "category": "current model catalog awareness",
+      "what": "Recognizes, hides, and correctly configures currently valid provider model names, versions, capabilities, and deprecations.",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Start the app with a config containing one current model and one deprecated/removed provider model, then confirm only the valid model is selectable and its advertised capabilities match provider docs."
+    },
+    {
+      "category": "provider-specific request shaping",
+      "what": "Builds API requests with provider- and model-specific fields such as temperature, reasoning levels, max tokens, tools, and streaming delta formats.",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Send the same prompt to two different providers with tools, temperature, max tokens, reasoning level, and streaming enabled, then inspect captured requests for provider-specific field names and formats."
+    },
+    {
+      "category": "chat wire compatibility",
+      "what": "Parses heterogeneous chat-completion stream payloads, reasoning deltas, empty fragments, and tool-call formats without corrupting conversation output.",
+      "projects": [
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Replay recorded streams containing empty deltas, reasoning deltas, normal text, and tool calls from multiple providers, then confirm the final transcript and tool calls are correct."
+    },
+    {
+      "category": "bounded payload transmission",
+      "what": "Detects and constrains oversized messages, attachments, or completion parameters before they exceed upstream platform limits.",
+      "projects": [
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Submit an oversized prompt, attachment, and max-token value, then confirm the client rejects or trims them locally before any upstream API call is made."
+    },
+    {
+      "category": "safe filesystem path handling",
+      "what": "Validates and resolves user-controlled paths while rejecting symlink loops, invalid edits, unsafe archives, and malformed path inputs.",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Attempt edits through a normal path, a symlink loop, path traversal, unsafe archive entry, and malformed path, then confirm only the normal path is accepted."
+    },
+    {
+      "category": "durable conversation persistence",
+      "what": "Creates required history directories, loads conversations safely, and surfaces dataless or failed loads without crashing.",
+      "projects": [
+        "aider",
+        "gptme"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Launch with no history directory, then with a corrupt or empty conversation file, and confirm directories are created and load failures are shown without crashing."
+    },
+    {
+      "category": "terminal output integrity",
+      "what": "Preserves command-output formatting, buffers partial reasoning or stream output correctly, and avoids duplicate or lost display text.",
+      "projects": [
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Stream command output with ANSI formatting, partial chunks, and repeated reasoning fragments, then confirm display text is formatted once with no missing or duplicated chunks."
+    },
+    {
+      "category": "interruptible long-running work",
+      "what": "Handles user interrupts, turn cancellation, review cancellation, and process termination without hangs, wedges, or lost output.",
+      "projects": [
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Start a long tool execution or model stream, trigger user cancel and SIGINT, then confirm control returns promptly with partial output preserved."
+    },
+    {
+      "category": "graceful process shutdown",
+      "what": "Responds to shutdown signals and lifecycle exits by closing servers, streams, locks, and subprocesses cleanly.",
+      "projects": [
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Start servers, streams, locks, and a subprocess, send a shutdown signal, then confirm all handles close and no child processes remain."
+    },
+    {
+      "category": "tool availability truthfulness",
+      "what": "Reports unavailable, invalid, or nested tools accurately and exposes tool namespaces in the format expected by chat providers.",
+      "projects": [
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Configure valid, unavailable, invalid, and nested tools, then confirm the UI/API reports availability accurately and sends provider-compatible tool namespaces."
+    },
+    {
+      "category": "cross-platform release correctness",
+      "what": "Builds and packages releases correctly across Windows, Linux, aarch64, archive layouts, runfiles, and target environments.",
+      "projects": [
+        "aider",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Build release artifacts for Windows, Linux, and aarch64, unpack each archive, and confirm expected layout, runfiles, executable bits, and startup behavior."
+    },
+    {
+      "category": "service routing correctness",
+      "what": "Routes cloud, telemetry, app-server, and provider API traffic to the intended endpoints after infrastructure or upstream changes.",
+      "projects": [
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Capture outbound requests for cloud, telemetry, app-server, and provider API calls, then confirm each goes to the configured intended endpoint."
+    },
+    {
+      "category": "test harness compatibility",
+      "what": "Keeps provider harnesses, native chat harnesses, browser harnesses, and test doubles aligned with upstream protocol and SDK behavior.",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Run provider, native chat, browser, and fake-provider harnesses against current SDK/protocol fixtures, then confirm all handshake and stream assertions pass."
+    },
+    {
+      "category": "configuration compatibility preservation",
+      "what": "Reads and applies existing user, auto-review, approval, model, and editor settings across schema or protocol changes.",
+      "projects": [
+        "aider",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Load an older user config containing approval, auto-review, model, and editor settings, then confirm all settings are preserved and applied after migration."
+    },
+    {
+      "category": "documentation and help command accuracy",
+      "what": "Keeps README grammar, help usage, FAQ figures, and generated model documentation consistent with actual behavior.",
+      "projects": [
+        "aider",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Generate help, README model docs, and FAQ snippets, then compare commands, options, model names, and figures against the running product behavior."
+    }
+  ],
+  "optional": [
+    {
+      "category": "accurate exception classification",
+      "what": "Maps provider, transport, and application errors into known exception classes without false positives or missing error types.",
+      "projects": [
+        "aider"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Inject representative provider 400/401/429/500 errors, transport timeouts, and app validation failures, then confirm each maps to the expected exception class."
+    },
+    {
+      "category": "secure message and elicitation validation",
+      "what": "Rejects malformed model paths, whitespace-only elicitation IDs, unsafe edited-message paths, and invalid batch model overrides.",
+      "projects": [
+        "gptme"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Submit malformed model paths, whitespace-only elicitation IDs, unsafe edited-message paths, and invalid batch model overrides, then confirm each is rejected."
+    },
+    {
+      "category": "web conversation state coherence",
+      "what": "Keeps chat UI state, selected models, busy indicators, queued messages, placeholders, and conversation lists synchronized.",
+      "projects": [
+        "gptme"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "In the web UI, switch models while sending queued messages and refreshing the conversation list, then confirm selected model, busy state, placeholders, and list state remain consistent."
+    },
+    {
+      "category": "keyboard and mobile interaction completeness",
+      "what": "Provides accessible keyboard behavior and usable mobile ergonomics for selection, escape, composer, and confirmation flows.",
+      "projects": [
+        "gptme"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Use only keyboard and then a mobile viewport to select, escape, compose, and confirm actions, then confirm all flows are reachable and usable."
+    },
+    {
+      "category": "sandbox and execution output reliability",
+      "what": "Maintains sandbox permissions, stdio behavior, execution-server output retention, and platform-specific command execution semantics.",
+      "projects": [
+        "openinterpreter"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Run a sandboxed command that writes stdout/stderr, attempts denied filesystem access, and uses platform-specific shell syntax, then confirm permissions and retained output are correct."
+    },
+    {
+      "category": "update and installer safety",
+      "what": "Runs autoupdate, installer, version-check, and update-command flows with locking and correct telemetry or routing behavior.",
+      "projects": [
+        "openinterpreter"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Run version check, autoupdate, installer, and update command concurrently, then confirm locking prevents races and telemetry/routing events are correct."
+    },
+    {
+      "category": "commit and undo history clarity",
+      "what": "Displays commit, undo, clear, and co-author history information in a concise and correct form.",
+      "projects": [
+        "aider"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Create commits, undo one change, clear history, and add a co-author, then confirm the displayed history is concise and factually correct."
+    },
+    {
+      "category": "browser automation connection stability",
+      "what": "Connects to browser automation targets using stable tab or CDP behavior instead of disruptive window/session handling.",
+      "projects": [
+        "gptme"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Connect browser automation to an existing browser with multiple tabs, then confirm it attaches to the intended tab via stable CDP behavior without opening or stealing windows."
+    },
+    {
+      "category": "CI self-repair observability",
+      "what": "Pins automated repair logs to the triggering run and can open structured draft fix PRs from passing gates.",
+      "projects": [
+        "gptme"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Trigger a failing CI run followed by automated repair, then confirm repair logs link to that run and a structured draft PR opens only after gates pass."
+    }
+  ]
+}

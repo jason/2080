@@ -36,6 +36,16 @@ def test_registry_only_control_passed_lenses_may_gate():
             f"{n}: gating={gates} but control-passed={n in CONTROL_PASSED}"
 
 
+def test_norm_name_matches_product_name_variants():
+    # intent: the model attributes categories to PRODUCT names ('open-interpreter', 'Aider')
+    # while canonical names are clone-dir names ('openinterpreter'); exact-match dropped every
+    # attribution and emitted a 0-required spine (live failure 2026-06-11). Never again.
+    from lens_mine import norm_name
+    assert norm_name("Open-Interpreter") == norm_name("openinterpreter") == norm_name("open_interpreter")
+    assert norm_name("Aider") == norm_name("aider")
+    assert norm_name("gptme") != norm_name("aider")
+
+
 def test_slug_from_url_handles_https_ssh_and_junk():
     # intent: the issue lens derives the gh API target from the clone's remote; a mis-parsed
     # slug fetches a stranger's issues (wrong data) or crashes the whole mine on a local remote.

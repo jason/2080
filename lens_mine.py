@@ -86,6 +86,12 @@ def _feature_surface_source(repo):
     return f"README:\n{readme}\nfeat: commits:\n" + "\n".join(feats)
 
 
+def norm_name(n):
+    """Neighbor-name normalization for attribution matching (pure): 'Open-Interpreter' ==
+    'openinterpreter' == 'open_interpreter'."""
+    return re.sub(r"[^a-z0-9]", "", str(n).lower())
+
+
 def slug_from_url(url):
     """github remote URL (https or ssh) -> 'owner/repo', or None (pure)."""
     m = re.search(r"github\.com[:/]([^/\s]+)/([^/\s]+?)(?:\.git)?/?$", url or "")
@@ -257,9 +263,11 @@ def synth_prompt(materials, app_type, lens):
         f"Below are the {lens['material_label']} of {len(materials)} mature {app_type} projects: "
         f"{', '.join(names)}.\n{blocks}\n\n"
         f"Abstract these into a category-level spine: {lens['abstract'].format(app_type=app_type)}. "
-        f"For each category, note which of the named projects show it. Only reference these projects "
-        f"({', '.join(names)}); invent no others.\n"
-        'Return ONLY JSON: {"spine":[{"category":"short name","what":"one line","neighbors":["..."]}]}'
+        f"The \"neighbors\" field is REQUIRED on every category: list exactly which of the named "
+        f"projects' material shows it (at least one; convergence across projects is the point of "
+        f"this analysis). Only reference these projects ({', '.join(names)}); invent no others.\n"
+        'Return ONLY JSON: {"spine":[{"category":"short name","what":"one line",'
+        f'"neighbors":["one or more of: {", ".join(names)}"]}}]}}'
     )
 
 
@@ -315,10 +323,14 @@ def main():
     if not spine:
         print("spine synthesis returned nothing parseable", file=sys.stderr); sys.exit(EXIT_EMPTY)
 
-    names = {m["name"] for m in materials}
+    # normalized matching: the model writes product names ("open-interpreter", "Aider"); the
+    # canonical names are clone-dir names ("openinterpreter") — exact match silently dropped
+    # every attribution and zeroed the required tier (caught live 2026-06-11).
+    canon = {norm_name(m["name"]): m["name"] for m in materials}
     cats = []
     for c in spine:
-        neighs = [n for n in (c.get("neighbors") or []) if n in names]
+        neighs = sorted({canon[norm_name(n)] for n in (c.get("neighbors") or [])
+                         if norm_name(n) in canon})
         cats.append({"category": str(c.get("category", "")).strip(),
                      "what": str(c.get("what", "")).strip(),
                      "projects": neighs,
@@ -339,7 +351,7 @@ def main():
     for i, c in enumerate(cats):
         c["day1_tell"] = str(tells.get(str(i + 1)) or tells.get(i + 1) or "").strip()
 
-    derived = sorted(names)
+    derived = sorted(m["name"] for m in materials)
     required = [c for c in cats if c["tier"] == "required"]
     optional = [c for c in cats if c["tier"] == "optional"]
     checklist = {
