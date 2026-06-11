@@ -7,14 +7,17 @@ mine_common.py — shared substrate for 2080's mining tools (the "mine family").
 read a source, abstract through an LLM, aggregate across neighbors. This module is the shared
 LLM-call + JSON-extraction substrate so each new lens is a config, not new plumbing.
 
-Two interchangeable LLM backends behind ONE seam (`fan_batch`):
-  native (default) — any OpenAI-compatible chat-completions endpoint, stdlib-only, parallel via
-                     threads. Bring your own key: OPENAI_API_KEY (+ OPENAI_BASE_URL for
-                     OpenRouter/Azure/local servers).
-  fan              — the `fan` parallel-LLM CLI, used automatically when found on PATH (a local
-                     accelerator with its own provider auth). Not required by anything.
-Select explicitly with LLM_2080_BACKEND=native|fan. Override the model/provider every tool uses
-with LLM_2080_MODEL / LLM_2080_PROVIDER (provider is a fan concept; native ignores it).
+Three interchangeable LLM backends behind ONE seam (`fan_batch`):
+  native — any OpenAI-compatible chat-completions endpoint, stdlib-only, parallel via threads.
+           Bring your own key: OPENAI_API_KEY (+ OPENAI_BASE_URL for OpenRouter/Azure/local).
+  fan    — the `fan` parallel-LLM CLI, used automatically when found on PATH (a local
+           accelerator with its own provider auth). Not required by anything.
+  claude — Claude Code headless (`claude -p`), billed to a Claude SUBSCRIPTION via the CLI's
+           OAuth login (or CLAUDE_CODE_OAUTH_TOKEN on servers). No API key needed. Default
+           model haiku (cheap batch work); override with LLM_2080_MODEL=sonnet|opus|….
+Auto-detection order: fan on PATH → OPENAI_API_KEY set → claude on PATH → native (which then
+fails loudly with setup guidance). Pin explicitly with LLM_2080_BACKEND=native|fan|claude.
+Override the model every tool uses with LLM_2080_MODEL (LLM_2080_PROVIDER is fan-only).
 """
 from __future__ import annotations
 import json, os, re, shutil, subprocess, time
@@ -34,12 +37,27 @@ FAN_RETRIES = int(os.environ.get("FAN_RETRIES", "1"))
 
 
 def backend():
-    """native|fan. Explicit LLM_2080_BACKEND wins; otherwise fan iff it's on PATH (accelerator),
-    else native (the no-dependency default any clone can run with just an API key)."""
+    """native|fan|claude. Explicit LLM_2080_BACKEND wins; otherwise: fan on PATH (accelerator) →
+    OPENAI_API_KEY set (native) → claude CLI on PATH (subscription compute) → native, whose
+    missing-key error then carries the setup guidance."""
     b = os.environ.get("LLM_2080_BACKEND", "").strip().lower()
-    if b in ("native", "fan"):
+    if b in ("native", "fan", "claude"):
         return b
-    return "fan" if shutil.which("fan") else "native"
+    if shutil.which("fan"):
+        return "fan"
+    if os.environ.get("OPENAI_API_KEY"):
+        return "native"
+    if shutil.which("claude"):
+        return "claude"
+    return "native"
+
+
+def _claude_model(model):
+    """2080 callers pass OpenAI-style defaults ('gpt-5.5'); on the claude backend those map to
+    haiku — the cheap/fast tier suited to batch classification/judging. Claude-ish names pass
+    through, and LLM_2080_MODEL (applied in fan_batch) overrides everything."""
+    m = (model or "").lower()
+    return model if ("claude" in m or m in ("haiku", "sonnet", "opus")) else "haiku"
 
 
 def llm_runtime():
@@ -52,6 +70,9 @@ def llm_runtime():
         info["base_url"] = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
         info["key_source"] = "OPENAI_API_KEY (set)" if os.environ.get("OPENAI_API_KEY") \
             else "OPENAI_API_KEY (MISSING — calls will fail)"
+    elif b == "claude":
+        info["model"] = os.environ.get("LLM_2080_MODEL") or "haiku (claude-backend default)"
+        info["key_source"] = "Claude Code CLI OAuth (subscription; CLAUDE_CODE_OAUTH_TOKEN on servers)"
     else:
         info["provider"] = os.environ.get("LLM_2080_PROVIDER") or "openai-codex (tool default)"
         info["key_source"] = "fan CLI's own provider auth"
@@ -132,6 +153,29 @@ def _native_once(calls, model, reasoning, timeout_ms, concurrency):
     return {str(c["id"]): t for c, t in zip(calls, texts)}
 
 
+def _claude_one(call, model, timeout_ms):
+    """One headless Claude Code call (`claude -p`) — billed to the CLI's subscription OAuth.
+    Returns text or None on any failure, same contract as the other backends."""
+    try:
+        r = subprocess.run(
+            ["claude", "-p", call["prompt"], "--model", model, "--output-format", "text"],
+            capture_output=True, text=True, timeout=timeout_ms / 1000)
+        return r.stdout.strip() or None if r.returncode == 0 else None
+    except Exception:
+        return None
+
+
+def _claude_once(calls, model, timeout_ms, concurrency):
+    if not shutil.which("claude"):
+        raise RuntimeError("claude backend needs the Claude Code CLI on PATH "
+                           "(or set OPENAI_API_KEY for native / install fan)")
+    model = _claude_model(model)
+    # each call is a full CLI process (~1-2s startup) — cap width below the API backends'
+    with ThreadPoolExecutor(max_workers=max(1, min(concurrency, 8))) as ex:
+        texts = ex.map(lambda c: _claude_one(c, model, timeout_ms), calls)
+    return {str(c["id"]): t for c, t in zip(calls, texts)}
+
+
 def fan_batch(calls, model="gpt-5.5", provider="openai-codex", reasoning="low", timeout_ms=180000,
               concurrency=None, retries=None):
     """Run N prompts concurrently through the active backend (see module docstring).
@@ -144,8 +188,13 @@ def fan_batch(calls, model="gpt-5.5", provider="openai-codex", reasoning="low", 
     provider = os.environ.get("LLM_2080_PROVIDER") or provider
     concurrency = FAN_CONCURRENCY if concurrency is None else concurrency
     retries = FAN_RETRIES if retries is None else retries
-    once = (lambda cs, conc: _fan_once(cs, model, provider, reasoning, timeout_ms, conc)) \
-        if backend() == "fan" else (lambda cs, conc: _native_once(cs, model, reasoning, timeout_ms, conc))
+    b = backend()
+    if b == "fan":
+        once = lambda cs, conc: _fan_once(cs, model, provider, reasoning, timeout_ms, conc)
+    elif b == "claude":
+        once = lambda cs, conc: _claude_once(cs, model, timeout_ms, conc)
+    else:
+        once = lambda cs, conc: _native_once(cs, model, reasoning, timeout_ms, conc)
     out = once(calls, concurrency)
     for _ in range(retries):
         failed = [c for c in calls if out.get(str(c["id"])) is None]

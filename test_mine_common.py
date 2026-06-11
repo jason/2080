@@ -44,6 +44,63 @@ def test_backend_auto_follows_fan_presence():
         env("LLM_2080_BACKEND", old); mine_common.shutil.which = oldwhich
 
 
+def test_backend_auto_prefers_key_over_claude_and_falls_back_to_claude():
+    # intent: the auto chain is fan → API key → claude → native; a subscription-only user
+    # (no fan, no key, claude installed) must land on the claude backend instead of the
+    # native missing-key error, and a set key must NOT be silently bypassed for claude.
+    old_b, old_key = os.environ.get("LLM_2080_BACKEND"), os.environ.get("OPENAI_API_KEY")
+    oldwhich = mine_common.shutil.which
+    try:
+        env("LLM_2080_BACKEND", None)
+        mine_common.shutil.which = lambda name: "/usr/local/bin/claude" if name == "claude" else None
+        env("OPENAI_API_KEY", "sk-x")
+        assert backend() == "native"
+        env("OPENAI_API_KEY", None)
+        assert backend() == "claude"
+        mine_common.shutil.which = lambda name: None
+        assert backend() == "native"
+    finally:
+        mine_common.shutil.which = oldwhich
+        env("LLM_2080_BACKEND", old_b); env("OPENAI_API_KEY", old_key)
+
+
+def test_claude_backend_maps_openai_default_model_to_haiku():
+    # intent: every 2080 caller hardcodes model='gpt-5.5'; sent verbatim to `claude -p` that
+    # 400s every call — the claude backend must map OpenAI-style names to its cheap tier
+    # while letting explicit claude names and LLM_2080_MODEL pass through.
+    from mine_common import _claude_model
+    assert _claude_model("gpt-5.5") == "haiku"
+    assert _claude_model("sonnet") == "sonnet"
+    assert _claude_model("claude-haiku-4-5") == "claude-haiku-4-5"
+
+
+def test_claude_once_invokes_cli_and_contains_failures():
+    # intent: the claude backend must speak the shared {id: text|None} contract — a failed
+    # CLI call becomes None (so fan_batch's retry net covers it), never an exception that
+    # kills the whole batch.
+    old_run, oldwhich = mine_common.subprocess.run, mine_common.shutil.which
+    seen = []
+
+    class R:
+        def __init__(self, code, out):
+            self.returncode, self.stdout, self.stderr = code, out, ""
+
+    def fake_run(cmd, **kw):
+        seen.append(cmd)
+        return R(0, "pong") if "fail" not in cmd[2] else R(1, "")
+
+    try:
+        mine_common.shutil.which = lambda _: "/usr/local/bin/claude"
+        mine_common.subprocess.run = fake_run
+        out = mine_common._claude_once([{"id": "1", "prompt": "ping"}, {"id": "2", "prompt": "fail"}],
+                                       "gpt-5.5", 60000, 4)
+        assert out == {"1": "pong", "2": None}
+        assert seen[0][:2] == ["claude", "-p"] and "--model" in seen[0]
+        assert seen[0][seen[0].index("--model") + 1] == "haiku"
+    finally:
+        mine_common.subprocess.run = old_run; mine_common.shutil.which = oldwhich
+
+
 def test_native_without_key_raises_actionable_error():
     # intent: a missing API key must fail loudly with the fix in the message — a None-filled
     # result dict would surface as "all categories unknown" three tools downstream.
