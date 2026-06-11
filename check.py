@@ -39,8 +39,9 @@ def capability_map():
             "args": "<target-repo> --spine <checklist.json> [--threshold N] [--fail-on gap|partial] "
                     "[--save-assessment FILE] [--from-assessment FILE] [--json] [--yes]",
             "fail_on": ["gap", "partial"],
-            "robustness_axis": "mined categories are advisory by default (only the generic-baseline "
-                               "floor gates); --enforce-mined-robustness restores full gating",
+            "axis_gating": "mined categories gate only on validated axes (SCOPE); other axes are "
+                           "advisory by default with the generic-baseline floor still gating; "
+                           "--enforce-mined restores full gating",
             "llm": llm_runtime(),  # bring-your-own-key preflight: backend/model/key SOURCE (never values)
             "assessment": {"--save-assessment": "after the live LLM assess, write the raw assessment JSON to FILE",
                            "--from-assessment": "skip the LLM: load a saved assessment and gate on it (deterministic)"},
@@ -53,17 +54,23 @@ def die(msg, code, as_json):
     sys.exit(code)
 
 
+VALIDATED_GATING_AXES = {"SCOPE"}  # the only axis that beat the generic-baseline control (+0.27)
+
+
 def evaluate(result, fail_on, axis=None, enforce_mined_robustness=False):
     """Split assessed categories into blocking (applicable required gaps), advisory, and the rest.
     Blocking = tier==required AND status in fail_on AND not na_by_design/covered.
 
-    ROBUSTNESS axis: mined categories are ADVISORY, only the generic-baseline floor gates.
-    Measured (2026-06, ×3 with variance): a hand-written generic checklist out-recalls the mined
-    robustness spine (lift −0.15) and mined labels are change-shaped ("dependency fix"), not
-    capability-shaped — gating on them is noise (97/117 false-ish blocks on the first external
-    target). SCOPE-axis spines, where mining wins (+0.27), gate in full."""
+    Axis discipline: mined categories GATE only on validated axes (SCOPE, +0.27 over the
+    generic-baseline control). On every other mined axis (ROBUSTNESS, ISSUES, CONFIG, TESTS,
+    DOCS, OPERABILITY…) they are ADVISORY — informative, never blocking — until that lens beats
+    the same control. Measured for ROBUSTNESS (2026-06, ×3): the generic checklist out-recalls
+    the mined spine (−0.15) and change-shaped labels caused 97/117 false-ish blocks on the first
+    external target. The `origin: generic-baseline` floor always gates. A spine with NO axis
+    (user-authored checklist) gates in full — it's the user's own rule set."""
     block_statuses = {"gap", "partial"} if fail_on == "partial" else {"gap"}
-    demote_mined = (axis or "").upper() == "ROBUSTNESS" and not enforce_mined_robustness
+    demote_mined = bool(axis) and (axis or "").upper() not in VALIDATED_GATING_AXES \
+        and not enforce_mined_robustness
     blocking, advisory, required_total = [], [], 0
     for c in result["categories"]:
         if c.get("tier") != "required":
@@ -90,9 +97,10 @@ def main():
     ap.add_argument("--threshold", type=int, default=0, help="max applicable required gaps allowed before the gate blocks")
     ap.add_argument("--fail-on", choices=["gap", "partial"], default="partial",
                     help="'gap' blocks only on full gaps; 'partial' (default) also blocks on partials")
-    ap.add_argument("--enforce-mined-robustness", action="store_true",
-                    help="gate on mined robustness categories too (default: in robustness spines only "
-                         "the generic-baseline floor gates; mined categories are advisory)")
+    ap.add_argument("--enforce-mined", "--enforce-mined-robustness", dest="enforce_mined_robustness",
+                    action="store_true",
+                    help="gate on mined categories of non-validated axes too (default: only SCOPE-axis "
+                         "mined categories and the generic-baseline floor gate; the rest are advisory)")
     ap.add_argument("--save-assessment", metavar="FILE",
                     help="after the live assess, write the raw assessment JSON to FILE (re-gate later without an LLM)")
     ap.add_argument("--from-assessment", metavar="FILE",
@@ -182,8 +190,8 @@ def main():
     else:
         print("No applicable required gaps remain — the second-85% is closed for this spine.")
     if advisory:
-        print(f"\nADVISORY (mined robustness — informational, does not gate; "
-              f"--enforce-mined-robustness to gate): {len(advisory)}")
+        print(f"\nADVISORY (mined {axis or '?'}-axis — informational, does not gate; "
+              f"--enforce-mined to gate): {len(advisory)}")
         for g in advisory[:10]:
             print(f"  • {g['status']:8} {g['category']}")
         if len(advisory) > 10:

@@ -38,8 +38,13 @@ second search before they're final. Novelty positioning (verified two-pass surve
 app-store-mining prior art; the commit-mined category spine used as a day-1 predictor **and
 enforcement gate** is the unoccupied residue.
 
-Mining is **lens-parameterized** (`mine_common.py`): each axis is a lens (recurring-fix → robustness,
-feature-surface → scope; future: integration/threat/operability). `check.py` is the keystone gate —
+Mining is **lens-parameterized**: each axis is a lens. Six ship today — recurring-fix → ROBUSTNESS
+(`cluster_fixes.py`); feature-surface → SCOPE, plus issue-surface (GitHub issues = gaps users
+actually hit), config-surface, test-surface, and docs-surface (`feature_mine.py` `--lens`); and a
+fully deterministic operability-surface lens (`surface_mine.py`, zero LLM calls — Dockerfile/CI/
+release/config-example/migrations convergence). **Only SCOPE-axis spines gate**; every other axis
+is advisory until it beats the generic-baseline control — the discipline is enforced in `check.py`
+and tested. `check.py` is the keystone gate —
 `2080 check <target> --spine <checklist>` runs the diff, blocks (exit 3) on applicable required gaps,
 and is CI-ready. 2080 was run against its own feature spine and closed 3 of the gaps it found.
 See [`docs/HANDOFF.md`](docs/HANDOFF.md) for the full arc and findings.

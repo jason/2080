@@ -1,0 +1,166 @@
+{
+  "app_type": "telegram-llm-bot",
+  "lens": "config-surface",
+  "axis": "CONFIG",
+  "scope_note": "CONFIG-axis spine for telegram-llm-bot, mined via the config-surface lens (configuration knobs a mature telegram-llm-bot exposes (config files + env keys)) from ['AstrBot', 'ChatGPT-Telegram-Bot', 'LangBot', 'nekro-agent']. Does NOT predict project-specific product direction \u2014 that is strategy, not completeness. Non-SCOPE axes are advisory in check.py until they beat the generic-baseline control.",
+  "derived_from": [
+    "AstrBot",
+    "ChatGPT-Telegram-Bot",
+    "LangBot",
+    "nekro-agent"
+  ],
+  "required": [
+    {
+      "category": "Bot/channel credentials",
+      "what": "Tokens or access credentials for Telegram/OneBot-style messaging adapters.",
+      "projects": [
+        "nekro-agent",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Configure a Telegram/OneBot token, start the adapter, and confirm a test message is received by the bot."
+    },
+    {
+      "category": "LLM provider credentials",
+      "what": "API keys and base endpoints for LLM or model-serving providers.",
+      "projects": [
+        "LangBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Set an LLM API key and base URL, then send a prompt and confirm the provider returns a response."
+    },
+    {
+      "category": "Model discovery/selection",
+      "what": "Controls for available models, model lists, or pipeline/model configuration.",
+      "projects": [
+        "LangBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Change the configured model name or model list, restart, and confirm only the selected/listed model is used or shown."
+    },
+    {
+      "category": "Admin and access control",
+      "what": "Admin users, passwords, allowlists, group lists, and service access tokens.",
+      "projects": [
+        "nekro-agent",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Add an admin user/password or allowlist entry, then confirm allowed access succeeds and an unlisted user is denied."
+    },
+    {
+      "category": "Web/API frontend binding",
+      "what": "Frontend-to-backend API base URLs and dashboard/web client configuration.",
+      "projects": [
+        "LangBot",
+        "nekro-agent",
+        "AstrBot"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Set the frontend API base URL to the backend address and confirm the dashboard can load data from the API."
+    },
+    {
+      "category": "Persistent data paths",
+      "what": "Configurable data, static, or root directories for runtime state.",
+      "projects": [
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Set a custom data/config directory, create runtime state, restart, and confirm the state persists in that directory."
+    },
+    {
+      "category": "Container orchestration",
+      "what": "Docker Compose and environment presets for production, development, and adapter services.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 4,
+      "tier": "required",
+      "day1_tell": "Start the production/dev/adapter Docker Compose preset and confirm the expected services and environment values are active."
+    }
+  ],
+  "optional": [
+    {
+      "category": "Runtime ports and exposure",
+      "what": "External ports, service exposure, and container-facing network bindings.",
+      "projects": [
+        "nekro-agent"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Change the exposed service port, restart, and confirm the app is reachable on the new port but not the old one."
+    },
+    {
+      "category": "Relational database",
+      "what": "Postgres host, port, database, user, password, and environment-driven DB selection.",
+      "projects": [
+        "nekro-agent"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Configure Postgres host, port, database, user, and password, then confirm the app connects and creates/reads a record."
+    },
+    {
+      "category": "Vector database",
+      "what": "Qdrant URL, API key, and environment-driven vector-store selection.",
+      "projects": [
+        "nekro-agent"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Configure Qdrant URL/API key and vector-store selection, then confirm an embedding is stored and retrieved from Qdrant."
+    },
+    {
+      "category": "Auth/session secrets",
+      "what": "JWT or refresh-token secrets and expiration settings.",
+      "projects": [
+        "nekro-agent"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Set JWT or refresh-token secret and expiry, log in, and confirm tokens validate until expiry and fail afterward."
+    },
+    {
+      "category": "Search integration",
+      "what": "External search engine credentials and IDs for web-search augmentation.",
+      "projects": [
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Configure search engine credentials and search ID, then run a web-search query and confirm external results are returned."
+    },
+    {
+      "category": "Logging and diagnostics",
+      "what": "Runtime log verbosity or operational logging controls.",
+      "projects": [
+        "nekro-agent"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Set log level to debug, restart, and confirm debug-level runtime messages appear in logs."
+    },
+    {
+      "category": "Internationalized config UI",
+      "what": "Localized configuration metadata and dashboard-facing config descriptions.",
+      "projects": [
+        "AstrBot"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Switch the config UI language and confirm configuration labels/descriptions appear localized in the dashboard."
+    }
+  ]
+}

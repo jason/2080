@@ -2,6 +2,30 @@
 
 _Last updated: 2026-06-10 (session 5)_
 
+## ⏩ Session-5b: five new mining lenses (published repo: github.com/jason/2080, public)
+
+The lens registry earned its keep — four new LLM lenses are LENSES entries in `feature_mine.py`
+(source + abstract prose, shared synthesis): **issue-surface** (ISSUES axis — GitHub issues =
+gaps users EXPERIENCED, reaction-weighted, PRs excluded, gh-cached), **config-surface** (CONFIG —
+config files + recurring env keys → knob groups), **test-surface** (TESTS — test files/names →
+verification spine), **docs-surface** (DOCS — md headings → support surface). Plus
+**surface_mine.py**: a fully deterministic operability-surface lens (OPERABILITY — Dockerfile/
+compose/CI/release/config-example/migrations/healthcheck/packaging probes; zero LLM calls).
+
+**Gating discipline generalized and codified:** `check.py` now has `VALIDATED_GATING_AXES =
+{"SCOPE"}` — mined categories on ANY other axis (ROBUSTNESS and all five new ones) are advisory;
+the generic-baseline floor and axis-less user checklists still gate; `--enforce-mined` (alias
+`--enforce-mined-robustness`) opts back in. Tripwire tests enforce it from both sides
+(test_feature_mine: no lens may ship axis SCOPE without the control; test_surface_mine +
+test_check_assessment: new axes demote). A lens earns gating by beating the generic-baseline
+control in measure.py — same bar SCOPE passed (+0.27).
+
+All six lenses live-ran on the telegram neighbors → `checklists/telegram-llm-bot.{issues,configs,
+tests,docs,operability}.json` (10/7/13/20/10 required). Operability is 3-4/4 convergent on
+containerization/compose/CI/release/config-example — exactly the demo-invisible material the
+thesis names. Next: assess VIP against the issue + operability spines (advisory richness), and
+run a measure.py control on the issue lens (the one most likely to earn gating).
+
 ## ⏩ Session-5 update: gate matches the measurement, recall measured, open-source cut
 
 Three moves, all verified (54 deterministic tests green):

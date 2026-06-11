@@ -141,6 +141,17 @@ class RobustnessAxisAdvisory(unittest.TestCase):
                           extra=["--enforce-mined-robustness"])
             self.assertEqual(r.returncode, 3, r.stderr)
 
+    def test_new_lens_axes_are_advisory_until_validated(self):
+        # intent: every unvalidated mined axis (OPERABILITY/ISSUES/CONFIG/TESTS/DOCS) must demote
+        # like ROBUSTNESS — a new lens silently gaining gating power is how unmeasured noise
+        # starts blocking builds again.
+        ops = {**ROBUSTNESS_SPINE, "lens": "operability-surface", "axis": "OPERABILITY"}
+        with tempfile.TemporaryDirectory() as tmp:
+            r = run_check(tmp, robustness_assessment("gap"), spine_dict=ops)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            v = json.loads(r.stdout)
+            self.assertEqual([g["category"] for g in v["advisory_gaps"]], ["dependency fix"])
+
     def test_scope_axis_mined_gaps_still_gate(self):
         # intent: scope mining WON its control (+0.27) — the robustness demotion must never
         # leak to SCOPE spines, or the one measured-valuable gate stops gating.

@@ -1,0 +1,182 @@
+{
+  "app_type": "telegram-llm-bot",
+  "lens": "test-surface",
+  "axis": "TESTS",
+  "scope_note": "TESTS-axis spine for telegram-llm-bot, mined via the test-surface lens (behaviors mature telegram-llm-bots actually test (test files + test names)) from ['AstrBot', 'ChatGPT-Telegram-Bot', 'LangBot', 'nekro-agent']. Does NOT predict project-specific product direction \u2014 that is strategy, not completeness. Non-SCOPE axes are advisory in check.py until they beat the generic-baseline control.",
+  "derived_from": [
+    "AstrBot",
+    "ChatGPT-Telegram-Bot",
+    "LangBot",
+    "nekro-agent"
+  ],
+  "required": [
+    {
+      "category": "CI/smoke/startup",
+      "what": "Basic workflows verify the bot boots, test suites run in CI, and deployments/startup do not regress.",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "a CI smoke test that boots the bot, runs the test suite, and fails if startup exits non-zero"
+    },
+    {
+      "category": "message parsing/rendering",
+      "what": "Edge cases in user-visible text formats such as mentions, emoji, Telegram Markdown, LaTeX, SVG/image links, and markup escaping are verified.",
+      "projects": [
+        "AstrBot",
+        "nekro-agent",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "a rendering test that sends mentions, emoji, Markdown, LaTeX, SVG/image links, and escaped markup and asserts the exact safe output"
+    },
+    {
+      "category": "platform adapters",
+      "what": "Chat-platform integration behavior is tested across adapters such as Telegram, Discord, DingTalk, KOOK, and mocked platform clients.",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "an adapter contract test that sends the same mocked message through Telegram, Discord, DingTalk, and KOOK adapters and asserts normalized events/responses"
+    },
+    {
+      "category": "LLM provider/model clients",
+      "what": "Provider integrations, model service behavior, API keys, embeddings, Anthropic/Gemini/Dify-style clients, and provider configuration are covered.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "a provider client test that calls mocked OpenAI/Anthropic/Gemini/Dify-style chat and embedding APIs with configured API keys and asserts request/response mapping"
+    },
+    {
+      "category": "conversation flow",
+      "what": "End-to-end or pipeline tests check that incoming messages pass through routing, bot logic, model calls, and outgoing responses correctly.",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "an end-to-end conversation test that injects an incoming message and asserts routing, bot logic, model call, and outgoing reply all occur"
+    },
+    {
+      "category": "commands and bot control",
+      "what": "Command handling, conversation commands, CLI init/password flows, and bot/service control APIs are tested.",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "a command handling test that runs init/password/conversation-control commands and asserts the bot/service state changes correctly"
+    },
+    {
+      "category": "HTTP/API surface",
+      "what": "REST/API routes for bots, providers, knowledge, monitoring, pipelines, chat, and authentication are exercised.",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "an API route smoke test that exercises auth plus bots, providers, knowledge, monitoring, pipelines, and chat endpoints and asserts expected status codes"
+    },
+    {
+      "category": "persistence/migrations/backup",
+      "what": "Database migrations, persistence layers, backup/restore, and stored configuration survive changes.",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "a migration persistence test that upgrades a seeded database, restarts the app, and asserts stored config plus backup/restore still work"
+    },
+    {
+      "category": "knowledge/files/content ingestion",
+      "what": "Knowledge-base import, EPUB/docs parsing, embeddings, and content synchronization are tested.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "a content ingestion test that imports an EPUB/docs fixture, parses content, creates embeddings, syncs it, and asserts searchable knowledge entries"
+    },
+    {
+      "category": "plugin/extension system",
+      "what": "Plugin fixtures, extension preference storage, MCP/tool integrations, and extension lifecycle behavior are verified.",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "a plugin lifecycle test that installs a fixture plugin, stores preferences, invokes an MCP/tool extension, disables it, and asserts cleanup"
+    },
+    {
+      "category": "tooling and permissions",
+      "what": "Computer/file-system tools, skill sync, MCP access, and tool permission boundaries are checked.",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "a tool permission test that attempts allowed and forbidden filesystem/computer/MCP tool actions and asserts permission enforcement"
+    },
+    {
+      "category": "security hardening",
+      "what": "Tests cover dangerous execution paths, API-key handling, passwords, dependency risks, and permission enforcement.",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "a security regression test that verifies dangerous execution paths are blocked and API keys/passwords are never exposed in logs or responses"
+    },
+    {
+      "category": "agent runners",
+      "what": "Agent execution loops, runner clients, and multi-step agent workflows are verified.",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "an agent runner test that runs a mocked multi-step agent loop and asserts tool calls, intermediate state, and final response are correct"
+    }
+  ],
+  "optional": [
+    {
+      "category": "context/token management",
+      "what": "Conversation context, checkpoints, token counting, truncation, and history management are verified.",
+      "projects": [
+        "AstrBot"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "a context management test that builds an over-token conversation history and asserts checkpointing, token counting, truncation, and retained messages are correct"
+    },
+    {
+      "category": "dashboard/frontend UX",
+      "what": "Web dashboard behavior such as routing readiness, hash tabs, IME input, font subsets, and preferences is tested.",
+      "projects": [
+        "AstrBot"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "a frontend smoke test that loads the dashboard, verifies routing/hash tabs/preferences, tests IME input, and checks required font subsets render"
+    }
+  ]
+}

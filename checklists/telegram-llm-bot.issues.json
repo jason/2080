@@ -1,0 +1,139 @@
+{
+  "app_type": "telegram-llm-bot",
+  "lens": "issue-surface",
+  "axis": "ISSUES",
+  "scope_note": "ISSUES-axis spine for telegram-llm-bot, mined via the issue-surface lens (gaps users actually hit or demanded (GitHub issues, reaction-weighted)) from ['AstrBot', 'ChatGPT-Telegram-Bot', 'LangBot', 'nekro-agent']. Does NOT predict project-specific product direction \u2014 that is strategy, not completeness. Non-SCOPE axes are advisory in check.py until they beat the generic-baseline control.",
+  "derived_from": [
+    "AstrBot",
+    "ChatGPT-Telegram-Bot",
+    "LangBot",
+    "nekro-agent"
+  ],
+  "required": [
+    {
+      "category": "Model/provider compatibility",
+      "what": "Users need fast, reliable support for new LLM providers/models, custom endpoints, reasoning modes, embeddings, and model-list scanning without regressions.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 4,
+      "tier": "required",
+      "day1_tell": "Configure a newly released OpenAI-compatible model on a custom endpoint with reasoning enabled and embeddings listed, then scan/select the model list and complete one chat plus one embedding call without fallback or errors."
+    },
+    {
+      "category": "Adapter/platform reliability",
+      "what": "Users hit practical failures across Telegram, Feishu/Lark, WeCom, Discord, Minecraft and other adapters: message duplication, file/image send failures, long output failures, domain/config issues, and missing platform capabilities.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 4,
+      "tier": "required",
+      "day1_tell": "On each enabled adapter, send a long text, an image, and a file to a test chat and confirm delivery occurs once, succeeds, and long output is split rather than truncated or failed."
+    },
+    {
+      "category": "Tool/plugin/MCP governance",
+      "what": "Users want safer and clearer control over tools, plugins, workflows, MCP servers, sandbox calls, permissions, disabled methods, and tool-call lifecycle behavior.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Disable one tool/plugin/MCP method, then ask the model to use it and confirm the UI/logs show it was blocked with a clear permission/lifecycle reason and no sandbox call executed."
+    },
+    {
+      "category": "Multimodal media handling",
+      "what": "Users expect robust upload, viewing, generation, transcription, summarization, and processing of images, files, audio, video, and YouTube-like content.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 4,
+      "tier": "required",
+      "day1_tell": "Upload an image, PDF, audio clip, video, and YouTube-style URL, then request summarize/transcribe/describe/generate actions and confirm each produces a usable result or clear supported-format error."
+    },
+    {
+      "category": "Memory, RAG, and conversation history",
+      "what": "Users want reliable knowledge bases, vector storage, passive group history capture, memory initialization, summarization, timed resets, and safer persistence semantics.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 4,
+      "tier": "required",
+      "day1_tell": "Create a small knowledge base, add a document, query it in a new conversation, restart the service, and confirm retrieved context, memory initialization, history persistence, and reset behavior match configuration."
+    },
+    {
+      "category": "Admin, permissions, and group operations",
+      "what": "Users need practical group/channel administration: separate chat/tool permissions, admin-delegated commands, quotas, channel enable states, deletion, and manual human intervention.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "As a delegated group admin, change chat permission, tool permission, quota, channel enable state, and delete one test item, then confirm unauthorized users cannot do the same."
+    },
+    {
+      "category": "Security and trust boundaries",
+      "what": "Users raise concerns around audit findings, protocol/message spoofing, package validation, API auth fallback, sandbox exposure, and trusted/untrusted content boundaries.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 4,
+      "tier": "required",
+      "day1_tell": "Send spoofed protocol-like content, install an unsigned package/plugin, call the API without auth, and request sandbox access to secrets; confirm each is rejected or isolated with audit-visible logs."
+    },
+    {
+      "category": "Deployment and environment friction",
+      "what": "Users struggle with Docker, proxies, local installs, Windows/Linux quirks, Android/WSL support, dependency imports, CPU requirements, working directories, and environment variables.",
+      "projects": [
+        "AstrBot",
+        "nekro-agent",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Fresh-install via the documented Docker/local path behind a proxy on the target OS, restart from a different working directory, and confirm dependencies, env vars, CPU compatibility, and startup all work."
+    },
+    {
+      "category": "Observability and UX feedback",
+      "what": "Users want clearer UI state, dynamic waiting indicators, better error messages, debug-group reliability, login/autofill convenience, and less confusing frontend behavior.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Trigger a slow model response, a provider error, and a debug-group notification, then confirm the UI shows waiting state, actionable error text, reliable debug output, and no confusing stale state."
+    },
+    {
+      "category": "Automation and proactive behavior",
+      "what": "Users ask bots to initiate actions, run cron/wakeup flows, backup regularly, auto-update, send notifications, and act beyond passive chat.",
+      "projects": [
+        "AstrBot",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Configure a cron/wakeup automation to run a backup and send a notification without user chat input, then confirm it executes on schedule, survives restart, and reports success/failure."
+    }
+  ],
+  "optional": []
+}

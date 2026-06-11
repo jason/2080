@@ -1,0 +1,274 @@
+{
+  "app_type": "telegram-llm-bot",
+  "lens": "docs-surface",
+  "axis": "DOCS",
+  "scope_note": "DOCS-axis spine for telegram-llm-bot, mined via the docs-surface lens (support/doc sections a mature telegram-llm-bot ships (markdown headings)) from ['AstrBot', 'ChatGPT-Telegram-Bot', 'LangBot', 'nekro-agent']. Does NOT predict project-specific product direction \u2014 that is strategy, not completeness. Non-SCOPE axes are advisory in check.py until they beat the generic-baseline control.",
+  "derived_from": [
+    "AstrBot",
+    "ChatGPT-Telegram-Bot",
+    "LangBot",
+    "nekro-agent"
+  ],
+  "required": [
+    {
+      "category": "Project overview",
+      "what": "High-level introduction, positioning, capabilities, and why-use sections.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 4,
+      "tier": "required",
+      "day1_tell": "Open the main README or docs homepage and verify it has an overview/introduction section explaining what the project is, its main capabilities, and why someone would use it."
+    },
+    {
+      "category": "Feature list",
+      "what": "Documented core features, key capabilities, supported use cases, and demos.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 4,
+      "tier": "required",
+      "day1_tell": "Open the docs and find a features/capabilities section listing the bot's core features, supported use cases, or demo links/screenshots."
+    },
+    {
+      "category": "Quick start",
+      "what": "Fast path for first-time users to launch or deploy the bot.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Open the docs and confirm there is a quick-start path that lets a first-time user launch or deploy the bot with minimal steps."
+    },
+    {
+      "category": "Deployment matrix",
+      "what": "Multiple deployment options such as Docker, one-click cloud deploy, local source deploy, hosted platforms, or scripts.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 4,
+      "tier": "required",
+      "day1_tell": "Open the deployment docs and verify they describe more than one deployment option, such as Docker, cloud deploy, local source deploy, hosted platform, or scripts."
+    },
+    {
+      "category": "Local development setup",
+      "what": "Instructions for cloning, installing dependencies, bootstrapping backend/frontend, and running locally.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Open the developer setup docs and confirm they include clone, dependency installation, backend/frontend bootstrap, and local run commands."
+    },
+    {
+      "category": "Configuration reference",
+      "what": "Environment variables, config files, launch parameters, or runtime configuration guidance.",
+      "projects": [
+        "nekro-agent",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Open the configuration docs and verify there is a reference for environment variables, config files, launch parameters, or runtime settings."
+    },
+    {
+      "category": "Supported platforms",
+      "what": "Messaging platforms, integrations, or bot channels supported by the project.",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Open the docs and find a supported platforms/channels section naming the messaging platforms, integrations, or bot channels the project supports."
+    },
+    {
+      "category": "Supported model services",
+      "what": "Supported LLM providers, model backends, TTS, image generation, or AI integrations.",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Open the docs and verify there is a supported AI/model services section listing LLM providers, model backends, TTS, image generation, or similar integrations."
+    },
+    {
+      "category": "Plugin or extension development",
+      "what": "Guides for building, debugging, or structuring plugins/extensions/tools.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 4,
+      "tier": "required",
+      "day1_tell": "Open the docs and confirm there is a guide for creating, debugging, or structuring plugins, extensions, tools, or custom integrations."
+    },
+    {
+      "category": "Architecture",
+      "what": "Repository layout, runtime architecture, sandbox/plugin architecture, or system overview.",
+      "projects": [
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Open the docs and find an architecture section that explains repository layout, runtime flow, plugin/sandbox architecture, or overall system design."
+    },
+    {
+      "category": "Testing",
+      "what": "Test commands, testing workflow, test steps, or validation expectations.",
+      "projects": [
+        "AstrBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Open the docs and find testing instructions that include test commands, workflow, validation steps, or expected test setup."
+    },
+    {
+      "category": "Code quality",
+      "what": "Formatting, linting, pre-commit, code standards, migrations, and quality gates.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Open the docs and confirm there are code quality instructions covering formatting, linting, pre-commit hooks, coding standards, migrations, or quality gates."
+    },
+    {
+      "category": "Contributor guide",
+      "what": "How to report issues, submit pull requests, follow contribution rules, and communicate with maintainers.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Open CONTRIBUTING.md or contributor docs and verify they explain how to report issues, submit PRs, follow contribution rules, or contact maintainers."
+    },
+    {
+      "category": "PR template",
+      "what": "Pull request checklist, screenshots, change type, implementation details, and maintainer review items.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Check the repository for a pull request template and verify it includes a checklist, change type, screenshots, implementation notes, or review guidance."
+    },
+    {
+      "category": "License and legal",
+      "what": "License, EULA, copyright, warranties, restrictions, and liability terms.",
+      "projects": [
+        "AstrBot",
+        "nekro-agent",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Check the repository for a LICENSE, EULA, or legal section and verify it states license terms, copyright, warranties, restrictions, or liability terms."
+    },
+    {
+      "category": "Troubleshooting",
+      "what": "Common issues, workarounds, debugging tips, and operational gotchas.",
+      "projects": [
+        "AstrBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Open the docs and find a troubleshooting section that covers common failures, debugging steps, workarounds, or operational gotchas."
+    },
+    {
+      "category": "FAQ",
+      "what": "Frequently asked questions for users or deployers.",
+      "projects": [
+        "nekro-agent",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Open the docs and verify there is an FAQ section with common questions and answers for users, deployers, or developers."
+    },
+    {
+      "category": "Release and changelog",
+      "what": "Release versions, changelog, preview/stable channels, and update notes.",
+      "projects": [
+        "AstrBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Check the repository or docs for a changelog/releases page and verify it lists versions, release notes, update history, or preview/stable channels."
+    },
+    {
+      "category": "Community",
+      "what": "Community links, support channels, sponsors, contributors, and star history.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 4,
+      "tier": "required",
+      "day1_tell": "Open the README or docs and verify there are community/support links such as Discord, Slack, forum, sponsors, contributors, or star history."
+    },
+    {
+      "category": "Multilingual docs",
+      "what": "Documentation duplicated or localized across multiple languages.",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent",
+        "ChatGPT-Telegram-Bot"
+      ],
+      "recurrence_projects": 4,
+      "tier": "required",
+      "day1_tell": "Open the docs and verify the same documentation is available in more than one language or includes localized language folders/pages."
+    }
+  ],
+  "optional": [
+    {
+      "category": "API documentation",
+      "what": "API references, response formats, SDK/runtime APIs, or developer-facing interface docs.",
+      "projects": [
+        "nekro-agent"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Open the docs and verify there is API documentation with endpoints, SDK/runtime APIs, request/response formats, or developer interfaces."
+    },
+    {
+      "category": "Code of conduct",
+      "what": "Community behavior expectations and enforcement policy.",
+      "projects": [
+        "AstrBot"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Check the repository or docs for a Code of Conduct and verify it states community behavior expectations and enforcement/reporting policy."
+    }
+  ]
+}

@@ -27,12 +27,15 @@ Emits a checklist-compatible JSON (required/optional + day1_tell) so `diff_targe
 unchanged.
 
 Usage:
-  feature_mine.py <neighbor-repo-dir>... [--app-type T] [--lens feature-surface]
-                  [--emit checklists/<app-type>.features.json] [--json]
+  feature_mine.py <neighbor-repo-dir>... [--app-type T] [--lens NAME]
+                  [--emit checklists/<app-type>.<lens>.json] [--json]
+Lenses: feature-surface (SCOPE, gates) · issue-surface (ISSUES) · config-surface (CONFIG) ·
+        test-surface (TESTS) · docs-surface (DOCS) — non-SCOPE axes are advisory in check.py.
+        The deterministic operability-surface lens lives in surface_mine.py.
 Exit codes: 0 OK | 1 USAGE/ERR | 2 NOT_FOUND | 3 EMPTY
 """
 from __future__ import annotations
-import argparse, json, subprocess, sys
+import argparse, json, os, re, subprocess, sys
 from pathlib import Path
 
 from mine_common import fan_batch, extract_json, EXIT_OK, EXIT_ERR, EXIT_NOT_FOUND, EXIT_EMPTY
@@ -53,36 +56,118 @@ def neighbor_name(repo_dir):
 
 
 # ── LENS registry ─────────────────────────────────────────────────────────────
-# To add a mining dimension: register a lens here. `source(repo)` returns the raw material;
-# `synth(material, app_type)` returns the spine-synthesis prompt. Aggregation (convergence
-# tiering) and day-1 tells are lens-agnostic and handled in main().
+# To add a mining dimension: register a lens here. `source(repo)` returns that repo's raw
+# material as ONE text block; `material_label` + `abstract` parameterize the shared synthesis
+# prompt. Aggregation (convergence tiering) and day-1 tells are lens-agnostic in main().
+#
+# GATING DISCIPLINE: only the SCOPE axis has beaten the generic-baseline control (+0.27) and
+# earned the right to gate. Every other axis ships ADVISORY (check.py demotes it) until it
+# passes the same measure.py control. Do not mark a new lens SCOPE to make it gate.
+
+def _ls_tree(repo):
+    return _git(repo, "ls-tree", "-r", "--name-only", "HEAD").splitlines()
+
+
+def _grep_lines(repo, pattern, *pathspecs, cap=150):
+    out = _git(repo, "grep", "-hIE", pattern, "HEAD", "--", *pathspecs) if pathspecs else \
+        _git(repo, "grep", "-hIE", pattern, "HEAD")
+    lines = [ln.split(":", 1)[-1].strip() for ln in out.splitlines()]
+    seen, uniq = set(), []
+    for ln in lines:
+        if ln and ln not in seen:
+            seen.add(ln); uniq.append(ln)
+    return uniq[:cap]
+
 
 def _feature_surface_source(repo):
     readme = ""
     for n in README_NAMES:
         r = _git(repo, "show", f"HEAD:{n}")
         if r:
-            readme = r[:1800]
+            readme = r[:1400]
             break
-    feats = [s for s in _git(repo, "log", "--format=%s").splitlines() if s.lower().startswith("feat")][:45]
-    return {"readme": readme, "feat_commits": feats}
+    feats = [s for s in _git(repo, "log", "--format=%s").splitlines() if s.lower().startswith("feat")][:35]
+    return f"README:\n{readme}\nfeat: commits:\n" + "\n".join(feats)
 
 
-def _feature_surface_synth(materials, app_type):
-    blocks = ""
-    for m in materials:
-        blocks += (f"\n### {m['name']} README:\n{m['readme'][:1400]}\n"
-                   f"### {m['name']} feat: commits:\n" + "\n".join(m["feat_commits"][:35]) + "\n")
-    names = [m["name"] for m in materials]
-    return (
-        f"Below are the FEATURE surfaces (README + feat: commits) of {len(materials)} mature "
-        f"{app_type} projects: {', '.join(names)}.\n{blocks}\n\n"
-        f"Abstract these into a category-level FEATURE SPINE: the product CAPABILITIES a full working "
-        f"{app_type} converges on — actual user-facing features/capabilities, NOT bug-fixes or hardening. "
-        f"For each category, note which of the named projects have it. Only reference these projects "
-        f"({', '.join(names)}); invent no others.\n"
-        'Return ONLY JSON: {"feature_spine":[{"category":"short name","what":"one line","neighbors":["..."]}]}'
-    )
+def slug_from_url(url):
+    """github remote URL (https or ssh) -> 'owner/repo', or None (pure)."""
+    m = re.search(r"github\.com[:/]([^/\s]+)/([^/\s]+?)(?:\.git)?/?$", url or "")
+    return f"{m.group(1)}/{m.group(2)}" if m else None
+
+
+def format_issue_lines(items, cap=120):
+    """GitHub issues API items -> material lines, PRs excluded, reactions surfaced (pure)."""
+    lines = []
+    for it in items:
+        if not isinstance(it, dict) or "pull_request" in it or not it.get("title"):
+            continue
+        n = (it.get("reactions") or {}).get("total_count", 0)
+        lines.append(f"- [{it.get('state', '?')}] (+{n}) {str(it['title']).strip()[:120]}")
+    lines.sort(key=lambda l: -int(re.search(r"\(\+(\d+)\)", l).group(1)))
+    return lines[:cap]
+
+
+def _issue_surface_source(repo):
+    """Issues = gaps users EXPERIENCED. Fetched via gh, cached; empty block if gh/remote fails
+    (the lens then just sees fewer neighbors — never crashes the mine)."""
+    name = neighbor_name(repo)
+    cache = Path(os.environ.get("CACHE_2080", os.path.expanduser("~/.cache/2080"))) / "issues"
+    cache.mkdir(parents=True, exist_ok=True)
+    cached = cache / f"{name}.json"
+    if cached.exists():
+        items = json.loads(cached.read_text())
+    else:
+        slug = slug_from_url(_git(repo, "remote", "get-url", "origin").strip())
+        if not slug:
+            return ""
+        items = []
+        for page in (1, 2):
+            r = subprocess.run(["gh", "api", f"repos/{slug}/issues?state=all&per_page=100&page={page}"],
+                               capture_output=True, text=True)
+            if r.returncode != 0:
+                break
+            items += json.loads(r.stdout)
+        cached.write_text(json.dumps(items))
+    return "\n".join(format_issue_lines(items))
+
+
+CONFIG_FILE_RE = re.compile(r"(^|/)(\.env[^/]*|docker-compose[^/]*|compose\.ya?ml|[^/]*config[^/]*\."
+                            r"(example|sample|ya?ml|toml|json)|[^/]*\.example\.[^/]+)$", re.I)
+ENV_TOKEN_RE = re.compile(r"\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+){1,}\b")
+
+
+def config_material(files, blobs):
+    """Config filenames + recurring env-var tokens from their contents (pure)."""
+    cfg_files = [f for f in files if CONFIG_FILE_RE.search(f)][:40]
+    counts = {}
+    for text in blobs:
+        for tok in set(ENV_TOKEN_RE.findall(text or "")):
+            counts[tok] = counts.get(tok, 0) + 1
+    toks = sorted(counts, key=lambda t: -counts[t])[:80]
+    return "config files:\n" + "\n".join(cfg_files) + "\nconfig keys:\n" + "\n".join(toks)
+
+
+def _config_surface_source(repo):
+    files = _ls_tree(repo)
+    cfg = [f for f in files if CONFIG_FILE_RE.search(f)][:25]
+    blobs = [_git(repo, "show", f"HEAD:{f}")[:6000] for f in cfg]
+    return config_material(files, blobs)
+
+
+TEST_PATH_RE = re.compile(r"(^|/)(tests?|spec|__tests__)(/|_)|[._-](test|spec)s?\.[a-z]+$|_test\.[a-z]+$", re.I)
+
+
+def _test_surface_source(repo):
+    tfiles = [f for f in _ls_tree(repo) if TEST_PATH_RE.search(f)]
+    names = _grep_lines(repo, r"def test_|it\(['\"]|test\(['\"]|describe\(['\"]|#\[test\]|func Test",
+                        *(tfiles[:200] or ["."]), cap=120) if tfiles else []
+    return "test files:\n" + "\n".join(tfiles[:60]) + "\ntest names:\n" + "\n".join(names)
+
+
+def _docs_surface_source(repo):
+    heads = _grep_lines(repo, r"^#{1,3} ", "*.md", "*.rst", cap=150)
+    return "doc headings:\n" + "\n".join(heads)
 
 
 LENSES = {
@@ -90,18 +175,80 @@ LENSES = {
         "axis": "SCOPE",
         "desc": "product capabilities a mature <app_type> converges on (README + feat: commits)",
         "source": _feature_surface_source,
-        "synth": _feature_surface_synth,
+        "material_label": "FEATURE surfaces (README + feat: commits)",
+        "abstract": ("the product CAPABILITIES a full working {app_type} converges on — actual "
+                     "user-facing features/capabilities, NOT bug-fixes or hardening"),
         "day1_kind": "reveals whether a product HAS this capability (e.g. 'open the web UI and confirm it "
                      "serves the chat interface', 'list configured providers and switch model mid-session')",
     },
-    # future: "integration-surface" (SCOPE), "threat-surface" (SECURITY), "operability-surface" (OPS)…
+    "issue-surface": {
+        "axis": "ISSUES",
+        "desc": "gaps users actually hit or demanded (GitHub issues, reaction-weighted)",
+        "source": _issue_surface_source,
+        "material_label": "ISSUE surfaces (GitHub issue titles, [state] (+reactions))",
+        "abstract": ("the capability gaps and demands USERS of a {app_type} actually experience — "
+                     "recurring complaint/request themes, weighted toward high-reaction and recurring "
+                     "issues, NOT one-off bug reports"),
+        "day1_kind": "reveals whether the product would suffer this user-reported gap (e.g. 'send a "
+                     "long message and confirm it is split, not truncated')",
+    },
+    "config-surface": {
+        "axis": "CONFIG",
+        "desc": "configuration knobs a mature <app_type> exposes (config files + env keys)",
+        "source": _config_surface_source,
+        "material_label": "CONFIG surfaces (config filenames + recurring config/env keys)",
+        "abstract": ("the CONFIGURATION capabilities a mature {app_type} exposes — groups of knobs "
+                     "(timeouts, proxies, rate limits, credentials, model selection…), NOT individual "
+                     "variable names"),
+        "day1_kind": "reveals whether the knob group exists (e.g. 'set the request timeout in config and "
+                     "confirm a slow call honors it')",
+    },
+    "test-surface": {
+        "axis": "TESTS",
+        "desc": "behaviors mature <app_type>s actually test (test files + test names)",
+        "source": _test_surface_source,
+        "material_label": "TEST surfaces (test file paths + test case names)",
+        "abstract": ("the VERIFICATION surface a mature {app_type} converges on — categories of "
+                     "behavior the projects all bother to test (reconnects, rate limits, parsing edge "
+                     "cases…), NOT individual test names"),
+        "day1_kind": "names the test the target should have (e.g. 'a test that kills the connection "
+                     "mid-stream and asserts recovery')",
+    },
+    "docs-surface": {
+        "axis": "DOCS",
+        "desc": "support/doc sections a mature <app_type> ships (markdown headings)",
+        "source": _docs_surface_source,
+        "material_label": "DOCS surfaces (markdown headings from README + docs)",
+        "abstract": ("the SUPPORT surface a mature {app_type} documents — recurring doc sections "
+                     "(installation matrix, configuration reference, troubleshooting, deployment, "
+                     "FAQ…), NOT prose topics"),
+        "day1_kind": "reveals whether the doc section exists and is real (e.g. 'open docs and find a "
+                     "troubleshooting section that covers a failed connection')",
+    },
+    # deterministic operability-surface lens lives in surface_mine.py (no LLM needed)
 }
 
 
+def synth_prompt(materials, app_type, lens):
+    """Shared spine-synthesis prompt; lenses differ only in material_label + abstract prose."""
+    names = [m["name"] for m in materials]
+    blocks = "".join(f"\n### {m['name']}:\n{m['block'][:1800]}\n" for m in materials)
+    return (
+        f"Below are the {lens['material_label']} of {len(materials)} mature {app_type} projects: "
+        f"{', '.join(names)}.\n{blocks}\n\n"
+        f"Abstract these into a category-level spine: {lens['abstract'].format(app_type=app_type)}. "
+        f"For each category, note which of the named projects show it. Only reference these projects "
+        f"({', '.join(names)}); invent no others.\n"
+        'Return ONLY JSON: {"spine":[{"category":"short name","what":"one line","neighbors":["..."]}]}'
+    )
+
+
 def capability_map():
-    return {"tool": "feature_mine", "version": "0.1",
-            "args": "<neighbor-repo-dir>... [--app-type T] [--lens feature-surface] [--emit PATH] [--json]",
-            "lenses": list(LENSES.keys()),
+    return {"tool": "feature_mine", "version": "0.2",
+            "args": "<neighbor-repo-dir>... [--app-type T] [--lens NAME] [--emit PATH] [--json]",
+            "lenses": {k: {"axis": v["axis"], "desc": v["desc"]} for k, v in LENSES.items()},
+            "gating": "only SCOPE-axis spines gate by default; other axes are advisory until they "
+                      "beat the generic-baseline control (see measure.py)",
             "exit_codes": {"0": "ok", "1": "usage/err", "2": "not_found", "3": "empty"}}
 
 
@@ -129,19 +276,18 @@ def main():
             # allow bare or worktree; only hard-fail if git can't read it
             if not _git(repo, "rev-parse", "HEAD").strip():
                 print(f"not a readable git repo: {repo}", file=sys.stderr); sys.exit(EXIT_NOT_FOUND)
-        src = lens["source"](repo)
-        src["name"] = neighbor_name(repo)
-        materials.append(src)
+        materials.append({"name": neighbor_name(repo), "block": lens["source"](repo) or ""})
 
-    if not any(m.get("readme") or m.get("feat_commits") for m in materials):
-        print("no feature material extracted from any neighbor", file=sys.stderr); sys.exit(EXIT_EMPTY)
+    materials = [m for m in materials if m["block"].strip()]
+    if not materials:
+        print(f"no {a.lens} material extracted from any neighbor", file=sys.stderr); sys.exit(EXIT_EMPTY)
 
     def _fan(calls, mt_default=2500):
         return fan_batch(calls, a.model, a.provider, a.reasoning)
 
     # 1) synthesize the spine across neighbors
     try:
-        synth_txt = _fan([{"id": "spine", "prompt": lens["synth"](materials, a.app_type), "maxTokens": 2500}])["spine"]
+        synth_txt = _fan([{"id": "spine", "prompt": synth_prompt(materials, a.app_type, lens), "maxTokens": 2500}])["spine"]
     except Exception as e:
         print(f"fan error: {e}", file=sys.stderr); sys.exit(EXIT_ERR)
     parsed = extract_json(synth_txt) or {}
@@ -180,9 +326,11 @@ def main():
         "app_type": a.app_type,
         "lens": a.lens,
         "axis": lens["axis"],
-        "scope_note": (f"SCOPE-completeness spine for {a.app_type}, mined via the {a.lens} lens from the "
-                       f"FEATURE surface of {derived}. Complements the robustness spine (cluster_fixes.py). "
-                       f"Does NOT predict project-specific product direction — that is strategy, not completeness."),
+        "scope_note": (f"{lens['axis']}-axis spine for {a.app_type}, mined via the {a.lens} lens "
+                       f"({lens['desc'].replace('<app_type>', a.app_type)}) from {derived}. "
+                       f"Does NOT predict project-specific product direction — that is strategy, not "
+                       f"completeness. Non-SCOPE axes are advisory in check.py until they beat the "
+                       f"generic-baseline control."),
         "derived_from": derived,
         "required": required,
         "optional": optional,
@@ -196,8 +344,8 @@ def main():
     if a.json:
         print(json.dumps(checklist, indent=2)); sys.exit(EXIT_OK)
 
-    print(f"=== {a.app_type} FEATURE spine [{lens['axis']} axis, lens={a.lens}] ===")
-    print(f"derived from feature surfaces of: {derived}\n")
+    print(f"=== {a.app_type} spine [{lens['axis']} axis, lens={a.lens}] ===")
+    print(f"derived from {a.lens} material of: {derived}\n")
     print(f"CONVERGENT capabilities (≥2 neighbors → required scope) — {len(required)}:")
     for c in required:
         print(f"  🔁 {c['category']}  {c['projects']}")

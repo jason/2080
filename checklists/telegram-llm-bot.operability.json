@@ -1,0 +1,156 @@
+{
+  "app_type": "telegram-llm-bot",
+  "lens": "operability-surface",
+  "axis": "OPERABILITY",
+  "scope_note": "OPERABILITY-axis spine for telegram-llm-bot: deterministic artifact-presence mining over ['AstrBot', 'ChatGPT-Telegram-Bot', 'LangBot', 'nekro-agent'] \u2014 what mature neighbors ship AROUND the code. Advisory in check.py until this lens beats the generic-baseline control.",
+  "derived_from": [
+    "AstrBot",
+    "ChatGPT-Telegram-Bot",
+    "LangBot",
+    "nekro-agent"
+  ],
+  "required": [
+    {
+      "category": "containerization",
+      "what": "Ships a container image definition.",
+      "aliases": "docker / container image / dockerfile",
+      "projects": [
+        "AstrBot",
+        "ChatGPT-Telegram-Bot",
+        "LangBot"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "example": "Dockerfile",
+      "day1_tell": "Build the container image from the repo's Dockerfile and run it."
+    },
+    {
+      "category": "compose/orchestration",
+      "what": "Ships multi-service orchestration (compose/helm/k8s).",
+      "aliases": "docker compose / helm chart / kubernetes manifests",
+      "projects": [
+        "AstrBot",
+        "ChatGPT-Telegram-Bot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 4,
+      "tier": "required",
+      "example": "compose.yml",
+      "day1_tell": "Bring the stack up with one orchestration command (compose up or helm install)."
+    },
+    {
+      "category": "CI pipeline",
+      "what": "Ships continuous-integration automation.",
+      "aliases": "continuous integration / github actions / build pipeline",
+      "projects": [
+        "AstrBot",
+        "ChatGPT-Telegram-Bot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 4,
+      "tier": "required",
+      "example": ".github/workflows/build-docs.yml",
+      "day1_tell": "Push a commit and confirm CI runs the test suite automatically."
+    },
+    {
+      "category": "release automation",
+      "what": "Automates releases/publishing (tagged builds, changelog, registry push).",
+      "aliases": "release workflow / publish pipeline / goreleaser / semantic release",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "example": ".github/workflows/release.yml",
+      "day1_tell": "Tag a version and confirm an automated release (artifact/registry/changelog) is produced."
+    },
+    {
+      "category": "config example",
+      "what": "Ships a copyable configuration template.",
+      "aliases": "env example / sample config / configuration template",
+      "projects": [
+        "ChatGPT-Telegram-Bot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "example": ".env.example",
+      "day1_tell": "Copy the shipped config example, fill the minimum values, and boot successfully from it."
+    },
+    {
+      "category": "schema/data migrations",
+      "what": "Ships database/data migration machinery.",
+      "aliases": "schema migration / database migration / alembic",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "example": "astrbot/core/db/migration/helper.py",
+      "day1_tell": "Run the migration command against an old-schema database and confirm it upgrades cleanly."
+    },
+    {
+      "category": "healthcheck endpoint",
+      "what": "Exposes a liveness/readiness signal.",
+      "aliases": "healthcheck / liveness / readiness probe",
+      "projects": [
+        "AstrBot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "example": "astrbot/core/computer/booters/bay_manager.py",
+      "day1_tell": "Hit the health endpoint (or healthcheck command) and confirm it reports status."
+    },
+    {
+      "category": "packaging metadata",
+      "what": "Installable via standard packaging (not just git clone).",
+      "aliases": "package metadata / installable package / distribution",
+      "projects": [
+        "AstrBot",
+        "ChatGPT-Telegram-Bot",
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 4,
+      "tier": "required",
+      "example": "dashboard/package.json",
+      "day1_tell": "Install the tool through its package manager entry point and run the binary."
+    },
+    {
+      "category": "task runner",
+      "what": "Ships a developer task entry point (make/just/task).",
+      "aliases": "makefile / justfile / task runner / dev commands",
+      "projects": [
+        "AstrBot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "example": "Makefile",
+      "day1_tell": "Run the default dev task (e.g. `make test`) and confirm it works from a fresh clone."
+    },
+    {
+      "category": "install script",
+      "what": "Ships a one-command installer.",
+      "aliases": "install script / one-line install / setup script",
+      "projects": [
+        "AstrBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "example": "docs/public/install.ps1",
+      "day1_tell": "Run the install script on a clean machine/container and confirm a working binary."
+    }
+  ],
+  "optional": []
+}
