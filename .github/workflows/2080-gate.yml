@@ -17,6 +17,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
 
+      - name: lint (syntax/undefined-name floor)
+        run: uvx ruff check --select E9,F63,F7,F82 . --exclude archive
+
       - name: 2080 completeness gate (from committed assessment)
         run: |
           if [ ! -f .2080.json ] || [ ! -f .2080-assessment.json ]; then
