@@ -98,6 +98,17 @@ def test_config_material_surfaces_recurring_env_tokens():
     assert "prose" not in m.lower().split("config keys:")[1]
 
 
+def test_config_material_excludes_dev_tooling_configs():
+    # intent: dev-tooling configs (tsconfig, eslint, pytest) describe how the project is BUILT,
+    # not what an operator configures — mining them is why the config lens scored only +0.10 in
+    # the 2026-06-11 control ("build/typecheck toolchain" came back as a required knob group).
+    files = ["tsconfig.json", ".eslintrc.config.json", "pytest-config.yaml",
+             ".env.example", "config/settings.example.yaml"]
+    m = config_material(files, [])
+    assert ".env.example" in m and "config/settings.example.yaml" in m
+    assert "tsconfig" not in m and "eslint" not in m and "pytest" not in m
+
+
 def test_path_regexes_classify_correctly():
     # intent: TEST_PATH_RE/CONFIG_FILE_RE feed two lenses' material; a regex matching src files
     # as tests (or lockfiles as config) poisons the spine upstream of every later stage.

@@ -2,7 +2,8 @@
   "app_type": "telegram-llm-bot",
   "lens": "config-surface",
   "axis": "CONFIG",
-  "scope_note": "CONFIG-axis spine for telegram-llm-bot, mined via the config-surface lens (configuration knobs a mature telegram-llm-bot exposes (config files + env keys)) from ['AstrBot', 'ChatGPT-Telegram-Bot', 'LangBot', 'nekro-agent']. Does NOT predict project-specific product direction \u2014 that is strategy, not completeness. Non-SCOPE axes are advisory in check.py until they beat the generic-baseline control.",
+  "baseline_merged": false,
+  "scope_note": "CONFIG-axis spine for telegram-llm-bot, mined via the config-surface lens (configuration knobs a mature telegram-llm-bot exposes (config files + env keys)) from ['AstrBot', 'ChatGPT-Telegram-Bot', 'LangBot', 'nekro-agent']. Does NOT predict project-specific product direction \u2014 that is strategy, not completeness. An axis gates only after beating the generic-baseline control (check.py VALIDATED_GATING_AXES); the rest are advisory.",
   "derived_from": [
     "AstrBot",
     "ChatGPT-Telegram-Bot",
@@ -11,156 +12,145 @@
   ],
   "required": [
     {
-      "category": "Bot/channel credentials",
-      "what": "Tokens or access credentials for Telegram/OneBot-style messaging adapters.",
+      "category": "deployment and containerization",
+      "what": "Run the bot via compose/env-driven deployment, including service wiring and runtime mode.",
       "projects": [
-        "nekro-agent",
-        "ChatGPT-Telegram-Bot"
-      ],
-      "recurrence_projects": 2,
-      "tier": "required",
-      "day1_tell": "Configure a Telegram/OneBot token, start the adapter, and confirm a test message is received by the bot."
-    },
-    {
-      "category": "LLM provider credentials",
-      "what": "API keys and base endpoints for LLM or model-serving providers.",
-      "projects": [
+        "AstrBot",
+        "ChatGPT-Telegram-Bot",
         "LangBot",
-        "ChatGPT-Telegram-Bot"
+        "nekro-agent"
+      ],
+      "recurrence_projects": 4,
+      "tier": "required",
+      "day1_tell": "Start the stack with docker compose using env vars for runtime mode and service URLs, then confirm the bot container boots and connects to its dependent services."
+    },
+    {
+      "category": "bot/channel credentials",
+      "what": "Configure Telegram/OneBot-facing tokens and connection credentials for the chat platform.",
+      "projects": [
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
       ],
       "recurrence_projects": 2,
       "tier": "required",
-      "day1_tell": "Set an LLM API key and base URL, then send a prompt and confirm the provider returns a response."
+      "day1_tell": "Set Telegram/OneBot token or connection credentials in config, start the bot, and confirm it can receive or send a test message on that channel."
     },
     {
-      "category": "Model discovery/selection",
-      "what": "Controls for available models, model lists, or pipeline/model configuration.",
-      "projects": [
-        "LangBot",
-        "ChatGPT-Telegram-Bot"
-      ],
-      "recurrence_projects": 2,
-      "tier": "required",
-      "day1_tell": "Change the configured model name or model list, restart, and confirm only the selected/listed model is used or shown."
-    },
-    {
-      "category": "Admin and access control",
-      "what": "Admin users, passwords, allowlists, group lists, and service access tokens.",
-      "projects": [
-        "nekro-agent",
-        "ChatGPT-Telegram-Bot"
-      ],
-      "recurrence_projects": 2,
-      "tier": "required",
-      "day1_tell": "Add an admin user/password or allowlist entry, then confirm allowed access succeeds and an unlisted user is denied."
-    },
-    {
-      "category": "Web/API frontend binding",
-      "what": "Frontend-to-backend API base URLs and dashboard/web client configuration.",
-      "projects": [
-        "LangBot",
-        "nekro-agent",
-        "AstrBot"
-      ],
-      "recurrence_projects": 3,
-      "tier": "required",
-      "day1_tell": "Set the frontend API base URL to the backend address and confirm the dashboard can load data from the API."
-    },
-    {
-      "category": "Persistent data paths",
-      "what": "Configurable data, static, or root directories for runtime state.",
+      "category": "web/admin frontend endpoint",
+      "what": "Point browser dashboards or frontends at the backend API service.",
       "projects": [
         "LangBot",
         "nekro-agent"
       ],
       "recurrence_projects": 2,
       "tier": "required",
-      "day1_tell": "Set a custom data/config directory, create runtime state, restart, and confirm the state persists in that directory."
+      "day1_tell": "Change the frontend backend API URL, open the dashboard in a browser, and confirm it loads data from the new backend endpoint."
     },
     {
-      "category": "Container orchestration",
-      "what": "Docker Compose and environment presets for production, development, and adapter services.",
+      "category": "admin access control",
+      "what": "Configure operator/admin identity, passwords, allowed groups, or privileged user lists.",
+      "projects": [
+        "ChatGPT-Telegram-Bot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Configure an admin user/password or allowed user/group list, then confirm an allowed operator can access admin functions while an unlisted user cannot."
+    },
+    {
+      "category": "persistent data location",
+      "what": "Choose runtime data roots or mounted storage directories for bot state and files.",
+      "projects": [
+        "LangBot",
+        "nekro-agent"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Set the runtime data directory to a mounted path, create bot state or upload a file, restart the service, and confirm the data persists there."
+    },
+    {
+      "category": "external tool/search integrations",
+      "what": "Configure third-party tool credentials such as browser/sandbox/search APIs used by the bot.",
+      "projects": [
+        "ChatGPT-Telegram-Bot",
+        "LangBot"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Configure a search/browser/sandbox API key, invoke the related tool from the bot, and confirm it successfully calls the third-party integration."
+    },
+    {
+      "category": "pipeline or behavior configuration",
+      "what": "Provide structured runtime config for bot behavior, pipelines, or feature settings.",
       "projects": [
         "AstrBot",
-        "LangBot",
-        "nekro-agent",
-        "ChatGPT-Telegram-Bot"
+        "LangBot"
       ],
-      "recurrence_projects": 4,
+      "recurrence_projects": 2,
       "tier": "required",
-      "day1_tell": "Start the production/dev/adapter Docker Compose preset and confirm the expected services and environment values are active."
+      "day1_tell": "Provide a structured behavior or pipeline config that changes a visible bot behavior, restart or reload, and confirm the bot follows the new setting."
     }
   ],
   "optional": [
     {
-      "category": "Runtime ports and exposure",
-      "what": "External ports, service exposure, and container-facing network bindings.",
-      "projects": [
-        "nekro-agent"
-      ],
-      "recurrence_projects": 1,
-      "tier": "optional",
-      "day1_tell": "Change the exposed service port, restart, and confirm the app is reachable on the new port but not the old one."
-    },
-    {
-      "category": "Relational database",
-      "what": "Postgres host, port, database, user, password, and environment-driven DB selection.",
-      "projects": [
-        "nekro-agent"
-      ],
-      "recurrence_projects": 1,
-      "tier": "optional",
-      "day1_tell": "Configure Postgres host, port, database, user, and password, then confirm the app connects and creates/reads a record."
-    },
-    {
-      "category": "Vector database",
-      "what": "Qdrant URL, API key, and environment-driven vector-store selection.",
-      "projects": [
-        "nekro-agent"
-      ],
-      "recurrence_projects": 1,
-      "tier": "optional",
-      "day1_tell": "Configure Qdrant URL/API key and vector-store selection, then confirm an embedding is stored and retrieved from Qdrant."
-    },
-    {
-      "category": "Auth/session secrets",
-      "what": "JWT or refresh-token secrets and expiration settings.",
-      "projects": [
-        "nekro-agent"
-      ],
-      "recurrence_projects": 1,
-      "tier": "optional",
-      "day1_tell": "Set JWT or refresh-token secret and expiry, log in, and confirm tokens validate until expiry and fail afterward."
-    },
-    {
-      "category": "Search integration",
-      "what": "External search engine credentials and IDs for web-search augmentation.",
+      "category": "LLM/API provider access",
+      "what": "Configure upstream model/API endpoint credentials, base URLs, and model discovery or API config paths.",
       "projects": [
         "ChatGPT-Telegram-Bot"
       ],
       "recurrence_projects": 1,
       "tier": "optional",
-      "day1_tell": "Configure search engine credentials and search ID, then run a web-search query and confirm external results are returned."
+      "day1_tell": "Set the LLM API key, base URL, and model/config path, then send a prompt and confirm the request reaches the configured provider/model."
     },
     {
-      "category": "Logging and diagnostics",
-      "what": "Runtime log verbosity or operational logging controls.",
+      "category": "database configuration",
+      "what": "Configure relational database host, port, database name, user, password, and env-backed database selection.",
       "projects": [
         "nekro-agent"
       ],
       "recurrence_projects": 1,
       "tier": "optional",
-      "day1_tell": "Set log level to debug, restart, and confirm debug-level runtime messages appear in logs."
+      "day1_tell": "Configure database host, port, name, user, and password via env, start the app, and confirm it connects and creates or reads expected tables."
     },
     {
-      "category": "Internationalized config UI",
-      "what": "Localized configuration metadata and dashboard-facing config descriptions.",
+      "category": "vector store configuration",
+      "what": "Configure vector database URL, API key, ports, and whether to use env-supplied vector storage settings.",
       "projects": [
-        "AstrBot"
+        "nekro-agent"
       ],
       "recurrence_projects": 1,
       "tier": "optional",
-      "day1_tell": "Switch the config UI language and confirm configuration labels/descriptions appear localized in the dashboard."
+      "day1_tell": "Set vector store URL, API key, and port via env/config, run an embedding or retrieval action, and confirm vectors are written to or read from that store."
+    },
+    {
+      "category": "network exposure and ports",
+      "what": "Control externally exposed service ports for bot, admin, database, vector store, or adapters.",
+      "projects": [
+        "nekro-agent"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Change the exposed port for a service, restart the stack, and confirm the service is reachable on the new port and not on the old one."
+    },
+    {
+      "category": "security tokens and session secrets",
+      "what": "Configure access-token expiry, JWT/session secrets, refresh secrets, and adapter tokens.",
+      "projects": [
+        "nekro-agent"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Set JWT/session/adapter secrets and short token expiry values, log in or call the adapter, and confirm issued tokens validate and expire as configured."
+    },
+    {
+      "category": "logging verbosity",
+      "what": "Set runtime log level for operational diagnostics.",
+      "projects": [
+        "nekro-agent"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Set the log level to DEBUG or equivalent, restart the service, and confirm debug-level diagnostic messages appear in logs."
     }
   ]
 }

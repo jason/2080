@@ -147,12 +147,22 @@ def _issue_surface_source(repo):
 
 CONFIG_FILE_RE = re.compile(r"(^|/)(\.env[^/]*|docker-compose[^/]*|compose\.ya?ml|[^/]*config[^/]*\."
                             r"(example|sample|ya?ml|toml|json)|[^/]*\.example\.[^/]+)$", re.I)
+# Developer-tooling config is NOT product config: mining it is why the lens scored only +0.10
+# in the 2026-06-11 control (the cli-pool spine came back "build/typecheck toolchain"). The
+# lens's subject is knobs an OPERATOR/USER sets at runtime.
+DEV_CONFIG_RE = re.compile(r"(^|/)\.?(tsconfig|jsconfig|eslint|prettier|babel|webpack|rollup|vite|"
+                           r"jest|vitest|pytest|tox|mypy|ruff|flake8|pylint|biome|stylelint|"
+                           r"commitlint|lint-staged|renovate|dependabot|golangci|rustfmt|"
+                           r"editorconfig|pre-commit)[^/]*$", re.I)
 ENV_TOKEN_RE = re.compile(r"\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+){1,}\b")
 
 
 def config_material(files, blobs):
-    """Config filenames + recurring env-var tokens from their contents (pure)."""
-    cfg_files = [f for f in files if CONFIG_FILE_RE.search(f)][:40]
+    """RUNTIME config filenames + recurring env-var tokens from their contents (pure).
+    Dev-tooling configs (linters/compilers/test runners) are excluded — they describe how the
+    project is developed, not what an operator can configure."""
+    cfg_files = [f for f in files
+                 if CONFIG_FILE_RE.search(f) and not DEV_CONFIG_RE.search(f)][:40]
     counts = {}
     for text in blobs:
         for tok in set(ENV_TOKEN_RE.findall(text or "")):
@@ -163,7 +173,7 @@ def config_material(files, blobs):
 
 def _config_surface_source(repo):
     files = _ls_tree(repo)
-    cfg = [f for f in files if CONFIG_FILE_RE.search(f)][:25]
+    cfg = [f for f in files if CONFIG_FILE_RE.search(f) and not DEV_CONFIG_RE.search(f)][:25]
     blobs = [_git(repo, "show", f"HEAD:{f}")[:6000] for f in cfg]
     return config_material(files, blobs)
 
@@ -270,9 +280,11 @@ LENSES = {
         "desc": "configuration knobs a mature <app_type> exposes (config files + env keys)",
         "source": _config_surface_source,
         "material_label": "CONFIG surfaces (config filenames + recurring config/env keys)",
-        "abstract": ("the CONFIGURATION capabilities a mature {app_type} exposes — groups of knobs "
-                     "(timeouts, proxies, rate limits, credentials, model selection…), NOT individual "
-                     "variable names"),
+        "abstract": ("the RUNTIME configuration capabilities a mature {app_type} exposes to its "
+                     "OPERATOR/USER — groups of knobs (timeouts, proxies, rate limits, credentials, "
+                     "model selection…), NOT individual variable names and NOT developer tooling "
+                     "(linters, compilers, test runners, CI pipelines are how the project is built, "
+                     "not what a user configures)"),
         "day1_kind": "reveals whether the knob group exists (e.g. 'set the request timeout in config and "
                      "confirm a slow call honors it')",
     },
@@ -345,9 +357,10 @@ def synth_prompt(materials, app_type, lens):
         f"Below are the {lens['material_label']} of {len(materials)} mature {app_type} projects: "
         f"{', '.join(names)}.\n{blocks}\n\n"
         f"Abstract these into a category-level spine: {lens['abstract'].format(app_type=app_type)}. "
-        f"The \"neighbors\" field is REQUIRED on every category: list exactly which of the named "
-        f"projects' material shows it (at least one; convergence across projects is the point of "
-        f"this analysis). Only reference these projects ({', '.join(names)}); invent no others.\n"
+        f"The \"neighbors\" field is REQUIRED on every category: list EVERY named project whose "
+        f"material shows it — check each category against each project's section; convergence "
+        f"across projects is the point of this analysis, and under-attribution silently breaks "
+        f"the convergence count. Only reference these projects ({', '.join(names)}); invent no others.\n"
         'Return ONLY JSON: {"spine":[{"category":"short name","what":"one line",'
         f'"neighbors":["one or more of: {", ".join(names)}"]}}]}}'
     )

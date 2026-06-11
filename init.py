@@ -165,7 +165,8 @@ def run_mine(cmd, as_json):
 def spine_paths(app_type):
     d = SCRIPT_DIR / "checklists"
     return (d / f"{app_type}.robustness.json", d / f"{app_type}.features.json",
-            d / f"{app_type}.operability.json")
+            d / f"{app_type}.operability.json", d / f"{app_type}.issues.json",
+            d / f"{app_type}.tests.json")
 
 
 def main():
@@ -177,6 +178,10 @@ def main():
     ap.add_argument("--app-type", help="spine label; default from discovery (slug of intent with --neighbors)")
     ap.add_argument("--max-commits", type=int, default=500, help="newest commits harvested per neighbor (0 = all)")
     ap.add_argument("--skip-robustness", action="store_true", help="skip the robustness-surface mine")
+    ap.add_argument("--skip-issues", action="store_true",
+                    help="skip the issue-surface mine (a VALIDATED gating lens; skip only if gh/remotes unavailable)")
+    ap.add_argument("--skip-tests", action="store_true",
+                    help="skip the test-surface mine (a VALIDATED gating lens)")
     ap.add_argument("--skip-scope", action="store_true", help="skip the lens_mine scope mine")
     ap.add_argument("--dry-run", action="store_true", help="print the full plan; NO network/LLM, NO writes")
     ap.add_argument("--force", action="store_true", help="overwrite existing spine files for this app-type")
@@ -204,7 +209,7 @@ def main():
     # ── dry-run: the complete plan, zero network/LLM, zero writes ──
     if a.dry_run:
         app_type = a.app_type or (slug(intent) if override else "<app_type from find_neighbors>")
-        rob, feat, ops = spine_paths(app_type)
+        rob, feat, ops, iss, tst = spine_paths(app_type)
         plan = {"ok": True, "dry_run": True, "intent": intent, "target": next_target,
                 "app_type": app_type,
                 "neighbors": override or f"<discover: find_neighbors.py \"{intent}\" --json, top {a.max_neighbors} by maturity>",
@@ -213,7 +218,9 @@ def main():
                 "would_harvest": f"{CACHE_ROOT}/harvests/<name>.json (newest {a.max_commits or 'all'} commit subjects)",
                 "would_mine": {"robustness": "skipped" if a.skip_robustness else str(rob),
                                "scope": "skipped" if a.skip_scope else str(feat),
-                               "operability": str(ops)},
+                               "operability": str(ops),
+                               "issues": "skipped" if a.skip_issues else str(iss),
+                               "tests": "skipped" if a.skip_tests else str(tst)},
                 "next": f"check.py {next_target} --spine {feat if not a.skip_scope else rob}"}
         if a.json:
             print(json.dumps(plan, indent=2))
@@ -248,9 +255,10 @@ def main():
 
     # ── overwrite guard: a colliding app_type label would silently clobber a different sub-type's
     # spine (sub-type match is load-bearing; an LLM-classified label is not unique). Refuse early.
-    rob_guard, feat_guard, ops_guard = spine_paths(app_type)
+    rob_guard, feat_guard, ops_guard, iss_guard, tst_guard = spine_paths(app_type)
     clobber = [str(p) for p, skip in ((rob_guard, a.skip_robustness), (feat_guard, a.skip_scope),
-                                      (ops_guard, False))
+                                      (ops_guard, False), (iss_guard, a.skip_issues),
+                                      (tst_guard, a.skip_tests))
                if not skip and p.exists()]
     if clobber and not a.force:
         fail(f"refusing to overwrite existing spine(s) for app_type '{app_type}': {', '.join(clobber)} "
@@ -293,7 +301,7 @@ def main():
         fail("no neighbor produced a harvest — nothing to mine", EXIT_EMPTY, a.json)
 
     # ── stage 5: mine the spines ──
-    rob_path, feat_path, ops_path = spine_paths(app_type)
+    rob_path, feat_path, ops_path, iss_path, tst_path = spine_paths(app_type)
     rob_path.parent.mkdir(parents=True, exist_ok=True)
     spines = {}
     if a.skip_robustness:
@@ -317,6 +325,17 @@ def main():
     ok = run_mine(_tool_cmd("surface_mine.py") + [c["path"] for c in cloned.values()]
                   + ["--app-type", app_type, "--emit", str(ops_path)], a.json)
     spines["operability"] = {"path": str(ops_path), "ok": ok and ops_path.exists()}
+    # issues + tests are VALIDATED GATING lenses (ISSUES +0.41, TESTS +0.61/+0.28 over the
+    # control) — a day-1 map without them is missing the strongest measured predictors
+    for kind, skip, lens, path in (("issues", a.skip_issues, "issue-surface", iss_path),
+                                   ("tests", a.skip_tests, "test-surface", tst_path)):
+        if skip:
+            spines[kind] = "skipped"
+            continue
+        print(f"→ mining {kind} spine (lens_mine {lens}) from {len(cloned)} clones…", file=sys.stderr)
+        ok = run_mine(_tool_cmd("lens_mine.py") + [c["path"] for c in cloned.values()]
+                      + ["--app-type", app_type, "--lens", lens, "--emit", str(path)], a.json)
+        spines[kind] = {"path": str(path), "ok": ok and path.exists()}
 
     mined = [s for s in spines.values() if isinstance(s, dict)]
     all_ok = bool(mined) and all(s["ok"] for s in mined)
