@@ -39,6 +39,8 @@ def capability_map():
             "args": "<target-repo> --spine <checklist.json> [--threshold N] [--fail-on gap|partial] "
                     "[--save-assessment FILE] [--from-assessment FILE] [--json] [--yes]",
             "fail_on": ["gap", "partial"],
+            "robustness_axis": "mined categories are advisory by default (only the generic-baseline "
+                               "floor gates); --enforce-mined-robustness restores full gating",
             "assessment": {"--save-assessment": "after the live LLM assess, write the raw assessment JSON to FILE",
                            "--from-assessment": "skip the LLM: load a saved assessment and gate on it (deterministic)"},
             "exit_codes": {"0": "pass (gate open)", "1": "usage/err", "2": "not_found", "3": "gated (required gaps remain)"}}
@@ -50,11 +52,18 @@ def die(msg, code, as_json):
     sys.exit(code)
 
 
-def evaluate(result, fail_on):
-    """Split assessed categories into blocking (applicable required gaps) vs the rest.
-    Blocking = tier==required AND status in fail_on AND not na_by_design/covered."""
+def evaluate(result, fail_on, axis=None, enforce_mined_robustness=False):
+    """Split assessed categories into blocking (applicable required gaps), advisory, and the rest.
+    Blocking = tier==required AND status in fail_on AND not na_by_design/covered.
+
+    ROBUSTNESS axis: mined categories are ADVISORY, only the generic-baseline floor gates.
+    Measured (2026-06, ×3 with variance): a hand-written generic checklist out-recalls the mined
+    robustness spine (lift −0.15) and mined labels are change-shaped ("dependency fix"), not
+    capability-shaped — gating on them is noise (97/117 false-ish blocks on the first external
+    target). SCOPE-axis spines, where mining wins (+0.27), gate in full."""
     block_statuses = {"gap", "partial"} if fail_on == "partial" else {"gap"}
-    blocking, required_total = [], 0
+    demote_mined = (axis or "").upper() == "ROBUSTNESS" and not enforce_mined_robustness
+    blocking, advisory, required_total = [], [], 0
     for c in result["categories"]:
         if c.get("tier") != "required":
             continue
@@ -66,8 +75,11 @@ def evaluate(result, fail_on):
                      "citation_unverified": bool(c.get("citation_unverified"))}
             if c.get("fix_sites"):  # defensive: only some assessments carry fix-site suggestions
                 entry["fix_sites"] = c["fix_sites"]
-            blocking.append(entry)
-    return blocking, required_total
+            if demote_mined and c.get("origin") != "generic-baseline":
+                advisory.append(entry)
+            else:
+                blocking.append(entry)
+    return blocking, advisory, required_total
 
 
 def main():
@@ -77,6 +89,9 @@ def main():
     ap.add_argument("--threshold", type=int, default=0, help="max applicable required gaps allowed before the gate blocks")
     ap.add_argument("--fail-on", choices=["gap", "partial"], default="partial",
                     help="'gap' blocks only on full gaps; 'partial' (default) also blocks on partials")
+    ap.add_argument("--enforce-mined-robustness", action="store_true",
+                    help="gate on mined robustness categories too (default: in robustness spines only "
+                         "the generic-baseline floor gates; mined categories are advisory)")
     ap.add_argument("--save-assessment", metavar="FILE",
                     help="after the live assess, write the raw assessment JSON to FILE (re-gate later without an LLM)")
     ap.add_argument("--from-assessment", metavar="FILE",
@@ -116,7 +131,9 @@ def main():
         if a.save_assessment:
             Path(a.save_assessment).write_text(json.dumps(result, indent=2) + "\n")
 
-    blocking, required_total = evaluate(result, a.fail_on)
+    axis = result.get("axis") or cl.get("axis")  # old saved assessments lack axis; the spine has it
+    blocking, advisory, required_total = evaluate(result, a.fail_on, axis=axis,
+                                                  enforce_mined_robustness=a.enforce_mined_robustness)
     over = max(0, len(blocking) - a.threshold)
     gated = over > 0
     verdict = {
@@ -126,11 +143,14 @@ def main():
         "spine": str(spine_path),
         "app_type": cl.get("app_type"),
         "sub_type": result.get("sub_type", "?"),
+        "axis": axis,
         "required_total": required_total,
         "blocking_count": len(blocking),
+        "advisory_count": len(advisory),
         "threshold": a.threshold,
         "fail_on": a.fail_on,
         "blocking_gaps": blocking,
+        "advisory_gaps": advisory,
     }
 
     if a.json:
@@ -160,6 +180,13 @@ def main():
                         print(f"        fix @ {str(s)[:120]}")
     else:
         print("No applicable required gaps remain — the second-85% is closed for this spine.")
+    if advisory:
+        print(f"\nADVISORY (mined robustness — informational, does not gate; "
+              f"--enforce-mined-robustness to gate): {len(advisory)}")
+        for g in advisory[:10]:
+            print(f"  • {g['status']:8} {g['category']}")
+        if len(advisory) > 10:
+            print(f"  … and {len(advisory) - 10} more")
     sys.exit(EXIT_GATED if gated else EXIT_OK)
 
 

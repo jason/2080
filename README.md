@@ -21,6 +21,8 @@ Status: **working pipeline, dogfooded on itself, measured under controls.** The 
    (lift −0.15, replicated ×3 — the defect-prediction literature's trivial-baseline lesson, confirmed).
    So every emitted robustness spine ships with the generic baseline as its floor
    (`merge_baseline`), and mining adds sub-type-specific categories + day-1 tells on top.
+   The gate enforces only that floor: mined robustness categories are **advisory** by default
+   (`check.py` demotes them to `advisory_gaps`; `--enforce-mined-robustness` opts back in).
 2. **Generic scope** — features a full product of category X converges on. **This is where mining
    earns its keep**: the feature-surface mine (`feature_mine.py`) beats the generic baseline by
    **+0.27 (±0.05, ×3)** — no common-sense checklist predicts "multi-provider, plugin system, web

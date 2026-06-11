@@ -1,5 +1,7 @@
 {
   "app_type": "telegram-llm-bot",
+  "lens": "recurring-fix",
+  "axis": "ROBUSTNESS",
   "scope_note": "Derived ONLY from telegram-llm-bot repos ['AstrBot', 'ChatGPT-Telegram-Bot', 'LangBot', 'nekro-agent']. Categories are app-type-relative \u2014 this checklist does NOT transfer to other app types.",
   "derived_from": [
     "AstrBot",

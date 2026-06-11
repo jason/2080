@@ -34,10 +34,10 @@ def make_assessment(cfg_status="gap", fix_sites=None):
                             "reasoning": "state journal + resume", "day1_tell": "", "citation_unverified": False}]}
 
 
-def run_check(tmp, assessment, extra=(), assessment_file="asmt.json"):
+def run_check(tmp, assessment, extra=(), assessment_file="asmt.json", spine_dict=None):
     """Write spine (+ assessment unless None) into tmp; run check.py --from-assessment --json."""
     spine = Path(tmp) / "spine.json"
-    spine.write_text(json.dumps(SPINE))
+    spine.write_text(json.dumps(spine_dict or SPINE))
     if assessment is not None:
         (Path(tmp) / assessment_file).write_text(json.dumps(assessment))
     return subprocess.run([sys.executable, CHECK, tmp, "--spine", str(spine),
@@ -94,6 +94,61 @@ class FromAssessmentGate(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             r = run_check(tmp, make_assessment("partial"), extra=["--fail-on", "gap"])
             self.assertEqual(r.returncode, 0, r.stderr)
+
+
+ROBUSTNESS_SPINE = {"app_type": "telegram-llm-bot", "lens": "recurring-fix", "axis": "ROBUSTNESS",
+                    "required": [{"category": "dependency fix", "day1_tell": ""},
+                                 {"category": "error handling", "origin": "generic-baseline", "day1_tell": ""}],
+                    "optional": []}
+
+
+def robustness_assessment(mined_status="gap", baseline_status="covered"):
+    return {"sub_type": "test-bot", "app_type": "telegram-llm-bot",
+            "categories": [
+                {"category": "dependency fix", "tier": "required", "status": mined_status,
+                 "reasoning": "change-shaped mined label", "day1_tell": "", "citation_unverified": False},
+                {"category": "error handling", "tier": "required", "origin": "generic-baseline",
+                 "status": baseline_status, "reasoning": "", "day1_tell": "", "citation_unverified": False}]}
+
+
+class RobustnessAxisAdvisory(unittest.TestCase):
+    def test_mined_robustness_gap_is_advisory_not_gating(self):
+        # intent: mined robustness labels are change-shaped and lost to the generic baseline
+        # (lift −0.15, ×3); gating on them produced 97/117 false-ish blocks on the first external
+        # target. They must inform, not block — or the gate trains users to bypass it.
+        with tempfile.TemporaryDirectory() as tmp:
+            r = run_check(tmp, robustness_assessment("gap"), spine_dict=ROBUSTNESS_SPINE)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            v = json.loads(r.stdout)
+            self.assertFalse(v["gated"])
+            self.assertEqual([g["category"] for g in v["advisory_gaps"]], ["dependency fix"])
+
+    def test_baseline_floor_still_gates_on_robustness_axis(self):
+        # intent: the generic baseline is the part of robustness that EARNED the gate (it beat
+        # mining); demoting mined cats must not also open the gate for real floor gaps.
+        with tempfile.TemporaryDirectory() as tmp:
+            r = run_check(tmp, robustness_assessment("gap", baseline_status="gap"),
+                          spine_dict=ROBUSTNESS_SPINE)
+            self.assertEqual(r.returncode, 3, r.stderr)
+            v = json.loads(r.stdout)
+            self.assertEqual([g["category"] for g in v["blocking_gaps"]], ["error handling"])
+
+    def test_enforce_mined_robustness_restores_full_gating(self):
+        # intent: the escape hatch is the old contract — teams that want mined robustness to
+        # block (e.g. after capability-phrased re-mining) must get exit 3 back with one flag.
+        with tempfile.TemporaryDirectory() as tmp:
+            r = run_check(tmp, robustness_assessment("gap"), spine_dict=ROBUSTNESS_SPINE,
+                          extra=["--enforce-mined-robustness"])
+            self.assertEqual(r.returncode, 3, r.stderr)
+
+    def test_scope_axis_mined_gaps_still_gate(self):
+        # intent: scope mining WON its control (+0.27) — the robustness demotion must never
+        # leak to SCOPE spines, or the one measured-valuable gate stops gating.
+        scope = {**ROBUSTNESS_SPINE, "lens": "feature-surface", "axis": "SCOPE"}
+        with tempfile.TemporaryDirectory() as tmp:
+            r = run_check(tmp, robustness_assessment("gap"), spine_dict=scope)
+            self.assertEqual(r.returncode, 3, r.stderr)
+            self.assertEqual(json.loads(r.stdout)["advisory_count"], 0)
 
 
 class StopHook(unittest.TestCase):

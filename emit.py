@@ -135,11 +135,12 @@ def load_verdict(a, stdin_text=None):
         result = assess_target(a.target, cl)
         if not result:
             die("assessment failed (could not parse model output)", EXIT_ERR, a.json)
-        blocking, required_total = evaluate(result, a.fail_on)
+        axis = result.get("axis") or cl.get("axis")
+        blocking, advisory, required_total = evaluate(result, a.fail_on, axis=axis)
         return {"target": a.target, "spine": str(spine_path), "app_type": cl.get("app_type"),
-                "sub_type": result["sub_type"], "required_total": required_total,
-                "blocking_count": len(blocking), "fail_on": a.fail_on,
-                "blocking_gaps": blocking}, "live"
+                "sub_type": result["sub_type"], "axis": axis, "required_total": required_total,
+                "blocking_count": len(blocking), "advisory_count": len(advisory),
+                "fail_on": a.fail_on, "blocking_gaps": blocking, "advisory_gaps": advisory}, "live"
     else:
         die("no input: pass --verdict <file|->, pipe a verdict on stdin, or --target + --spine",
             EXIT_ERR, a.json)

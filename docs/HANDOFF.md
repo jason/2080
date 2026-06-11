@@ -81,9 +81,13 @@ capability-shaped.** 97/117 required blocking on VIP — labels like "dependency
 fix", "module import fix" are cluster names of FIXES, not requirements a target can satisfy, so
 the gate drowns in mushy partials. Confirms (again, from a new angle) the layer-split verdict:
 gate on the SCOPE spine + the generic-baseline robustness floor; treat the mined robustness
-detail as advisory tells, not blocking categories. Candidate codification: `--fail-on` should
-default to scope spines, or cluster_fixes should emit capability-phrased labels (abstraction
-prompt change). Not built yet.
+detail as advisory tells, not blocking categories. **Codified (2026-06-10):** spines carry an
+`axis` (`ROBUSTNESS` from cluster_fixes, `SCOPE` from feature_mine); `check.py` demotes mined
+ROBUSTNESS-axis categories to `advisory_gaps` by default — only `origin: generic-baseline` floor
+categories gate; `--enforce-mined-robustness` restores full gating. Re-gating the VIP robustness
+assessment: 97 blocking → 2 blocking (release versioning, caching — both floor) + 95 advisory.
+The alternative codification (capability-phrased abstraction prompt in cluster_fixes) remains
+open as a way to EARN mined robustness back into the gate.
 (Nuance noted: 'sandbox runtime' / 'tool permissions' na'd as product features is correct
 scope-wise; the bot's real sandboxing/security concerns are robustness-side and already active
 work in that repo — tainted-mode commits.)

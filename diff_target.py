@@ -390,7 +390,8 @@ def assess_target(target, cl):
 
     cats = apply_assessments(cats, merge_chunk_assessments(outs, ASSESS_CHUNK), fileset)
     cats = escalate_gaps(target, cl, cats, ev, fileset)
-    return {"sub_type": sub_type, "app_type": cl.get("app_type"), "categories": cats}
+    return {"sub_type": sub_type, "app_type": cl.get("app_type"), "axis": cl.get("axis"),
+            "categories": cats}
 
 
 def print_fix_sites(c):

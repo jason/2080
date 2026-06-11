@@ -337,6 +337,8 @@ def main():
             c["day1_tell"] = str(tells.get(str(i + 1)) or tells.get(i + 1) or "").strip()
         checklist = {
             "app_type": a.app_type,
+            "lens": "recurring-fix",
+            "axis": "ROBUSTNESS",  # check.py gates only the generic-baseline floor on this axis; mined cats are advisory
             "scope_note": f"Derived ONLY from {a.app_type} repos {report['projects']}. Categories are app-type-relative — "
                           f"this checklist does NOT transfer to other app types.",
             "derived_from": report["projects"],

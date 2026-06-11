@@ -209,4 +209,5 @@ def main():
     sys.exit(EXIT_OK)
 
 
-main()
+if __name__ == "__main__":
+    main()
