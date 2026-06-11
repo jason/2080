@@ -1,6 +1,38 @@
 # 2080 — Handoff
 
-_Last updated: 2026-06-11 (session 6 + lens-control battery)_
+_Last updated: 2026-06-11 (session 6 + lens-control battery + specificity control)_
+
+## 🔬 Out-of-domain specificity control: TESTS demoted; gating now requires TWO controls
+
+The breadth caveat on TESTS was tested the same day it was recorded. Instrument: same
+measure.py protocol, but the gating spines were ALSO judged against three out-of-domain
+targets (AstrBot/LangBot/ChatGPT-Telegram-Bot answer keys — telegram bots, disjoint from the
+cli spine pool). A spine with real domain foresight should recall in-domain work far better
+than out-of-domain work; a breadth artifact matches everything everywhere. Specificity =
+in-recall − out-recall, compared to the generic baseline's (×3 repeats, 2 judges, one batch;
+raw JSON + analyzer: `docs/measurements/specificity-control{.json,/analyze_specificity.py}`).
+
+| spine (scope layer) | in-recall | out-recall | specificity |
+|---|---|---|---|
+| feature-surface (SCOPE) | 0.562 | 0.226 | **0.337 — real foresight (3× baseline)** |
+| issue-surface (ISSUES) | 0.799 | 0.687 | 0.112 — baseline-level (see caveat) |
+| test-surface (TESTS) | 0.939 | 0.861 | **0.078 — BELOW baseline → demoted** |
+| generic baseline | 0.309 | 0.200 | 0.109 (the bar) |
+
+(Robustness layer confirms: TESTS specificity 0.159 vs baseline 0.176.)
+
+- **TESTS demoted** (`VALIDATED_GATING_AXES = {SCOPE, ISSUES}` again; tripwire updated). Its
+  +0.61 lift — the highest ever measured here — was breadth: behavior-area labels match ~any
+  software project's future work (0.86 recall on telegram bots it never saw). **Codified
+  lesson: lift over the baseline is necessary but NOT sufficient; a gating axis must also be
+  more domain-specific than the baseline.** Both controls now documented as the promotion bar.
+- **ISSUES caveat, deliberately NOT demoted:** its specificity (0.112) sits at baseline level,
+  but the out-domain is ADJACENT — telegram LLM bots genuinely share issue vocabulary with
+  agent CLIs (provider errors, API keys, model config), so shared-content recall is partly
+  real transfer, not pure breadth. Inconclusive by this instrument. Follow-up flagged: rerun
+  with a fully-foreign out-domain (e.g. terminal multiplexers) before re-affirming or demoting.
+- Instrument note: this control reuses measure.py unchanged (extra `--target` args + variants);
+  no new code shipped — the analyzer is 30 lines in docs/measurements/.
 
 ## 🧪 Five-lens control battery (2026-06-11, fast path: 5m17s for 5 lenses × both layers × 3 repeats)
 
@@ -10,7 +42,7 @@ scales with wave count, tripwire-tested):
 
 | lens | robustness-layer lift | scope-layer lift | verdict |
 |---|---|---|---|
-| **test-surface** | **+0.28 ±0.00** | **+0.61 ±0.01** | **PROMOTED** — only axis positive on BOTH layers |
+| **test-surface** | **+0.28 ±0.00** | **+0.61 ±0.01** | **PROMOTED** — then DEMOTED same day by the specificity control (see top entry): the lift was breadth |
 | docs-surface | −0.27 ±0.03 | +0.43 ±0.07 | advisory — scope pass but material robustness loss (ISSUES precedent was parity, not loss) |
 | config-surface | −0.38 ±0.00 | +0.10 ±0.02 | advisory — marginal, and the cli-pool spine mined dev-tooling config, not product knobs; re-test after lens improvement |
 | operability | −0.54 ±0.02 | −0.33 ±0.02 | advisory — instrument mismatch: feat/fix-commit answer keys undersample artifact work |
@@ -495,16 +527,25 @@ Other next steps: adversarial-verify pass for `diff_target` (catch prose-level o
 2080's own retry gap; thicken the corpus with more other-author neighbors; tune maturity thresholds
 (commit-count should override youth).
 
-## Files
-- `mine_common.py` — shared mine substrate (fan call + JSON extraction); the "mine family" base
+## Files (refreshed 2026-06-11 — see `./2080 --json` for the live command map)
+- `2080` — dispatcher: init / check / emit / mine / surface / threat / neighbors / measure / recall
+- `mine_common.py` — shared mine substrate (native BYOK backend + optional fan accelerator, JSON extraction)
 - `find_neighbors.py` — metatool: intent → justified neighbors (measured maturity)
-- `cluster_fixes.py` — **recurring-fix lens** → robustness spine (LLM-abstract + embed + DBSCAN + tiered emit)
-- `lens_mine.py` — **feature-surface lens** → scope spine (README + `feat:` → convergent capability spine; `--lens` is the extension seam)
-- `diff_target.py` — target coverage diff; importable `assess_target()`; N/A now covers cross-mechanism
-- `check.py` — **keystone gate**: `2080 check <target> --spine <checklist>` → blocks (exit 3) on required gaps; CI-ready
-- `measure.py` — **controlled recall measurement**: ML + strict-fan judges, recall LIFT over a null spine (`--null-spine`)
-- `checklists/terminal-multiplexer.features.json` — the real adjacent-domain NULL control (tmux+zellij)
-- `completeness.flow.js` — adaptive intent-derivation engine (run on rally-flow, `--harness fan`)
+- `init.py` — one command: neighbors → blob-less clones (`~/.cache/2080/`) → harvests → matched spines
+- `lens_mine.py` — **the LLM lens registry** (feature/robustness/issue/discussions/config/test/docs-surface) + `merge_baseline` (gating-floor merge)
+- `surface_mine.py` — deterministic operability lens, 16 probes + content-hit hygiene (no LLM)
+- `threat_mine.py` — deterministic SECURITY lens: neighbor deps → OSV → vulnerability-class spine
+- `diff_target.py` — evidence-grounded coverage assessment (per-category git-grep retrieval, synonym escalation, fix_sites)
+- `check.py` — **keystone gate**: blocks (exit 3) on applicable required gaps; `VALIDATED_GATING_AXES = {SCOPE, ISSUES, TESTS}`; battery mode; `--save/--from-assessment` split
+- `emit.py` — blocking gaps → agent-ready task queue (acceptance = day1_tell, verify_cmd per task)
+- `measure.py` — controlled recall-lift instrument (prepare-once-judge-N fast path; also hosts embed/abstract from the archived cluster mine)
+- `measure_recall.py` — gate recall vs a neighbor's own future (snapshot backtest)
+- `checklists/generic-software.baseline.json` — **FROZEN measurement control** (20 categories; do not edit)
+- `checklists/generic-software.floor.json` — **gating floor**: industry-curated superset (Scorecard/Badge/community-profile), what `merge_baseline` and batteries use
+- `checklists/terminal-multiplexer.features.json` — adjacent-domain NULL control (tmux+zellij)
+- `hooks/stop_gate.sh` + `.github/workflows/2080-gate.yml` — Stop-hook and CI consumers of saved assessments (`docs/INTEGRATIONS.md`)
+- `archive/` — retired primitives with pull-back conditions (`cluster_fixes.py`, `completeness.flow.js`)
+- `docs/measurements/` — raw control-run JSONs behind every lift number quoted above
 - `checklists/ai-agent-coordination.robustness.json` — robustness spine, COORDINATION sub-type (rally/build-loop/voltagent/symphony; was `ai-agent-tool.json` — renamed to kill the label collision with the aider/OI/gptme-derived `ai-agent-tool.features.json`)
 - `checklists/ai-agent-cli.robustness.json` — robustness spine, agent-CLI sub-type (aider/OI/gptme) — the matched one
 - `checklists/ai-agent-tool.features.json` — scope spine for ai-agent-tool (feature lens; aider/OI/gptme)

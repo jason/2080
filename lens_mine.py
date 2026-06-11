@@ -6,13 +6,17 @@ One synthesis pipeline, many lenses: each LENSES entry is a source extractor + a
 prose; everything else (cross-neighbor synthesis, convergence tiering, day-1 tells, checklist
 emission) is shared. Current lenses/axes:
 
-  feature-surface    → SCOPE       product capabilities (README + feat: commits) — GATES (+0.27)
-  robustness-surface → ROBUSTNESS  capability-phrased hardening (fix commits) + generic-baseline
-                                   floor; superseded archive/cluster_fixes 2026-06-11 (−0.04 vs −0.20)
-  issue-surface      → ISSUES      gaps users actually hit (GitHub issues) — GATES (+0.41 ×3, 2026-06-11)
-  config-surface     → CONFIG      knob groups (config files + recurring env keys)
-  test-surface       → TESTS       verification surface (test files + names)
-  docs-surface       → DOCS        support surface (markdown headings)
+  feature-surface     → SCOPE       product capabilities (README + feat: commits) — GATES (+0.27)
+  robustness-surface  → ROBUSTNESS  capability-phrased hardening (fix commits) + gating floor
+                                    (generic-software.floor.json); superseded archive/cluster_fixes
+                                    2026-06-11 (−0.04 vs −0.20)
+  issue-surface       → ISSUES      gaps users actually hit (GitHub issues) — GATES (+0.41 ×3)
+  discussions-surface → DISCUSSIONS unanswered GitHub Discussions = demand never closed (gh GraphQL)
+  config-surface      → CONFIG      runtime knob groups (config files + recurring env keys)
+  test-surface        → TESTS       verification surface (test files + names) — high lift (+0.61/+0.28)
+                                    but DEMOTED 2026-06-11: specificity control showed the lift is
+                                    breadth, not domain foresight (see check.py + HANDOFF)
+  docs-surface        → DOCS        support surface (markdown headings)
 
 The deterministic operability-surface lens (file-presence probes, no LLM) lives in
 surface_mine.py. The original embedding/DBSCAN robustness mine lives in archive/cluster_fixes.py
@@ -56,9 +60,11 @@ def neighbor_name(repo_dir):
 # material as ONE text block; `material_label` + `abstract` parameterize the shared synthesis
 # prompt. Aggregation (convergence tiering) and day-1 tells are lens-agnostic in main().
 #
-# GATING DISCIPLINE: only the SCOPE axis has beaten the generic-baseline control (+0.27) and
-# earned the right to gate. Every other axis ships ADVISORY (check.py demotes it) until it
-# passes the same measure.py control. Do not mark a new lens SCOPE to make it gate.
+# GATING DISCIPLINE: an axis gates only after passing BOTH controls — recall lift over the
+# generic baseline AND out-of-domain specificity above the baseline's (check.py
+# VALIDATED_GATING_AXES is the source of truth; currently SCOPE +0.27/spec 0.337 and ISSUES
+# +0.41). TESTS proved why lift alone is insufficient: +0.61 lift, demoted same day for
+# baseline-level specificity (breadth). Do not mark a new lens with a gating axis to make it gate.
 
 def _ls_tree(repo):
     return _git(repo, "ls-tree", "-r", "--name-only", "HEAD").splitlines()

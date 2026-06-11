@@ -58,24 +58,31 @@ def die(msg, code, as_json):
 #   SCOPE  +0.27 ±0.05 (2026-06, feature-surface, ai-agent-tool targets dexto/goose/cline)
 #   ISSUES +0.41 ±0.06 on scope-layer work; +0.02 ±0.03 (baseline-parity, not harmful) on
 #          robustness-layer (2026-06-11, issue-surface ai-agent-cli spine, same targets/protocol)
-#   TESTS  +0.61 ±0.01 scope-layer AND +0.28 ±0.00 robustness-layer (2026-06-11, test-surface
-#          ai-agent-cli spine, same protocol — the only axis positive on BOTH layers)
+#   TESTS  +0.61/+0.28 lift (2026-06-11) — PROMOTED then DEMOTED the same day: the out-of-domain
+#          specificity control (docs/measurements/specificity-control.json) showed its recall is
+#          breadth, not foresight — it matches telegram-bot future work at 0.86/0.79, and its
+#          in-minus-out specificity (0.078 scope / 0.159 robustness) is BELOW the generic
+#          baseline's (0.109 / 0.176). Lift over the baseline is necessary but not sufficient;
+#          a gating spine must also be MORE domain-specific than the baseline.
+#          (SCOPE passes that second bar 3×: specificity 0.337. ISSUES sits at baseline-level
+#          0.112 on an ADJACENT out-domain (telegram bots share LLM-app issue vocabulary) —
+#          inconclusive, kept gating, foreign-domain rerun flagged in HANDOFF.)
 # Measured and NOT promoted (2026-06-11 battery, same protocol): DOCS +0.43 scope but −0.27
 # robustness (material loss, unlike ISSUES' parity); CONFIG +0.10 (thin spine); OPERABILITY and
 # SECURITY negative — feat/fix-commit answer keys structurally undersample artifact-presence and
 # vuln-class work (instrument mismatch, not necessarily lens failure).
 # Every other axis is advisory until it passes the same bar.
-VALIDATED_GATING_AXES = {"SCOPE", "ISSUES", "TESTS"}
+VALIDATED_GATING_AXES = {"SCOPE", "ISSUES"}
 
 
 def evaluate(result, fail_on, axis=None, enforce_mined_robustness=False):
     """Split assessed categories into blocking (applicable required gaps), advisory, and the rest.
     Blocking = tier==required AND status in fail_on AND not na_by_design/covered.
 
-    Axis discipline: mined categories GATE only on validated axes (SCOPE +0.27, ISSUES +0.41 —
-    see VALIDATED_GATING_AXES). On every other mined axis (ROBUSTNESS, CONFIG, TESTS, DOCS,
-    OPERABILITY…) they are ADVISORY — informative, never blocking — until that lens beats
-    the same control. Measured for ROBUSTNESS (2026-06, ×3): the generic checklist out-recalls
+    Axis discipline: mined categories GATE only on validated axes (SCOPE, ISSUES — see
+    VALIDATED_GATING_AXES). On every other mined axis (ROBUSTNESS, TESTS, CONFIG, DOCS,
+    OPERABILITY, SECURITY, DISCUSSIONS…) they are ADVISORY — informative, never blocking —
+    until that lens passes both controls (recall lift AND out-of-domain specificity). Measured for ROBUSTNESS (2026-06, ×3): the generic checklist out-recalls
     the mined spine (−0.15) and change-shaped labels caused 97/117 false-ish blocks on the first
     external target. The `origin: generic-baseline` floor always gates. A spine with NO axis
     (user-authored checklist) gates in full — it's the user's own rule set."""
@@ -148,8 +155,9 @@ def main():
                     help="'gap' blocks only on full gaps; 'partial' (default) also blocks on partials")
     ap.add_argument("--enforce-mined", "--enforce-mined-robustness", dest="enforce_mined_robustness",
                     action="store_true",
-                    help="gate on mined categories of non-validated axes too (default: only SCOPE-axis "
-                         "mined categories and the generic-baseline floor gate; the rest are advisory)")
+                    help="gate on mined categories of non-validated axes too (default: only "
+                         "SCOPE/ISSUES-axis mined categories and the generic-baseline floor "
+                         "gate; the rest are advisory)")
     ap.add_argument("--save-assessment", metavar="PATH",
                     help="write the raw assessment JSON to PATH (battery mode: a directory, one file per spine)")
     ap.add_argument("--from-assessment", metavar="PATH",

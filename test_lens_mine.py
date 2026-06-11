@@ -20,9 +20,12 @@ def test_registry_every_lens_is_complete():
 
 # Lenses that PASSED the generic-baseline control (measure.py, strict judges, ×3 each).
 # Promoting a lens here without that measurement is the exact failure the tripwire prevents.
-CONTROL_PASSED = {"feature-surface",  # SCOPE  +0.27 ±0.05 (2026-06)
-                  "issue-surface",    # ISSUES +0.41 ±0.06 on scope-layer work (2026-06-11)
-                  "test-surface"}     # TESTS  +0.61 ±0.01 scope AND +0.28 ±0.00 robustness (2026-06-11)
+CONTROL_PASSED = {"feature-surface",  # SCOPE  +0.27 ±0.05 lift; specificity 0.337 vs baseline 0.109
+                  "issue-surface"}    # ISSUES +0.41 ±0.06 lift; specificity baseline-level on an
+#                                       adjacent out-domain — inconclusive, foreign rerun flagged
+# test-surface: +0.61/+0.28 lift but DEMOTED 2026-06-11 by the specificity control — its recall
+# is breadth (out-of-domain 0.86/0.79; specificity BELOW the generic baseline's). Lift alone is
+# not sufficient; see check.py VALIDATED_GATING_AXES comment + docs/measurements/.
 
 
 def test_registry_only_control_passed_lenses_may_gate():

@@ -1,0 +1,976 @@
+{
+  "targets": [
+    "dexto",
+    "goose",
+    "cline",
+    "astrbot",
+    "langbot",
+    "tgbot"
+  ],
+  "judges": 2,
+  "repeats": 3,
+  "ml_threshold": 0.45,
+  "control": "null spine = synthetic 3d-game/graphics categories",
+  "spines": {
+    "robustness": {
+      "ai-agent-cli.test": "checklists/ai-agent-cli.test.json",
+      "generic-software.baseline": "checklists/generic-software.baseline.json"
+    },
+    "scope": {
+      "ai-agent-cli.test": "checklists/ai-agent-cli.test.json",
+      "ai-agent-cli.issues": "checklists/ai-agent-cli.issues.json",
+      "ai-agent-tool.features": "checklists/ai-agent-tool.features.json",
+      "generic-software.baseline": "checklists/generic-software.baseline.json"
+    }
+  },
+  "per_target": {
+    "dexto": {
+      "robustness": {
+        "n": 61,
+        "variants": {
+          "ai-agent-cli.test": {
+            "ml_real": 0.08,
+            "ml_null": 0.02,
+            "ml_lift": 0.06,
+            "llm_runs": [
+              {
+                "llm_real": 0.92,
+                "llm_null": 0.0,
+                "llm_lift": 0.92
+              },
+              {
+                "llm_real": 0.95,
+                "llm_null": 0.0,
+                "llm_lift": 0.95
+              },
+              {
+                "llm_real": 0.97,
+                "llm_null": 0.0,
+                "llm_lift": 0.97
+              }
+            ]
+          },
+          "generic-software.baseline": {
+            "ml_real": 0.18,
+            "ml_null": 0.02,
+            "ml_lift": 0.16,
+            "llm_runs": [
+              {
+                "llm_real": 0.74,
+                "llm_null": 0.0,
+                "llm_lift": 0.74
+              },
+              {
+                "llm_real": 0.7,
+                "llm_null": 0.0,
+                "llm_lift": 0.7
+              },
+              {
+                "llm_real": 0.66,
+                "llm_null": 0.0,
+                "llm_lift": 0.66
+              }
+            ]
+          }
+        }
+      },
+      "scope": {
+        "n": 38,
+        "variants": {
+          "ai-agent-cli.test": {
+            "ml_real": 0.26,
+            "ml_null": 0.0,
+            "ml_lift": 0.26,
+            "llm_runs": [
+              {
+                "llm_real": 0.95,
+                "llm_null": 0.0,
+                "llm_lift": 0.95
+              },
+              {
+                "llm_real": 0.95,
+                "llm_null": 0.0,
+                "llm_lift": 0.95
+              },
+              {
+                "llm_real": 0.92,
+                "llm_null": 0.0,
+                "llm_lift": 0.92
+              }
+            ]
+          },
+          "ai-agent-cli.issues": {
+            "ml_real": 0.16,
+            "ml_null": 0.0,
+            "ml_lift": 0.16,
+            "llm_runs": [
+              {
+                "llm_real": 0.66,
+                "llm_null": 0.0,
+                "llm_lift": 0.66
+              },
+              {
+                "llm_real": 0.66,
+                "llm_null": 0.0,
+                "llm_lift": 0.66
+              },
+              {
+                "llm_real": 0.63,
+                "llm_null": 0.0,
+                "llm_lift": 0.63
+              }
+            ]
+          },
+          "ai-agent-tool.features": {
+            "ml_real": 0.18,
+            "ml_null": 0.0,
+            "ml_lift": 0.18,
+            "llm_runs": [
+              {
+                "llm_real": 0.47,
+                "llm_null": 0.0,
+                "llm_lift": 0.47
+              },
+              {
+                "llm_real": 0.53,
+                "llm_null": 0.0,
+                "llm_lift": 0.53
+              },
+              {
+                "llm_real": 0.58,
+                "llm_null": 0.0,
+                "llm_lift": 0.58
+              }
+            ]
+          },
+          "generic-software.baseline": {
+            "ml_real": 0.08,
+            "ml_null": 0.0,
+            "ml_lift": 0.08,
+            "llm_runs": [
+              {
+                "llm_real": 0.18,
+                "llm_null": 0.0,
+                "llm_lift": 0.18
+              },
+              {
+                "llm_real": 0.18,
+                "llm_null": 0.0,
+                "llm_lift": 0.18
+              },
+              {
+                "llm_real": 0.24,
+                "llm_null": 0.0,
+                "llm_lift": 0.24
+              }
+            ]
+          }
+        }
+      }
+    },
+    "goose": {
+      "robustness": {
+        "n": 99,
+        "variants": {
+          "ai-agent-cli.test": {
+            "ml_real": 0.05,
+            "ml_null": 0.02,
+            "ml_lift": 0.03,
+            "llm_runs": [
+              {
+                "llm_real": 0.94,
+                "llm_null": 0.0,
+                "llm_lift": 0.94
+              },
+              {
+                "llm_real": 0.93,
+                "llm_null": 0.0,
+                "llm_lift": 0.93
+              },
+              {
+                "llm_real": 0.94,
+                "llm_null": 0.0,
+                "llm_lift": 0.94
+              }
+            ]
+          },
+          "generic-software.baseline": {
+            "ml_real": 0.11,
+            "ml_null": 0.02,
+            "ml_lift": 0.09,
+            "llm_runs": [
+              {
+                "llm_real": 0.66,
+                "llm_null": 0.0,
+                "llm_lift": 0.66
+              },
+              {
+                "llm_real": 0.63,
+                "llm_null": 0.0,
+                "llm_lift": 0.63
+              },
+              {
+                "llm_real": 0.67,
+                "llm_null": 0.0,
+                "llm_lift": 0.67
+              }
+            ]
+          }
+        }
+      },
+      "scope": {
+        "n": 18,
+        "variants": {
+          "ai-agent-cli.test": {
+            "ml_real": 0.33,
+            "ml_null": 0.0,
+            "ml_lift": 0.33,
+            "llm_runs": [
+              {
+                "llm_real": 0.94,
+                "llm_null": 0.0,
+                "llm_lift": 0.94
+              },
+              {
+                "llm_real": 0.89,
+                "llm_null": 0.0,
+                "llm_lift": 0.89
+              },
+              {
+                "llm_real": 0.89,
+                "llm_null": 0.0,
+                "llm_lift": 0.89
+              }
+            ]
+          },
+          "ai-agent-cli.issues": {
+            "ml_real": 0.0,
+            "ml_null": 0.0,
+            "ml_lift": 0.0,
+            "llm_runs": [
+              {
+                "llm_real": 0.78,
+                "llm_null": 0.0,
+                "llm_lift": 0.78
+              },
+              {
+                "llm_real": 0.78,
+                "llm_null": 0.0,
+                "llm_lift": 0.78
+              },
+              {
+                "llm_real": 0.83,
+                "llm_null": 0.0,
+                "llm_lift": 0.83
+              }
+            ]
+          },
+          "ai-agent-tool.features": {
+            "ml_real": 0.17,
+            "ml_null": 0.0,
+            "ml_lift": 0.17,
+            "llm_runs": [
+              {
+                "llm_real": 0.5,
+                "llm_null": 0.0,
+                "llm_lift": 0.5
+              },
+              {
+                "llm_real": 0.44,
+                "llm_null": 0.0,
+                "llm_lift": 0.44
+              },
+              {
+                "llm_real": 0.5,
+                "llm_null": 0.0,
+                "llm_lift": 0.5
+              }
+            ]
+          },
+          "generic-software.baseline": {
+            "ml_real": 0.06,
+            "ml_null": 0.0,
+            "ml_lift": 0.06,
+            "llm_runs": [
+              {
+                "llm_real": 0.44,
+                "llm_null": 0.0,
+                "llm_lift": 0.44
+              },
+              {
+                "llm_real": 0.44,
+                "llm_null": 0.0,
+                "llm_lift": 0.44
+              },
+              {
+                "llm_real": 0.44,
+                "llm_null": 0.0,
+                "llm_lift": 0.44
+              }
+            ]
+          }
+        }
+      }
+    },
+    "cline": {
+      "robustness": {
+        "n": 89,
+        "variants": {
+          "ai-agent-cli.test": {
+            "ml_real": 0.09,
+            "ml_null": 0.0,
+            "ml_lift": 0.09,
+            "llm_runs": [
+              {
+                "llm_real": 0.96,
+                "llm_null": 0.0,
+                "llm_lift": 0.96
+              },
+              {
+                "llm_real": 0.96,
+                "llm_null": 0.0,
+                "llm_lift": 0.96
+              },
+              {
+                "llm_real": 0.96,
+                "llm_null": 0.0,
+                "llm_lift": 0.96
+              }
+            ]
+          },
+          "generic-software.baseline": {
+            "ml_real": 0.16,
+            "ml_null": 0.0,
+            "ml_lift": 0.16,
+            "llm_runs": [
+              {
+                "llm_real": 0.64,
+                "llm_null": 0.0,
+                "llm_lift": 0.64
+              },
+              {
+                "llm_real": 0.67,
+                "llm_null": 0.0,
+                "llm_lift": 0.67
+              },
+              {
+                "llm_real": 0.67,
+                "llm_null": 0.0,
+                "llm_lift": 0.67
+              }
+            ]
+          }
+        }
+      },
+      "scope": {
+        "n": 22,
+        "variants": {
+          "ai-agent-cli.test": {
+            "ml_real": 0.27,
+            "ml_null": 0.0,
+            "ml_lift": 0.27,
+            "llm_runs": [
+              {
+                "llm_real": 0.91,
+                "llm_null": 0.0,
+                "llm_lift": 0.91
+              },
+              {
+                "llm_real": 1.0,
+                "llm_null": 0.0,
+                "llm_lift": 1.0
+              },
+              {
+                "llm_real": 1.0,
+                "llm_null": 0.0,
+                "llm_lift": 1.0
+              }
+            ]
+          },
+          "ai-agent-cli.issues": {
+            "ml_real": 0.05,
+            "ml_null": 0.0,
+            "ml_lift": 0.05,
+            "llm_runs": [
+              {
+                "llm_real": 0.95,
+                "llm_null": 0.0,
+                "llm_lift": 0.95
+              },
+              {
+                "llm_real": 0.95,
+                "llm_null": 0.0,
+                "llm_lift": 0.95
+              },
+              {
+                "llm_real": 0.95,
+                "llm_null": 0.0,
+                "llm_lift": 0.95
+              }
+            ]
+          },
+          "ai-agent-tool.features": {
+            "ml_real": 0.18,
+            "ml_null": 0.0,
+            "ml_lift": 0.18,
+            "llm_runs": [
+              {
+                "llm_real": 0.68,
+                "llm_null": 0.0,
+                "llm_lift": 0.68
+              },
+              {
+                "llm_real": 0.68,
+                "llm_null": 0.0,
+                "llm_lift": 0.68
+              },
+              {
+                "llm_real": 0.68,
+                "llm_null": 0.0,
+                "llm_lift": 0.68
+              }
+            ]
+          },
+          "generic-software.baseline": {
+            "ml_real": 0.14,
+            "ml_null": 0.0,
+            "ml_lift": 0.14,
+            "llm_runs": [
+              {
+                "llm_real": 0.27,
+                "llm_null": 0.0,
+                "llm_lift": 0.27
+              },
+              {
+                "llm_real": 0.32,
+                "llm_null": 0.0,
+                "llm_lift": 0.32
+              },
+              {
+                "llm_real": 0.27,
+                "llm_null": 0.0,
+                "llm_lift": 0.27
+              }
+            ]
+          }
+        }
+      }
+    },
+    "astrbot": {
+      "robustness": {
+        "n": 75,
+        "variants": {
+          "ai-agent-cli.test": {
+            "ml_real": 0.05,
+            "ml_null": 0.04,
+            "ml_lift": 0.01,
+            "llm_runs": [
+              {
+                "llm_real": 0.88,
+                "llm_null": 0.0,
+                "llm_lift": 0.88
+              },
+              {
+                "llm_real": 0.91,
+                "llm_null": 0.0,
+                "llm_lift": 0.91
+              },
+              {
+                "llm_real": 0.87,
+                "llm_null": 0.0,
+                "llm_lift": 0.87
+              }
+            ]
+          },
+          "generic-software.baseline": {
+            "ml_real": 0.23,
+            "ml_null": 0.04,
+            "ml_lift": 0.19,
+            "llm_runs": [
+              {
+                "llm_real": 0.53,
+                "llm_null": 0.0,
+                "llm_lift": 0.53
+              },
+              {
+                "llm_real": 0.55,
+                "llm_null": 0.0,
+                "llm_lift": 0.55
+              },
+              {
+                "llm_real": 0.41,
+                "llm_null": 0.0,
+                "llm_lift": 0.41
+              }
+            ]
+          }
+        }
+      },
+      "scope": {
+        "n": 39,
+        "variants": {
+          "ai-agent-cli.test": {
+            "ml_real": 0.08,
+            "ml_null": 0.03,
+            "ml_lift": 0.05,
+            "llm_runs": [
+              {
+                "llm_real": 0.95,
+                "llm_null": 0.0,
+                "llm_lift": 0.95
+              },
+              {
+                "llm_real": 0.92,
+                "llm_null": 0.0,
+                "llm_lift": 0.92
+              },
+              {
+                "llm_real": 0.95,
+                "llm_null": 0.0,
+                "llm_lift": 0.95
+              }
+            ]
+          },
+          "ai-agent-cli.issues": {
+            "ml_real": 0.03,
+            "ml_null": 0.03,
+            "ml_lift": 0.0,
+            "llm_runs": [
+              {
+                "llm_real": 0.69,
+                "llm_null": 0.0,
+                "llm_lift": 0.69
+              },
+              {
+                "llm_real": 0.72,
+                "llm_null": 0.0,
+                "llm_lift": 0.72
+              },
+              {
+                "llm_real": 0.67,
+                "llm_null": 0.0,
+                "llm_lift": 0.67
+              }
+            ]
+          },
+          "ai-agent-tool.features": {
+            "ml_real": 0.13,
+            "ml_null": 0.03,
+            "ml_lift": 0.1,
+            "llm_runs": [
+              {
+                "llm_real": 0.33,
+                "llm_null": 0.0,
+                "llm_lift": 0.33
+              },
+              {
+                "llm_real": 0.36,
+                "llm_null": 0.0,
+                "llm_lift": 0.36
+              },
+              {
+                "llm_real": 0.33,
+                "llm_null": 0.0,
+                "llm_lift": 0.33
+              }
+            ]
+          },
+          "generic-software.baseline": {
+            "ml_real": 0.13,
+            "ml_null": 0.03,
+            "ml_lift": 0.1,
+            "llm_runs": [
+              {
+                "llm_real": 0.31,
+                "llm_null": 0.0,
+                "llm_lift": 0.31
+              },
+              {
+                "llm_real": 0.31,
+                "llm_null": 0.0,
+                "llm_lift": 0.31
+              },
+              {
+                "llm_real": 0.31,
+                "llm_null": 0.0,
+                "llm_lift": 0.31
+              }
+            ]
+          }
+        }
+      }
+    },
+    "langbot": {
+      "robustness": {
+        "n": 83,
+        "variants": {
+          "ai-agent-cli.test": {
+            "ml_real": 0.06,
+            "ml_null": 0.04,
+            "ml_lift": 0.02,
+            "llm_runs": [
+              {
+                "llm_real": 0.81,
+                "llm_null": 0.0,
+                "llm_lift": 0.81
+              },
+              {
+                "llm_real": 0.71,
+                "llm_null": 0.0,
+                "llm_lift": 0.71
+              },
+              {
+                "llm_real": 0.76,
+                "llm_null": 0.0,
+                "llm_lift": 0.76
+              }
+            ]
+          },
+          "generic-software.baseline": {
+            "ml_real": 0.19,
+            "ml_null": 0.04,
+            "ml_lift": 0.15,
+            "llm_runs": [
+              {
+                "llm_real": 0.54,
+                "llm_null": 0.0,
+                "llm_lift": 0.54
+              },
+              {
+                "llm_real": 0.58,
+                "llm_null": 0.0,
+                "llm_lift": 0.58
+              },
+              {
+                "llm_real": 0.59,
+                "llm_null": 0.0,
+                "llm_lift": 0.59
+              }
+            ]
+          }
+        }
+      },
+      "scope": {
+        "n": 30,
+        "variants": {
+          "ai-agent-cli.test": {
+            "ml_real": 0.1,
+            "ml_null": 0.1,
+            "ml_lift": 0.0,
+            "llm_runs": [
+              {
+                "llm_real": 0.9,
+                "llm_null": 0.0,
+                "llm_lift": 0.9
+              },
+              {
+                "llm_real": 0.83,
+                "llm_null": 0.0,
+                "llm_lift": 0.83
+              },
+              {
+                "llm_real": 0.87,
+                "llm_null": 0.0,
+                "llm_lift": 0.87
+              }
+            ]
+          },
+          "ai-agent-cli.issues": {
+            "ml_real": 0.13,
+            "ml_null": 0.1,
+            "ml_lift": 0.03,
+            "llm_runs": [
+              {
+                "llm_real": 0.7,
+                "llm_null": 0.0,
+                "llm_lift": 0.7
+              },
+              {
+                "llm_real": 0.67,
+                "llm_null": 0.0,
+                "llm_lift": 0.67
+              },
+              {
+                "llm_real": 0.73,
+                "llm_null": 0.0,
+                "llm_lift": 0.73
+              }
+            ]
+          },
+          "ai-agent-tool.features": {
+            "ml_real": 0.1,
+            "ml_null": 0.1,
+            "ml_lift": 0.0,
+            "llm_runs": [
+              {
+                "llm_real": 0.23,
+                "llm_null": 0.0,
+                "llm_lift": 0.23
+              },
+              {
+                "llm_real": 0.27,
+                "llm_null": 0.0,
+                "llm_lift": 0.27
+              },
+              {
+                "llm_real": 0.27,
+                "llm_null": 0.0,
+                "llm_lift": 0.27
+              }
+            ]
+          },
+          "generic-software.baseline": {
+            "ml_real": 0.03,
+            "ml_null": 0.1,
+            "ml_lift": -0.07,
+            "llm_runs": [
+              {
+                "llm_real": 0.23,
+                "llm_null": 0.0,
+                "llm_lift": 0.23
+              },
+              {
+                "llm_real": 0.2,
+                "llm_null": 0.0,
+                "llm_lift": 0.2
+              },
+              {
+                "llm_real": 0.2,
+                "llm_null": 0.0,
+                "llm_lift": 0.2
+              }
+            ]
+          }
+        }
+      }
+    },
+    "tgbot": {
+      "robustness": {
+        "n": 88,
+        "variants": {
+          "ai-agent-cli.test": {
+            "ml_real": 0.05,
+            "ml_null": 0.0,
+            "ml_lift": 0.05,
+            "llm_runs": [
+              {
+                "llm_real": 0.72,
+                "llm_null": 0.0,
+                "llm_lift": 0.72
+              },
+              {
+                "llm_real": 0.7,
+                "llm_null": 0.0,
+                "llm_lift": 0.7
+              },
+              {
+                "llm_real": 0.74,
+                "llm_null": 0.0,
+                "llm_lift": 0.74
+              }
+            ]
+          },
+          "generic-software.baseline": {
+            "ml_real": 0.3,
+            "ml_null": 0.0,
+            "ml_lift": 0.3,
+            "llm_runs": [
+              {
+                "llm_real": 0.52,
+                "llm_null": 0.0,
+                "llm_lift": 0.52
+              },
+              {
+                "llm_real": 0.44,
+                "llm_null": 0.0,
+                "llm_lift": 0.44
+              },
+              {
+                "llm_real": 0.3,
+                "llm_null": 0.0,
+                "llm_lift": 0.3
+              }
+            ]
+          }
+        }
+      },
+      "scope": {
+        "n": 12,
+        "variants": {
+          "ai-agent-cli.test": {
+            "ml_real": 0.17,
+            "ml_null": 0.0,
+            "ml_lift": 0.17,
+            "llm_runs": [
+              {
+                "llm_real": 0.83,
+                "llm_null": 0.0,
+                "llm_lift": 0.83
+              },
+              {
+                "llm_real": 0.75,
+                "llm_null": 0.0,
+                "llm_lift": 0.75
+              },
+              {
+                "llm_real": 0.75,
+                "llm_null": 0.0,
+                "llm_lift": 0.75
+              }
+            ]
+          },
+          "ai-agent-cli.issues": {
+            "ml_real": 0.08,
+            "ml_null": 0.0,
+            "ml_lift": 0.08,
+            "llm_runs": [
+              {
+                "llm_real": 0.5,
+                "llm_null": 0.0,
+                "llm_lift": 0.5
+              },
+              {
+                "llm_real": 0.75,
+                "llm_null": 0.0,
+                "llm_lift": 0.75
+              },
+              {
+                "llm_real": 0.75,
+                "llm_null": 0.0,
+                "llm_lift": 0.75
+              }
+            ]
+          },
+          "ai-agent-tool.features": {
+            "ml_real": 0.08,
+            "ml_null": 0.0,
+            "ml_lift": 0.08,
+            "llm_runs": [
+              {
+                "llm_real": 0.08,
+                "llm_null": 0.0,
+                "llm_lift": 0.08
+              },
+              {
+                "llm_real": 0.08,
+                "llm_null": 0.0,
+                "llm_lift": 0.08
+              },
+              {
+                "llm_real": 0.08,
+                "llm_null": 0.0,
+                "llm_lift": 0.08
+              }
+            ]
+          },
+          "generic-software.baseline": {
+            "ml_real": 0.0,
+            "ml_null": 0.0,
+            "ml_lift": 0.0,
+            "llm_runs": [
+              {
+                "llm_real": 0.08,
+                "llm_null": 0.0,
+                "llm_lift": 0.08
+              },
+              {
+                "llm_real": 0.08,
+                "llm_null": 0.0,
+                "llm_lift": 0.08
+              },
+              {
+                "llm_real": 0.08,
+                "llm_null": 0.0,
+                "llm_lift": 0.08
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "aggregate": {
+    "robustness": {
+      "n_total": 495,
+      "variants": {
+        "ai-agent-cli.test": {
+          "ml_lift": 0.043,
+          "llm_lift_runs": [
+            0.872,
+            0.86,
+            0.873
+          ],
+          "llm_lift_mean": 0.868,
+          "llm_lift_sd": 0.007,
+          "llm_real_mean": 0.868,
+          "llm_null_mean": 0.0
+        },
+        "generic-software.baseline": {
+          "ml_lift": 0.175,
+          "llm_lift_runs": [
+            0.605,
+            0.595,
+            0.55
+          ],
+          "llm_lift_mean": 0.583,
+          "llm_lift_sd": 0.029,
+          "llm_real_mean": 0.583,
+          "llm_null_mean": 0.0
+        }
+      }
+    },
+    "scope": {
+      "n_total": 159,
+      "variants": {
+        "ai-agent-cli.test": {
+          "ml_lift": 0.18,
+          "llm_lift_runs": [
+            0.913,
+            0.89,
+            0.897
+          ],
+          "llm_lift_mean": 0.9,
+          "llm_lift_sd": 0.012,
+          "llm_real_mean": 0.9,
+          "llm_null_mean": 0.0
+        },
+        "ai-agent-cli.issues": {
+          "ml_lift": 0.053,
+          "llm_lift_runs": [
+            0.713,
+            0.755,
+            0.76
+          ],
+          "llm_lift_mean": 0.743,
+          "llm_lift_sd": 0.026,
+          "llm_real_mean": 0.743,
+          "llm_null_mean": 0.0
+        },
+        "ai-agent-tool.features": {
+          "ml_lift": 0.118,
+          "llm_lift_runs": [
+            0.382,
+            0.393,
+            0.407
+          ],
+          "llm_lift_mean": 0.394,
+          "llm_lift_sd": 0.013,
+          "llm_real_mean": 0.394,
+          "llm_null_mean": 0.0
+        },
+        "generic-software.baseline": {
+          "ml_lift": 0.052,
+          "llm_lift_runs": [
+            0.252,
+            0.255,
+            0.257
+          ],
+          "llm_lift_mean": 0.255,
+          "llm_lift_sd": 0.003,
+          "llm_real_mean": 0.255,
+          "llm_null_mean": 0.0
+        }
+      }
+    }
+  }
+}

@@ -12,7 +12,7 @@ COMMANDS = {
     "init": ("init.py", "acquire matched spines: find neighbors → clone → harvest → mine"),
     "check": ("check.py", "the gate: assess target vs spine(s), exit 3 while required gaps remain"),
     "emit": ("emit.py", "blocking gaps → agent-ready task queue (json|md)"),
-    "mine": ("lens_mine.py", "LLM lenses: feature/robustness/issue/config/test/docs-surface"),
+    "mine": ("lens_mine.py", "LLM lenses: feature/robustness/issue/discussions/config/test/docs-surface"),
     "surface": ("surface_mine.py", "deterministic operability lens (no LLM)"),
     "threat": ("threat_mine.py", "SECURITY lens: neighbor deps → OSV → category threat profile (no LLM)"),
     "neighbors": ("find_neighbors.py", "intent → mature neighbor repos via gh"),
