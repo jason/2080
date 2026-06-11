@@ -44,6 +44,26 @@ feature-surface → scope; future: integration/threat/operability). `check.py` i
 and is CI-ready. 2080 was run against its own feature spine and closed 3 of the gaps it found.
 See [`docs/HANDOFF.md`](docs/HANDOFF.md) for the full arc and findings.
 
+## Quickstart
+
+Python 3.11+, no packages needed for the core pipeline (measurement extras run via `uv`).
+LLM calls go to any OpenAI-compatible endpoint — bring your own key:
+
+```sh
+export OPENAI_API_KEY=sk-...           # required (the only setup)
+export OPENAI_BASE_URL=...             # optional: OpenRouter / Azure / local server
+export LLM_2080_MODEL=gpt-5.5         # optional: override the model every tool uses
+
+python3 init.py <your-repo>            # find neighbors → clone → harvest → mine matched spines
+python3 check.py <your-repo> --spine checklists/<app-type>.features.json --save-assessment a.json
+python3 check.py <your-repo> --spine checklists/<app-type>.features.json --from-assessment a.json --json \
+  | python3 emit.py --verdict - --format md   # blocking gaps → agent-ready task queue
+```
+
+`check` exits 3 while applicable required gaps remain (CI-ready); `--from-assessment` re-gates
+deterministically without an LLM. (If a `fan` parallel-LLM CLI is on your PATH it's used
+automatically as a local accelerator; nothing requires it.)
+
 ## The loop
 
 2080 is no longer just a report — it's a closed loop from day-1 map to enforced gate:

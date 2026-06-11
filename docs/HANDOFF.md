@@ -59,7 +59,8 @@ continuity; strict 2-judge, dexto/goose/cline, fresh full clones):
 
 ### 🐕 VIP-bot dogfood (session 4) — first real external target; relevance fixed live
 
-Ran `~/projects/vip` (351 files, TS/bun) against both telegram spines. First pass exposed the next
+Ran a local personal Telegram-LLM-bot repo ("VIP", 351 files, TS/bun) against both telegram
+spines. First pass exposed the next
 quality frontier: verdicts factually right but **strategically irrelevant** — a personal
 single-user bot gated on admin dashboards, plugin marketplaces, onboarding flows, i18n
 (framework-product features from the AstrBot/LangBot neighbor set). Plus the 194-cat robustness
@@ -295,10 +296,12 @@ falsified*). Cross-harness via rally-flow.
   human-approves-neighbors. An unattended "neighbor watch" would erode that — not built, not planned.
 
 ## Stack
-Python + `uv` inline deps; `sentence-transformers` + `scikit-learn` DBSCAN (reused from
-`~/projects/tools/corrections/cluster_embedding.py`); `gpt-5.5` low via `fan` (provider
-`openai-codex`, ~10 parallel calls/run, ~cents); `gh` REST API (not `gh search` — that returned junk).
-rally-flow (`~/projects/rally-flow`, separate product) hosts `completeness.flow.js` and the JS
+Python + `uv` inline deps; `sentence-transformers` + `scikit-learn` DBSCAN (local all-MiniLM,
+content-hash phrase cache); LLM calls through `mine_common.fan_batch` — native OpenAI-compatible
+HTTP backend by default (BYOK), a local `fan` parallel-LLM CLI auto-used as accelerator when on
+PATH (`gpt-5.5` reasoning-low, 16-wide, ~cents/run); `gh` REST API (not `gh search` — that
+returned junk).
+rally-flow (a separate local product) hosts `completeness.flow.js` and the JS
 validation spikes (harvest/prior-art-diff/backtest/recurrence flows) — superseded by the Python
 pipeline for harvest/cluster/diff; keep as historical or archive.
 

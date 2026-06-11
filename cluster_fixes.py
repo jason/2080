@@ -9,8 +9,8 @@ and dumped ~88% as noise. The fix is a hybrid:
   2. Embed + DBSCAN/cosine cluster those phrases (tight semantic space, no project noise).  ← ML
   3. Measure cross-project recurrence: fraction of clusters spanning >=2 projects.  ← reproducible
 
-Reuses the embedding+cache pattern from ~/projects/tools/corrections/cluster_embedding.py
-and the `fan` parallel-LLM CLI for the abstraction pass.
+Embedding layer: local all-MiniLM via sentence-transformers with a content-hash phrase cache;
+the abstraction pass runs through mine_common's parallel LLM seam.
 
 Usage:
   cluster_fixes.py <harvest1.json> ... [--model gpt-5.5] [--provider openai] [--reasoning low]
