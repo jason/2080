@@ -28,7 +28,7 @@ from __future__ import annotations
 import argparse, json, sys
 from pathlib import Path
 
-from mine_common import EXIT_OK, EXIT_ERR, EXIT_NOT_FOUND
+from mine_common import EXIT_OK, EXIT_ERR, EXIT_NOT_FOUND, llm_runtime
 from diff_target import assess_target
 
 EXIT_GATED = 3  # mirrors rally-flow's gate() exit code: completion refused
@@ -41,6 +41,7 @@ def capability_map():
             "fail_on": ["gap", "partial"],
             "robustness_axis": "mined categories are advisory by default (only the generic-baseline "
                                "floor gates); --enforce-mined-robustness restores full gating",
+            "llm": llm_runtime(),  # bring-your-own-key preflight: backend/model/key SOURCE (never values)
             "assessment": {"--save-assessment": "after the live LLM assess, write the raw assessment JSON to FILE",
                            "--from-assessment": "skip the LLM: load a saved assessment and gate on it (deterministic)"},
             "exit_codes": {"0": "pass (gate open)", "1": "usage/err", "2": "not_found", "3": "gated (required gaps remain)"}}

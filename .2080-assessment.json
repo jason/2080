@@ -1,6 +1,7 @@
 {
-  "sub_type": "LLM-based codebase completeness/gap-analysis CLI",
+  "sub_type": "single-user/CI CLI for codebase completeness gap analysis",
   "app_type": "ai-codebase-gap-analysis",
+  "axis": "SCOPE",
   "categories": [
     {
       "category": "AI code review",
@@ -14,7 +15,7 @@
       "tier": "required",
       "day1_tell": "Open a test pull request and confirm the product generates a review summary plus at least one line-level suggestion on the diff.",
       "status": "na_by_design",
-      "reasoning": "Line-level AI pull-request review is a code-review product mechanism, while this target assesses checklist coverage and second-85% gaps rather than reviewing PR diffs.",
+      "reasoning": "This target is a single-user/CI completeness-gap CLI, not a PR code-review product that must generate review summaries and line-level diff suggestions.",
       "citation_unverified": false
     },
     {
@@ -28,20 +29,9 @@
       "recurrence_projects": 3,
       "tier": "required",
       "day1_tell": "Open model/provider settings and confirm you can select or configure at least two LLM providers or models, including an OpenAI-compatible endpoint.",
-      "status": "partial",
-      "reasoning": "The mining tools expose model/provider CLI arguments, but evidence does not show user-facing configurable provider selection across the full product including OpenAI-compatible endpoints.",
-      "citation_unverified": false,
-      "fix_sites": [
-        {
-          "file": "mine_common.py",
-          "what": "Centralize provider/model configuration including OpenAI-compatible base URL support."
-        },
-        {
-          "file": "check.py",
-          "what": "Expose provider/model options or document how assessment provider settings are selected."
-        }
-      ],
-      "fix_sites_unverified": false
+      "status": "covered",
+      "reasoning": "The repo exposes provider/model selection through the shared LLM runtime and documented environment overrides rather than a GUI settings page, which fits a CLI tool.",
+      "citation_unverified": false
     },
     {
       "category": "Bring-your-own-key cost control",
@@ -53,20 +43,9 @@
       "recurrence_projects": 2,
       "tier": "required",
       "day1_tell": "Add a user-managed API key in settings and run a review confirming the request uses that configured key.",
-      "status": "gap",
-      "reasoning": "Evidence mentions cost caps and model usage, but no user-managed API key or BYOK request path is shown.",
-      "citation_unverified": false,
-      "fix_sites": [
-        {
-          "file": "mine_common.py",
-          "what": "Add environment/config handling for user-supplied provider API keys and document precedence."
-        },
-        {
-          "file": "docs/HANDOFF.md",
-          "what": "Document BYOK setup and verification for LLM-backed assessment runs."
-        }
-      ],
-      "fix_sites_unverified": false
+      "status": "covered",
+      "reasoning": "Bring-your-own-key support is implemented as the central LLM runtime seam and surfaced by check.py without exposing key values, appropriate for a CLI workflow.",
+      "citation_unverified": false
     },
     {
       "category": "CLI developer workflow",
@@ -81,7 +60,7 @@
       "tier": "required",
       "day1_tell": "Install the CLI and run a local review or analysis command against a repository.",
       "status": "covered",
-      "reasoning": "The repository provides CLI entry points such as check.py, diff_target.py, and mining commands for local repository analysis.",
+      "reasoning": "The project is explicitly a CLI pipeline with local commands such as find_neighbors, check.py, and CI gate usage documented in the repo.",
       "citation_unverified": false
     },
     {
@@ -96,20 +75,9 @@
       "recurrence_projects": 4,
       "tier": "required",
       "day1_tell": "Connect a GitHub/GitLab/Bitbucket repository and confirm the product can access and review an open pull request.",
-      "status": "gap",
-      "reasoning": "No evidence shows GitHub/GitLab/Bitbucket repository connection or pull-request access/review integration.",
-      "citation_unverified": false,
-      "fix_sites": [
-        {
-          "file": "check.py",
-          "what": "Add or document a PR-mode adapter that can fetch changed files from a Git hosting provider before running the gate."
-        },
-        {
-          "file": "README.md",
-          "what": "Document supported Git/PR integration workflow or explicitly scope it out."
-        }
-      ],
-      "fix_sites_unverified": false
+      "status": "na_by_design",
+      "reasoning": "Direct GitHub/GitLab/Bitbucket PR connection is not structurally required for this sub-type because it operates as a local/CI repository analysis CLI rather than a hosted PR-review app.",
+      "citation_unverified": false
     },
     {
       "category": "Custom rules and configuration",
@@ -125,7 +93,7 @@
       "tier": "required",
       "day1_tell": "Create or edit a custom rule/config file and confirm it changes the review output on a test repository.",
       "status": "covered",
-      "reasoning": "The --spine checklist acts as the custom rule set and can be pointed at arbitrary checklists to change gate behavior.",
+      "reasoning": "Custom rules are the checklist/spine passed via --spine, and check.py explicitly treats that file as the rule set controlling gate output.",
       "citation_unverified": false
     },
     {
@@ -139,7 +107,7 @@
       "tier": "required",
       "day1_tell": "Run a scan on a repository with a known lint/security/code-smell issue and confirm the product reports it outside of generic LLM prose.",
       "status": "na_by_design",
-      "reasoning": "Static lint/security/code-smell scanning is a SAST/linter engine mechanism, while this target uses LLM/checklist coverage assessment.",
+      "reasoning": "Static lint/security/code-smell scanning is explicitly treated as a SAST-engine concern rather than the job of this LLM completeness-gap tool.",
       "citation_unverified": false
     },
     {
@@ -154,7 +122,7 @@
       "tier": "required",
       "day1_tell": "Configure a quality threshold, run it on a failing change, and confirm the product marks the change as failed or blocked.",
       "status": "covered",
-      "reasoning": "check.py implements thresholded required-gap blocking with exit code 3, plus hook and CI-safe saved-assessment gating.",
+      "reasoning": "check.py implements thresholded quality gates and blocks with exit code 3 when required gaps remain, with deterministic re-gating support for CI/hooks.",
       "citation_unverified": false
     },
     {
@@ -168,7 +136,7 @@
       "tier": "required",
       "day1_tell": "Scan a project with a known vulnerable dependency and confirm the product reports the dependency or supply-chain risk.",
       "status": "na_by_design",
-      "reasoning": "Dependency and supply-chain vulnerability scanning belongs to a SAST/SCA engine, not this LLM completeness-gap analysis tool.",
+      "reasoning": "Dependency vulnerability and supply-chain scanning belongs to a SAST/SCA engine, while this target is scoped to LLM-based completeness gap analysis.",
       "citation_unverified": false
     },
     {
@@ -182,7 +150,7 @@
       "tier": "required",
       "day1_tell": "Run analysis on a repository containing at least two programming languages and confirm both are parsed or reported on.",
       "status": "na_by_design",
-      "reasoning": "Parsing/reporting multiple programming languages is a static-analysis engine capability, not required for this checklist-based completeness assessor.",
+      "reasoning": "Multi-language parsing/reporting is a static-analysis engine capability and is documented as not gating this prior-art/LLM completeness tool.",
       "citation_unverified": false
     },
     {
@@ -196,7 +164,7 @@
       "tier": "required",
       "day1_tell": "Find and follow the self-hosted deployment instructions, then confirm the service starts in your own environment.",
       "status": "na_by_design",
-      "reasoning": "Self-hosted service deployment does not structurally apply to this CLI-oriented analysis pipeline rather than a hosted web service.",
+      "reasoning": "Self-hosted service deployment does not apply to this single-user/CI CLI because there is no long-running hosted service to deploy.",
       "citation_unverified": false
     },
     {
@@ -210,20 +178,9 @@
       "recurrence_projects": 3,
       "tier": "required",
       "day1_tell": "Configure SSO, vault-backed secrets, or OS credential storage and confirm credentials are not stored as plain text in the app.",
-      "status": "gap",
-      "reasoning": "Evidence mentions enterprise secrets as a known emitted gap but shows no SSO, vault, OS credential storage, or non-plaintext secret handling implementation.",
-      "citation_unverified": false,
-      "fix_sites": [
-        {
-          "file": "mine_common.py",
-          "what": "Add support for reading provider credentials from OS keychain or external secret providers without persisting plaintext."
-        },
-        {
-          "file": "docs/HANDOFF.md",
-          "what": "Document enterprise secret-handling status and supported secure credential sources."
-        }
-      ],
-      "fix_sites_unverified": false
+      "status": "na_by_design",
+      "reasoning": "Enterprise SSO, vault-backed secrets, and fleet credential storage are multi-user enterprise product concerns, not required for this local BYOK CLI.",
+      "citation_unverified": false
     },
     {
       "category": "CI/CD integration",
@@ -238,7 +195,7 @@
       "tier": "required",
       "day1_tell": "Add the product to a CI pipeline or GitHub Action and confirm it runs automatically on a commit or pull request.",
       "status": "covered",
-      "reasoning": "The repository includes a GitHub Actions workflow for the 2080 gate and check.py explicitly supports deterministic CI gating from saved assessments.",
+      "reasoning": "The repo includes a GitHub Actions workflow and check.py is designed to act as the CI exit-code gate for automated runs on commits or PRs.",
       "citation_unverified": false
     },
     {
@@ -254,7 +211,7 @@
       "tier": "required",
       "day1_tell": "Open the reporting/dashboard area and confirm it shows review results, scan findings, usage, or project health metrics.",
       "status": "covered",
-      "reasoning": "check.py provides human and JSON gap reports, and related measurement/mining tools report assessment and clustering results.",
+      "reasoning": "The tool provides human and JSON gap reports through check.py/diff_target.py, which satisfies reporting for a CLI even though a dashboard is not required.",
       "citation_unverified": false
     }
   ]

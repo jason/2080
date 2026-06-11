@@ -42,6 +42,22 @@ def backend():
     return "fan" if shutil.which("fan") else "native"
 
 
+def llm_runtime():
+    """Which backend/model/key source the next LLM call will use — for capability maps and
+    preflight checks. Never includes secret VALUES, only their source."""
+    b = backend()
+    info = {"backend": b,
+            "model": os.environ.get("LLM_2080_MODEL") or "gpt-5.5 (tool default)"}
+    if b == "native":
+        info["base_url"] = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
+        info["key_source"] = "OPENAI_API_KEY (set)" if os.environ.get("OPENAI_API_KEY") \
+            else "OPENAI_API_KEY (MISSING — calls will fail)"
+    else:
+        info["provider"] = os.environ.get("LLM_2080_PROVIDER") or "openai-codex (tool default)"
+        info["key_source"] = "fan CLI's own provider auth"
+    return info
+
+
 def extract_json(text):
     """Tolerant JSON extraction: whole string, then first {...} / [...] span."""
     if not text:

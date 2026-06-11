@@ -61,8 +61,10 @@ python3 check.py <your-repo> --spine checklists/<app-type>.features.json --from-
 ```
 
 `check` exits 3 while applicable required gaps remain (CI-ready); `--from-assessment` re-gates
-deterministically without an LLM. (If a `fan` parallel-LLM CLI is on your PATH it's used
-automatically as a local accelerator; nothing requires it.)
+deterministically without an LLM. Preflight which backend/model/key source your calls will use
+(sources only, never secret values): `python3 check.py --json | jq .llm`. (If a `fan`
+parallel-LLM CLI is on your PATH it's used automatically as a local accelerator; nothing
+requires it.)
 
 ## The loop
 

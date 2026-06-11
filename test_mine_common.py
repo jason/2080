@@ -81,6 +81,42 @@ def test_retry_refires_only_failures_at_half_concurrency():
         mine_common._native_once = old_native; env("LLM_2080_BACKEND", old_b)
 
 
+def test_configured_key_and_base_url_reach_the_request():
+    # intent: BYOK is the cost-control contract — if OPENAI_API_KEY/OPENAI_BASE_URL are read
+    # but a default endpoint/credential is used anyway, the user's spend routes to the wrong
+    # account and the knob is a lie. Prove the configured values land in the actual HTTP request.
+    import io, json as _json
+    old = {k: os.environ.get(k) for k in ("LLM_2080_BACKEND", "OPENAI_API_KEY", "OPENAI_BASE_URL")}
+    captured = {}
+
+    class FakeResp(io.BytesIO):
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+
+    def fake_urlopen(req, timeout=None):
+        captured["url"] = req.full_url
+        captured["auth"] = req.get_header("Authorization")
+        captured["body"] = _json.loads(req.data)
+        return FakeResp(_json.dumps(
+            {"choices": [{"message": {"content": "pong"}}]}).encode())
+
+    old_urlopen = mine_common.urllib.request.urlopen
+    try:
+        env("LLM_2080_BACKEND", "native")
+        env("OPENAI_API_KEY", "sk-test-byok-key")
+        env("OPENAI_BASE_URL", "https://openrouter.example/api/v1")
+        mine_common.urllib.request.urlopen = fake_urlopen
+        out = fan_batch([{"id": "1", "prompt": "ping"}], model="m-1")
+        assert out == {"1": "pong"}
+        assert captured["url"] == "https://openrouter.example/api/v1/chat/completions"
+        assert captured["auth"] == "Bearer sk-test-byok-key"
+        assert captured["body"]["model"] == "m-1"
+    finally:
+        mine_common.urllib.request.urlopen = old_urlopen
+        for k, v in old.items():
+            env(k, v)
+
+
 def test_model_env_override_reaches_backend():
     # intent: LLM_2080_MODEL is the documented one-knob BYOK model selector for every tool;
     # if a script's hardcoded default wins, the knob is a lie.

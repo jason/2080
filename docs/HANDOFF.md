@@ -1,6 +1,41 @@
 # 2080 — Handoff
 
-_Last updated: 2026-06-09 (session 3)_
+_Last updated: 2026-06-10 (session 5)_
+
+## ⏩ Session-5 update: gate matches the measurement, recall measured, open-source cut
+
+Three moves, all verified (54 deterministic tests green):
+
+- **Robustness gate now matches the layer-split verdict (codified).** Spines carry an `axis`
+  (`ROBUSTNESS` from cluster_fixes, `SCOPE` from feature_mine; existing checklists backfilled).
+  `check.py` demotes mined ROBUSTNESS-axis required gaps to `advisory_gaps` — only the
+  `origin: generic-baseline` floor gates; `--enforce-mined-robustness` opts back in. Re-gating the
+  saved VIP robustness assessment: **97 blocking → 2 blocking** (release versioning, caching —
+  both floor) **+ 95 advisory**. The change-shaped-labels finding is now enforced by the gate
+  itself, not a HANDOFF paragraph.
+- **Gate RECALL measured for the first time** (`measure_recall.py` — precision 0.77 was only half
+  of gate quality). Protocol: snapshot a neighbor at 25% of its FULL history, ground-truth = spine
+  categories its future commits introduced (2 strict introduction-judges, full agreement, ≥2
+  commits), run the real assessor on the snapshot. **LangBot @ 2023-05-21 (896/3581 commits):
+  mean recall 0.54 (runs 0.62/0.46, n=2) over 13 ground-truth categories.** Two miss families,
+  both instructive: (a) `na_by_design` misses — admin dashboard + dashboard auth na'd at the
+  snapshot's inferred sub-type, but the project later GREW into them: na_by_design is a bet on
+  intent, and intent grows (stable across both runs); (b) `covered` misses on categories present
+  in embryo that the future "built out" (residual ground-truth ambiguity). v0.1 lesson recorded
+  in the tool: snapshotting inside the recent-500 harvest window = mature-product snapshot =
+  contaminated ground truth (measured 0.25 "recall" that was really correct-covered verdicts).
+  Follow-ups: leave-one-out spine, more repos/runs, majority-of-3.
+- **Open-source cut.** `mine_common` grew a stdlib-only native OpenAI-compatible backend
+  (OPENAI_API_KEY + OPENAI_BASE_URL, threaded, same retry net) behind the one `fan_batch` seam;
+  `fan` demoted to optional accelerator (auto-used iff on PATH; `LLM_2080_BACKEND` pins).
+  `LLM_2080_MODEL`/`LLM_2080_PROVIDER` override every tool at once. MIT LICENSE, README
+  quickstart (BYOK-first), machine-local paths scrubbed from docs, git author identity rewritten
+  across all history. Self-gate: **4 blocking → 1 → PASS expected** after the BYOK
+  request-path test (test_mine_common.py proves configured key/base URL land in the actual HTTP
+  request) and a BYOK preflight surface (`check.py --json | jq .llm` — backend/model/key SOURCE,
+  never values). **Self-gate: 4 blocking → 1 → PASS (0/14 blocking), offline re-gate confirms.**
+  Repo creation + push needs the user (harness blocks new-remote pushes):
+  `gh repo create 2080 --private --source . --push`, then flip public when ready.
 
 ## ⏩ Session-3 update: the loop closed (visibility → enforcement → work queue)
 

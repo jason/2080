@@ -177,7 +177,7 @@ def main():
                           "exit_code": EXIT_EMPTY}) if a.json else "no ground truth survived", file=sys.stderr)
         sys.exit(EXIT_EMPTY)
 
-    print(f"[2/3] snapshot worktree @ {snap_sha[:8]} ({len(future)} commits before repo HEAD)…", file=sys.stderr)
+    print(f"[2/3] snapshot worktree @ {snap_sha[:8]} ({len(all_future)} commits before repo HEAD)…", file=sys.stderr)
     wt = make_snapshot(repo_dir, snap_sha)
 
     from diff_target import assess_target  # late import: keeps --json capability map LLM-free
