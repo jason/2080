@@ -175,6 +175,44 @@ def test_chunk_failures_and_garbage_are_contained():
     assert [(a["n"], a["status"]) for a in merged] == [(42, "covered")]
 
 
+def test_escalation_batched_grep_keeps_each_gap_on_its_own_terms():
+    # intent: the escalation grep runs as ONE batch over the union of every gap's synonym
+    # terms (perf: was one grep wave per gap). A gap whose OWN terms are dry must stand even
+    # when another gap's terms hit — cross-contamination here silently flips a real gap to
+    # covered, which is an unearned PASS at the gate.
+    from unittest.mock import patch
+    import diff_target as dt
+    cats = [{"category": "telemetry export", "status": "gap", "tier": "required", "reasoning": "r0"},
+            {"category": "usage quotas", "status": "gap", "tier": "required", "reasoning": "r1"},
+            {"category": "metrics dashboard", "status": "gap", "tier": "required", "reasoning": "r2"}]
+    fileset = {f"src/m{i}.py" for i in range(5)}
+    ev = {"category_evidence": {0: "e0", 1: "e1", 2: "e2"}, "dir_map": "src/ (5 files)"}
+    # gap 2 SHARES alpha_impl with gap 0 — the batch must grep it once, not once per gap
+    syn = '{"0": ["alpha_impl"], "1": ["zeta_impl"], "2": ["alpha_impl"]}'
+    rejudge = ('{"assessments":[{"n":0,"status":"covered","reasoning":"impl found",'
+               '"cited_files":["src/m0.py"]},'
+               '{"n":2,"status":"gap","reasoning":"mention only"}]}')
+    grep_calls = []
+
+    def fake_grep(repo, t):
+        grep_calls.append(t)
+        return t, ({"src/m0.py"} if t == "alpha_impl" else set())
+
+    class FakeRun:
+        returncode, stdout = 0, "src/m0.py:3:alpha_impl()"
+
+    with patch.object(dt, "fan_call", side_effect=[syn, rejudge]), \
+         patch.object(dt, "_grep_files", side_effect=fake_grep), \
+         patch.object(dt.subprocess, "run", return_value=FakeRun()):
+        out = dt.escalate_gaps("/repo", {"app_type": "t"}, cats, ev, fileset)
+    assert out[0]["status"] == "covered" and out[0]["escalated"] is True
+    # the dry gap STANDS — alpha_impl's hits must not leak into usage-quotas' evidence
+    assert out[1]["status"] == "gap" and out[1]["escalated"] is True
+    # sharing a term gets gap 2 RE-JUDGED on real evidence, but the re-judge kept it a gap
+    assert out[2]["status"] == "gap" and out[2]["escalated"] is True
+    assert grep_calls.count("alpha_impl") == 1  # shared term greps ONCE for the whole batch
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for fn in fns:

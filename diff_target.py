@@ -91,8 +91,11 @@ def _grep_files(repo, kw):
     try:
         r = subprocess.run(["git", "-C", repo, "grep", "-ilI", "--untracked", "-e", kw],
                            capture_output=True, text=True, timeout=60)
-    except subprocess.TimeoutExpired:
-        return kw, set()  # a wedged grep (lazy-blob fetch, huge repo) degrades to "no hits"
+    except Exception:
+        # ANY failure (wedged lazy-blob grep, transient OSError, decode error) degrades to
+        # "no hits" — this runs as an ex.map worker, and one raising worker would abort the
+        # whole keyword/escalation batch instead of one term
+        return kw, set()
     return kw, set(f for f in r.stdout.split("\n") if f)
 
 
@@ -260,14 +263,20 @@ def escalate_gaps(target, cl, cats, ev, fileset):
         return cats  # escalation is best-effort; the original verdicts stand
 
     allowed = {f for f in fileset if evidence_candidate(f)}
+    # one grep per UNIQUE term across ALL gaps in a single 8-wide batch (was: one batch per
+    # gap, gap-by-gap — on heavily-gapped targets that serialized dozens of grep waves and
+    # re-searched terms shared between gaps)
+    gap_terms = {i: clean_synonym_terms(syn.get(str(i)), category_keywords(cats[i])) for i in gaps}
+    uniq = sorted({t for ts in gap_terms.values() for t in ts})
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        term_hits = {kw: s & allowed for kw, s in ex.map(lambda t: _grep_files(target, t), uniq)}
     found = {}
     for i in gaps:
-        terms = clean_synonym_terms(syn.get(str(i)), category_keywords(cats[i]))
+        terms = gap_terms[i]
         if not terms:
             cats[i]["escalated"] = True
             continue
-        with ThreadPoolExecutor(max_workers=8) as ex:
-            hits = {kw: s & allowed for kw, s in ex.map(lambda t: _grep_files(target, t), terms)}
+        hits = {t: term_hits[t] for t in terms}  # each gap judged ONLY on its own terms
         top = rank_evidence_files(hits, len(allowed))
         if not top:
             cats[i]["escalated"] = True  # synonym search also dry — the gap verdict is now stronger
