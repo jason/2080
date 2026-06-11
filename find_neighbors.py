@@ -14,6 +14,7 @@ without a universal checklist: it builds the right neighbor set per request.
 Usage: find_neighbors.py "what you are building" [--json]
 """
 import argparse, json, re, subprocess, sys
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 from mine_common import fan_call as mc_fan_call, extract_json
@@ -53,6 +54,19 @@ def measured_maturity(cand):
     else:
         label = "low"
     return {"label": label, "commits": commits, "age_months": round(age, 1), "months_since_push": round(since_push, 1)}
+
+
+def attach_maturity(neighbors, by_name, measure=measured_maturity):
+    """Measure maturity for each picked neighbor CONCURRENTLY (one gh round-trip each,
+    independent). ORDER-ALIGNED: result i is written to neighbor i — a swap would silently
+    re-rank the proposal and mine the wrong repos. `measure` injectable for tests."""
+    def one(n):
+        cand = by_name.get(n.get("repo"))
+        return measure(cand) if cand else {"label": "unknown", "commits": 0}
+    with ThreadPoolExecutor(max_workers=min(8, max(1, len(neighbors)))) as ex:
+        for n, m in zip(neighbors, ex.map(one, neighbors)):
+            n["maturity"] = m
+    return neighbors
 
 
 def fan_call(prompt, max_tokens=2000):
@@ -143,10 +157,7 @@ def main():
         sys.exit("could not parse neighbor evaluation")
 
     # measure maturity from gh data (supersedes any LLM guess); drop neighbors we can't locate
-    by_name = {c["full_name"]: c for c in cand_list}
-    for n in pick.get("neighbors", []):
-        cand = by_name.get(n.get("repo"))
-        n["maturity"] = measured_maturity(cand) if cand else {"label": "unknown", "commits": 0}
+    attach_maturity(pick.get("neighbors", []), {c["full_name"]: c for c in cand_list})
     pick["neighbors"].sort(key=lambda n: -n["maturity"]["commits"])  # mature (most history) first = best prior art
 
     out = {"intent": a.intent, "app_type": spec.get("app_type"), "sub_type": spec.get("sub_type"),
