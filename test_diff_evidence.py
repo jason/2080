@@ -12,6 +12,18 @@ from diff_target import (validate_fix_sites, apply_assessments, category_keyword
 FILESET = {"app.py", "cli.py", "store.py"}
 
 
+def test_category_keywords_pull_from_what_description():
+    # intent: SCOPE/ISSUES spines — the only axes that GATE — emit no aliases, so without
+    # `what` the evidence search for exactly the gating verdicts ran on the 2-3 words of the
+    # category name (minimum vocabulary where precision matters most). The one-line `what`
+    # description must feed the deterministic keyword set.
+    cat = {"category": "Tool governance",
+           "what": "permission prompts and sandbox policies for shell execution"}
+    kws = category_keywords(cat)
+    assert "permission" in kws and "sandbox" in kws
+    assert len(kws) <= 6  # cap still enforced — `what` enriches, never floods the grep
+
+
 def test_hallucinated_fix_site_dropped_and_flagged():
     # intent: an LLM-invented file path would send the fixing agent to edit a file that
     # doesn't exist — hallucinated sites must be dropped and the category flagged.

@@ -72,6 +72,27 @@ class TestEmit(unittest.TestCase):
         self.assertTrue(t["evidence"]["citation_unverified"])
         self.assertNotIn("fix_sites", set(t) - {"evidence"})  # not promoted to a top-level field
 
+    def test_battery_verdict_uses_per_gap_spine_in_verify_cmd(self):
+        # intent: battery verdicts set the doc-level spine to None and carry the real one on
+        # each gap; emit used to render `--spine None` — an un-runnable verify command that
+        # defeats "closure is measured, not claimed" exactly when the user runs the full map.
+        battery = {**VERDICT, "spine": None,
+                   "spines": ["checklists/a.features.json", "checklists/a.operability.json"],
+                   "blocking_gaps": [dict(VERDICT["blocking_gaps"][0],
+                                          spine="checklists/a.features.json", axis="SCOPE")]}
+        doc = build_doc(battery, "verdict")
+        self.assertIn("--spine checklists/a.features.json", doc["tasks"][0]["verify_cmd"])
+        self.assertNotIn("None", doc["tasks"][0]["verify_cmd"])
+        self.assertIn("battery", doc["spine"])  # md header renders "2-spine battery", not "None"
+
+    def test_verify_cmd_shell_quotes_hostile_target_and_spine(self):
+        # intent: verify_cmd is BUILT TO BE RUN by an implementing agent, and target/spine
+        # arrive from verdict JSON (stdin in pipe mode) — un-quoted shell metacharacters in a
+        # path would execute when the agent runs the command verbatim.
+        t = gap_to_task(VERDICT["blocking_gaps"][0], "/tmp/repo; rm -rf ~", "my spine.json")
+        self.assertIn("'/tmp/repo; rm -rf ~'", t["verify_cmd"])
+        self.assertIn("'my spine.json'", t["verify_cmd"])
+
     def test_empty_blocking_gaps_is_empty_queue_not_error(self):
         # intent: an open gate means "nothing to do" — emit must hand orchestrators an empty
         # queue with exit 0, not crash and stall the pipeline on the success case.

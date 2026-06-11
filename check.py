@@ -37,11 +37,13 @@ EXIT_GATED = 3  # mirrors rally-flow's gate() exit code: completion refused
 def capability_map():
     return {"tool": "2080-check", "version": "0.2",
             "args": "<target-repo> --spine <checklist.json> [--threshold N] [--fail-on gap|partial] "
-                    "[--save-assessment FILE] [--from-assessment FILE] [--json] [--yes]",
+                    "[--save-assessment FILE] [--from-assessment FILE] [--allow-unassessed] [--json] [--yes]",
+            "fail_closed": "required categories left 'unknown' by a failed assessment chunk refuse "
+                           "PASS (exit 1) unless --allow-unassessed; verdict carries unassessed_count",
             "fail_on": ["gap", "partial"],
-            "axis_gating": "mined categories gate only on validated axes (SCOPE); other axes are "
-                           "advisory by default with the generic-baseline floor still gating; "
-                           "--enforce-mined restores full gating",
+            "axis_gating": "mined categories gate only on validated axes (VALIDATED_GATING_AXES — "
+                           "currently SCOPE, ISSUES); other axes are advisory by default with the "
+                           "generic-baseline floor still gating; --enforce-mined restores full gating",
             "llm": llm_runtime(),  # bring-your-own-key preflight: backend/model/key SOURCE (never values)
             "assessment": {"--save-assessment": "after the live LLM assess, write the raw assessment JSON to FILE",
                            "--from-assessment": "skip the LLM: load a saved assessment and gate on it (deterministic)"},
@@ -72,6 +74,16 @@ def die(msg, code, as_json):
 # SECURITY negative — feat/fix-commit answer keys structurally undersample artifact-presence and
 # vuln-class work (instrument mismatch, not necessarily lens failure).
 # Every other axis is advisory until it passes the same bar.
+#
+# MEASUREMENT SCOPE (what the controls do and do not certify): the lift/specificity controls
+# run through measure.py's embedding+judge protocol over spine CATEGORIES — they certify SPINE
+# PREDICTIVENESS (the mined categories anticipate the work mature repos actually did). They
+# never invoke diff_target, so they are NOT evidence of GATE ADJUDICATION ACCURACY on a live
+# target — that is a separate claim, measured separately (blocking-verdict precision 0.77 via
+# adversarial two-lens refutation; measure_recall.py is the protocol that exercises the real
+# assess_target path). An axis can be predictive while the gate misjudges it (and vice versa).
+# Open follow-up (HANDOFF): add an assess_target arm to the promotion criterion so axes earn
+# gating on the path that gates.
 VALIDATED_GATING_AXES = {"SCOPE", "ISSUES"}
 
 
@@ -89,11 +101,16 @@ def evaluate(result, fail_on, axis=None, enforce_mined_robustness=False):
     block_statuses = {"gap", "partial"} if fail_on == "partial" else {"gap"}
     demote_mined = bool(axis) and (axis or "").upper() not in VALIDATED_GATING_AXES \
         and not enforce_mined_robustness
-    blocking, advisory, required_total = [], [], 0
+    blocking, advisory, required_total, unassessed = [], [], 0, 0
     for c in result["categories"]:
         if c.get("tier") != "required":
             continue
         required_total += 1
+        if c.get("status") in (None, "", "unknown"):
+            # never judged (failed/timed-out assessment chunk) — NOT a pass; counted so the
+            # gate can fail closed instead of silently flipping GATED→PASS on a transient 429
+            unassessed += 1
+            continue
         if c.get("status") in block_statuses:
             entry = {"category": c["category"], "status": c["status"],
                      "reasoning": c.get("reasoning", ""),
@@ -105,7 +122,7 @@ def evaluate(result, fail_on, axis=None, enforce_mined_robustness=False):
                 advisory.append(entry)
             else:
                 blocking.append(entry)
-    return blocking, advisory, required_total
+    return blocking, advisory, required_total, unassessed
 
 
 def load_or_assess(target, spine_path, cl, a, save_to=None, from_file=None):
@@ -163,9 +180,14 @@ def main():
     ap.add_argument("--from-assessment", metavar="PATH",
                     help="skip the LLM: gate on saved assessment(s) at PATH (battery mode: the directory "
                          "--save-assessment wrote; deterministic, CI/hook-safe)")
+    ap.add_argument("--allow-unassessed", action="store_true",
+                    help="permit PASS even when some required categories were never assessed "
+                         "(failed chunk). Default: refuse PASS (exit 1) — fail closed, not open")
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--yes", "-y", action="store_true", help="accepted for agentic use; check is read-only")
     a = ap.parse_args()
+    if a.threshold < 0:
+        die("--threshold must be >= 0", EXIT_ERR, a.json)
 
     if not a.target:
         if a.json:
@@ -200,11 +222,11 @@ def main():
             (Path(a.from_assessment) if (a.from_assessment and not battery) else None)
         result = load_or_assess(a.target, spine_path, cl, a, save_to=save_to, from_file=from_file)
         axis = result.get("axis") or cl.get("axis")  # old saved assessments lack axis; the spine has it
-        blocking, advisory, required_total = evaluate(result, a.fail_on, axis=axis,
-                                                      enforce_mined_robustness=a.enforce_mined_robustness)
+        blocking, advisory, required_total, unassessed = evaluate(
+            result, a.fail_on, axis=axis, enforce_mined_robustness=a.enforce_mined_robustness)
         runs.append({"spine": str(spine_path), "app_type": cl.get("app_type"),
                      "sub_type": result.get("sub_type", "?"), "axis": axis,
-                     "required_total": required_total,
+                     "required_total": required_total, "unassessed_count": unassessed,
                      "blocking_count": len(blocking), "advisory_count": len(advisory),
                      "blocking_gaps": blocking, "advisory_gaps": advisory})
 
@@ -213,9 +235,21 @@ def main():
     all_advisory = [dict(g, spine=r["spine"], axis=r["axis"]) for r in runs for g in r["advisory_gaps"]] \
         if battery else runs[0]["advisory_gaps"]
     gated = max(0, len(all_blocking) - a.threshold) > 0
+    # FAIL CLOSED on unassessed categories: a required category whose status is still "unknown"
+    # was never judged (failed assessment chunk). "We couldn't assess it" must not render as
+    # "doesn't block" — that would flip GATED→PASS on a transient LLM failure.
+    total_unassessed = sum(r["unassessed_count"] for r in runs)
+    incomplete = total_unassessed > 0 and not a.allow_unassessed
+    if gated:
+        exit_code = EXIT_GATED
+    elif incomplete:
+        exit_code = EXIT_ERR  # fail closed: never PASS on a partially-assessed spine
+    else:
+        exit_code = EXIT_OK
     verdict = {
-        "ok": not gated,
+        "ok": not gated and not incomplete,
         "gated": gated,
+        "unassessed_count": total_unassessed,
         "target": a.target,
         "spine": runs[0]["spine"] if not battery else None,
         "spines": [r["spine"] for r in runs],
@@ -232,13 +266,18 @@ def main():
     }
     if battery:
         verdict["per_spine"] = [{k: r[k] for k in ("spine", "axis", "required_total",
-                                                   "blocking_count", "advisory_count")} for r in runs]
+                                                   "unassessed_count", "blocking_count",
+                                                   "advisory_count")} for r in runs]
 
     if a.json:
+        if incomplete and not gated:
+            verdict["error"] = (f"assessment incomplete: {total_unassessed} required categor"
+                                f"{'y' if total_unassessed == 1 else 'ies'} never assessed "
+                                "(failed chunk?) — refusing PASS; re-assess or --allow-unassessed")
         print(json.dumps(verdict, indent=2))
-        sys.exit(EXIT_GATED if gated else EXIT_OK)
+        sys.exit(exit_code)
 
-    head = "🚫 GATED" if gated else "✅ PASS"
+    head = "🚫 GATED" if gated else ("⛔ INCOMPLETE" if incomplete else "✅ PASS")
     if not battery:
         r = runs[0]
         print(f"{head} — {a.target} vs {r['app_type']} spine ({Path(r['spine']).name})")
@@ -250,6 +289,10 @@ def main():
         print(f"sub_type: {runs[0]['sub_type']}")
         print(f"blocking: {len(all_blocking)} (gating axes) | advisory: {len(all_advisory)} "
               f"| threshold: {a.threshold}\n")
+    if total_unassessed:
+        note = "blocking PASS until re-assessed" if incomplete else "--allow-unassessed in effect"
+        print(f"⚠ {total_unassessed} required categor{'y' if total_unassessed == 1 else 'ies'} "
+              f"never assessed (failed chunk?) — {note}\n")
     if all_blocking:
         print("BLOCKING GAPS (close these to open the gate):")
         print_gaps(all_blocking)
@@ -276,7 +319,7 @@ def main():
             if r["advisory_count"] > 8:
                 print(f"  … and {r['advisory_count'] - 8} more")
         print("\n(advisory sections inform the day-1 map; only gating axes block. --enforce-mined to gate them)")
-    sys.exit(EXIT_GATED if gated else EXIT_OK)
+    sys.exit(exit_code)
 
 
 if __name__ == "__main__":

@@ -162,6 +162,50 @@ class RobustnessAxisAdvisory(unittest.TestCase):
             self.assertEqual(json.loads(r.stdout)["advisory_count"], 0)
 
 
+class UnassessedFailClosed(unittest.TestCase):
+    """A required category whose status is still 'unknown' was never judged (failed/timed-out
+    assessment chunk). 'We couldn't assess it' must never render as 'doesn't block'."""
+
+    def unknown_assessment(self):
+        a = make_assessment("covered")
+        a["categories"][1]["status"] = "unknown"  # Crash recovery: chunk failed, never judged
+        return a
+
+    def test_unknown_required_category_refuses_pass(self):
+        # intent: a transient 429/timeout on one assessment chunk used to flip GATED→PASS —
+        # the worst-direction failure for a completeness gate. Unassessed must fail closed
+        # (exit 1, ok:false), distinct from GATED (3), so CI can tell "incomplete" from "gaps".
+        with tempfile.TemporaryDirectory() as tmp:
+            r = run_check(tmp, self.unknown_assessment())
+            self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+            v = json.loads(r.stdout)
+            self.assertFalse(v["ok"])
+            self.assertEqual(v["unassessed_count"], 1)
+            self.assertFalse(v["gated"])  # not gaps — incompleteness
+
+    def test_allow_unassessed_restores_pass(self):
+        # intent: --allow-unassessed is the explicit opt-out (e.g. a known-flaky advisory spine);
+        # without a working escape hatch teams would fork the gate instead of configuring it.
+        with tempfile.TemporaryDirectory() as tmp:
+            r = run_check(tmp, self.unknown_assessment(), extra=["--allow-unassessed"])
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            v = json.loads(r.stdout)
+            self.assertTrue(v["ok"])
+            self.assertEqual(v["unassessed_count"], 1)  # still visible, just not blocking
+
+    def test_real_gaps_still_dominate_unknowns(self):
+        # intent: when real blocking gaps AND unknowns coexist, GATED (3) is the actionable
+        # verdict — exit 1 would hide the closable gap list behind an "incomplete" error.
+        with tempfile.TemporaryDirectory() as tmp:
+            a = make_assessment("gap")
+            a["categories"][1]["status"] = "unknown"
+            r = run_check(tmp, a)
+            self.assertEqual(r.returncode, 3, r.stdout + r.stderr)
+            v = json.loads(r.stdout)
+            self.assertTrue(v["gated"])
+            self.assertEqual(v["unassessed_count"], 1)
+
+
 class BatteryMode(unittest.TestCase):
     """Multi-spine day-1 map: gating axes block, advisory axes inform, one merged verdict."""
 

@@ -14,7 +14,7 @@ at a file that doesn't exist is dropped and the category flagged fix_sites_unver
 Usage: diff_target.py <target-repo> <checklist.json> [--json] [--yes]
 Exit codes: 0 OK | 1 usage/err | 2 not_found
 """
-import argparse, json, re, subprocess, sys
+import argparse, json, os, re, subprocess, sys
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -47,12 +47,16 @@ def capability_map():
 
 
 def category_keywords(cat):
-    """Deterministic search terms for a category: domain words from category + aliases,
-    minus change-words (fix/update/...) that would match every commit-shaped string."""
+    """Deterministic search terms for a category: domain words from category + aliases + the
+    one-line `what` description, minus change-words (fix/update/...) that would match every
+    commit-shaped string. `what` is load-bearing: SCOPE/ISSUES spines (the axes that GATE)
+    carry no aliases, so without it the evidence search for exactly those axes ran on the 2-3
+    words of the category name alone — minimum vocabulary on the gating verdicts."""
     aliases = cat.get("aliases", "")
     if isinstance(aliases, list):
         aliases = " ".join(aliases)
-    words = re.findall(r"[a-zA-Z][a-zA-Z_-]{3,}", f"{cat.get('category', '')} {aliases}".lower())
+    words = re.findall(r"[a-zA-Z][a-zA-Z_-]{3,}",
+                       f"{cat.get('category', '')} {aliases} {cat.get('what', '')}".lower())
     seen, out = set(), []
     for w in words:
         if w in KEYWORD_STOP or w in seen:
@@ -84,8 +88,11 @@ def build_dir_map(files, top=40):
 
 
 def _grep_files(repo, kw):
-    r = subprocess.run(["git", "-C", repo, "grep", "-ilI", "--untracked", "-e", kw],
-                       capture_output=True, text=True)
+    try:
+        r = subprocess.run(["git", "-C", repo, "grep", "-ilI", "--untracked", "-e", kw],
+                           capture_output=True, text=True, timeout=60)
+    except subprocess.TimeoutExpired:
+        return kw, set()  # a wedged grep (lazy-blob fetch, huge repo) degrades to "no hits"
     return kw, set(f for f in r.stdout.split("\n") if f)
 
 
@@ -108,10 +115,13 @@ def category_evidence(repo, cat, nfiles, cache, char_budget):
     if not top:
         return f"keyword search ({', '.join(kws)}): NO matching files anywhere in the repo"
     out = ["files: " + ", ".join(top)]
-    r = subprocess.run(["git", "-C", repo, "grep", "-inI", "--untracked"]
-                       + [x for k in kws for x in ("-e", k)] + ["--"] + top[:3],
-                       capture_output=True, text=True)
-    out += [ln[:200] for ln in r.stdout.splitlines()[:6]]
+    try:
+        r = subprocess.run(["git", "-C", repo, "grep", "-inI", "--untracked"]
+                           + [x for k in kws for x in ("-e", k)] + ["--"] + top[:3],
+                           capture_output=True, text=True, timeout=60)
+        out += [ln[:200] for ln in r.stdout.splitlines()[:6]]
+    except subprocess.TimeoutExpired:
+        pass  # file list alone is still usable evidence
     return "\n".join(out)[:char_budget]
 
 
@@ -126,8 +136,12 @@ def gather_evidence(repo, cats=None):
         if (p / n).exists():
             readme = (p / n).read_text(errors="ignore")[:2500]; break
     # tracked AND untracked-not-ignored — an uncommitted target still has real source
-    files = [f for f in subprocess.run(["git", "-C", repo, "ls-files", "--cached", "--others", "--exclude-standard"],
-                                        capture_output=True, text=True).stdout.split("\n") if f]
+    try:
+        ls = subprocess.run(["git", "-C", repo, "ls-files", "--cached", "--others", "--exclude-standard"],
+                            capture_output=True, text=True, timeout=60).stdout
+    except subprocess.TimeoutExpired:
+        ls = ""  # degrade to the non-git rglob path below
+    files = [f for f in ls.split("\n") if f]
     in_git = bool(files)
     if not in_git:  # non-git dir: orientation still works; grep evidence is skipped
         files = sorted(str(x.relative_to(p)) for x in p.rglob("*") if x.is_file())[:400]
@@ -258,11 +272,14 @@ def escalate_gaps(target, cl, cats, ev, fileset):
         if not top:
             cats[i]["escalated"] = True  # synonym search also dry — the gap verdict is now stronger
             continue
-        r = subprocess.run(["git", "-C", target, "grep", "-inI", "--untracked"]
-                           + [x for t in terms for x in ("-e", t)] + ["--"] + top[:3],
-                           capture_output=True, text=True)
-        found[i] = ("files: " + ", ".join(top) + "\n"
-                    + "\n".join(ln[:200] for ln in r.stdout.splitlines()[:6]))[:1800]
+        try:
+            r = subprocess.run(["git", "-C", target, "grep", "-inI", "--untracked"]
+                               + [x for t in terms for x in ("-e", t)] + ["--"] + top[:3],
+                               capture_output=True, text=True, timeout=60)
+            lines = "\n".join(ln[:200] for ln in r.stdout.splitlines()[:6])
+        except subprocess.TimeoutExpired:
+            lines = ""
+        found[i] = ("files: " + ", ".join(top) + "\n" + lines)[:1800]
     if not found:
         return cats
 
@@ -353,6 +370,15 @@ def assess_target(target, cl):
         "need is na_by_design even if every mined neighbor has it;\n"
         "  (b) DIFFERENT PRODUCT MECHANISM — the capability belongs to a different kind of engine (e.g. "
         "static-analysis/AST scanning is a SAST engine's job, not an LLM completeness tool's) — na_by_design, not gap.\n"
+        "  (c) GENERIC/FLOOR categories must be REINTERPRETED in this sub-type's terms before judging, "
+        "never transplanted in their multi-user-product form: for a developer CLI, 'UI and UX polish' means "
+        "help text, error-message quality and output formatting (do not na it for lacking a GUI, do not gap "
+        "it for lacking one); 'internationalization' means correct non-ASCII/Unicode data handling — "
+        "translation catalogs apply only to products with an end-user UI fleet; 'authentication and access "
+        "control' for a local keyless tool is na_by_design; 'telemetry and monitoring' for a local "
+        "privacy-deliberate tool is satisfied by adequate logs/diagnostics or is na_by_design, not an "
+        "obligation to phone home. Judge the sub-type-appropriate FORM of the category; gap only when THAT "
+        "form is missing.\n"
         "For each: reasoning (1 sentence) and cited_files (file paths that APPEAR IN THE EVIDENCE/MAP above; "
         "[] if none; do NOT invent filenames). For each gap or partial ONLY, also give fix_sites: 1-3 of "
         '{"file": a file path FROM THE EVIDENCE where the capability would naturally be added or extended, '
@@ -383,7 +409,12 @@ def assess_target(target, cl):
             print(f"assess_target: chunk {ci + 1}/{len(chunks)} failed "
                   f"({'no result' if raw is None else 'unparseable'}) — its categories stay 'unknown'", file=sys.stderr)
             if raw:
-                Path(f"/tmp/2080-diff-raw-chunk{ci}.txt").write_text(raw)
+                # unguessable per-run path (0600): a fixed /tmp name collides across concurrent
+                # runs and is pre-creatable by another local user
+                import tempfile
+                fd, dump = tempfile.mkstemp(prefix=f"2080-diff-raw-chunk{ci}-", suffix=".txt")
+                Path(dump).write_text(raw); os.close(fd)
+                print(f"assess_target: raw chunk output saved to {dump}", file=sys.stderr)
         outs.append((ci, out, len(chunk)))
     if all(out is None for _, out, _ in outs):
         return None

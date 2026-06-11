@@ -525,7 +525,14 @@ project-specific residual; low recall → 2080 leans on the prior-art ~40% skele
 
 Other next steps: adversarial-verify pass for `diff_target` (catch prose-level over-claims); fix
 2080's own retry gap; thicken the corpus with more other-author neighbors; tune maturity thresholds
-(commit-count should override youth).
+(commit-count should override youth); **add an `assess_target` arm to the axis-promotion
+criterion** — the lift/specificity controls run measure.py's embedding+judge protocol over spine
+categories and certify *spine predictiveness*, not *gate adjudication accuracy*; the two are
+disjoint code paths (measure.py never imports diff_target), so an axis can earn promotion while
+the gate misjudges it. Either add a diff_target-based arm to measure.py or promote the
+measure_recall.py protocol (which does exercise assess_target) with leave-one-out spines + more
+repos. (Surfaced by the 2026-06-11 dual-model review; see the VALIDATED_GATING_AXES note in
+check.py.)
 
 ## Files (refreshed 2026-06-11 — see `./2080 --json` for the live command map)
 - `2080` — dispatcher: init / check / emit / mine / surface / threat / neighbors / measure / recall
@@ -536,7 +543,7 @@ Other next steps: adversarial-verify pass for `diff_target` (catch prose-level o
 - `surface_mine.py` — deterministic operability lens, 16 probes + content-hit hygiene (no LLM)
 - `threat_mine.py` — deterministic SECURITY lens: neighbor deps → OSV → vulnerability-class spine
 - `diff_target.py` — evidence-grounded coverage assessment (per-category git-grep retrieval, synonym escalation, fix_sites)
-- `check.py` — **keystone gate**: blocks (exit 3) on applicable required gaps; `VALIDATED_GATING_AXES = {SCOPE, ISSUES, TESTS}`; battery mode; `--save/--from-assessment` split
+- `check.py` — **keystone gate**: blocks (exit 3) on applicable required gaps; `VALIDATED_GATING_AXES = {SCOPE, ISSUES}` (TESTS demoted same-day by the specificity control); battery mode; `--save/--from-assessment` split
 - `emit.py` — blocking gaps → agent-ready task queue (acceptance = day1_tell, verify_cmd per task)
 - `measure.py` — controlled recall-lift instrument (prepare-once-judge-N fast path; also hosts embed/abstract from the archived cluster mine)
 - `measure_recall.py` — gate recall vs a neighbor's own future (snapshot backtest)

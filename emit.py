@@ -27,7 +27,7 @@ acceptance checklist). --json forces the json format and one JSON document on st
 Exit codes: 0 ok (including an empty queue — gate already open) | 1 usage/err | 2 not_found
 """
 from __future__ import annotations
-import argparse, json, re, sys
+import argparse, json, re, shlex, sys
 from pathlib import Path
 
 from mine_common import EXIT_OK, EXIT_ERR, EXIT_NOT_FOUND
@@ -52,11 +52,18 @@ def slug(text):
 
 
 def gap_to_task(gap, target, spine):
-    """One blocking gap -> one task spec. acceptance = day1_tell verbatim (it IS the criterion)."""
+    """One blocking gap -> one task spec. acceptance = day1_tell verbatim (it IS the criterion).
+    verify_cmd prefers the gap's own spine (battery verdicts set the doc-level spine to None and
+    carry the real one per-gap) and shell-quotes both fields — this string is built to be RUN by
+    an implementing agent, and target/spine come from verdict JSON (stdin in pipe mode)."""
     cat = gap.get("category", "uncategorized")
     status = gap.get("status", "gap")
     evidence = {"citation_unverified": bool(gap.get("citation_unverified"))}
     evidence.update({k: v for k, v in gap.items() if k not in KNOWN_GAP_KEYS})  # defensive passthrough
+    vspine = gap.get("spine") or spine
+    verify_cmd = (f"check.py {shlex.quote(str(target))} --spine {shlex.quote(str(vspine))} --json"
+                  if vspine else  # malformed battery gap with no spine: an honest non-command
+                  "(spine unknown — regenerate the verdict and re-emit to get a verify command)")
     return {"id": slug(cat),
             "title": ("Close gap: " if status == "gap" else "Complete partial: ") + cat,
             "category": cat,
@@ -65,12 +72,18 @@ def gap_to_task(gap, target, spine):
             "acceptance": gap.get("day1_tell", ""),
             "reasoning": gap.get("reasoning", ""),
             "evidence": evidence,
-            "verify_cmd": f"check.py {target} --spine {spine} --json"}
+            "verify_cmd": verify_cmd}
 
 
 def build_doc(verdict, generated_from):
-    target, spine = verdict.get("target", "?"), verdict.get("spine", "?")
-    tasks = [gap_to_task(g, target, spine) for g in verdict.get("blocking_gaps", [])]
+    target = verdict.get("target", "?")
+    # battery verdicts have spine=None at top level (the real one rides on each gap); the
+    # synthesized label is for the doc header ONLY — gap_to_task gets the raw value so a
+    # malformed gap can never render the label into a runnable-looking verify_cmd
+    raw_spine = verdict.get("spine")
+    spine = raw_spine or \
+        (f"{len(verdict.get('spines') or [])}-spine battery" if verdict.get("spines") else "?")
+    tasks = [gap_to_task(g, target, raw_spine) for g in verdict.get("blocking_gaps", [])]
     seen = {}
     for t in tasks:  # stable de-dup: identical categories get -2, -3 suffixes in input order
         n = seen.get(t["id"], 0) + 1
@@ -136,9 +149,10 @@ def load_verdict(a, stdin_text=None):
         if not result:
             die("assessment failed (could not parse model output)", EXIT_ERR, a.json)
         axis = result.get("axis") or cl.get("axis")
-        blocking, advisory, required_total = evaluate(result, a.fail_on, axis=axis)
+        blocking, advisory, required_total, unassessed = evaluate(result, a.fail_on, axis=axis)
         return {"target": a.target, "spine": str(spine_path), "app_type": cl.get("app_type"),
                 "sub_type": result["sub_type"], "axis": axis, "required_total": required_total,
+                "unassessed_count": unassessed,
                 "blocking_count": len(blocking), "advisory_count": len(advisory),
                 "fail_on": a.fail_on, "blocking_gaps": blocking, "advisory_gaps": advisory}, "live"
     else:
