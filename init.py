@@ -13,8 +13,8 @@ Every stage already exists as its own tool — this is glue + caching, not new m
                HISTORY is required (subjects feed the mine) but blobs stay lazy; the README
                still materializes in the working tree for lens_mine.
   harvest    ← ~/.cache/2080/harvests/<name>.json {"project", "commits":[{"sha","subject"}]}
-               — exactly cluster_fixes.py's input contract.
-  mine       ← cluster_fixes.py  → checklists/<app_type>.robustness.json  (robustness spine)
+               — mine-input provenance record.
+  mine       ← lens_mine.py robustness-surface → checklists/<app_type>.robustness.json
                lens_mine.py   → checklists/<app_type>.features.json    (scope spine)
 
 Clone + harvest are idempotent (re-run refreshes, never re-clones), so init doubles as the
@@ -176,7 +176,7 @@ def main():
     ap.add_argument("--neighbors", help="owner/repo,... — override discovery (skips the find_neighbors LLM step)")
     ap.add_argument("--app-type", help="spine label; default from discovery (slug of intent with --neighbors)")
     ap.add_argument("--max-commits", type=int, default=500, help="newest commits harvested per neighbor (0 = all)")
-    ap.add_argument("--skip-robustness", action="store_true", help="skip the cluster_fixes robustness mine")
+    ap.add_argument("--skip-robustness", action="store_true", help="skip the robustness-surface mine")
     ap.add_argument("--skip-scope", action="store_true", help="skip the lens_mine scope mine")
     ap.add_argument("--dry-run", action="store_true", help="print the full plan; NO network/LLM, NO writes")
     ap.add_argument("--force", action="store_true", help="overwrite existing spine files for this app-type")
@@ -299,9 +299,11 @@ def main():
     if a.skip_robustness:
         spines["robustness"] = "skipped"
     else:
-        print(f"→ mining robustness spine (cluster_fixes) from {len(harvests)} harvests…", file=sys.stderr)
-        ok = run_mine(_tool_cmd("cluster_fixes.py") + [h["path"] for h in harvests.values()]
-                      + ["--app-type", app_type, "--emit-checklist", str(rob_path)], a.json)
+        # robustness-surface lens (capability-phrased + baseline floor) — superseded cluster_fixes
+        # 2026-06-11: interleaved control, lift −0.04 vs −0.20, higher absolute recall, no ML stack
+        print(f"→ mining robustness spine (lens_mine robustness-surface) from {len(cloned)} clones…", file=sys.stderr)
+        ok = run_mine(_tool_cmd("lens_mine.py") + [c["path"] for c in cloned.values()]
+                      + ["--app-type", app_type, "--lens", "robustness-surface", "--emit", str(rob_path)], a.json)
         spines["robustness"] = {"path": str(rob_path), "ok": ok and rob_path.exists()}
     if a.skip_scope:
         spines["scope"] = "skipped"

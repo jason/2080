@@ -5,7 +5,7 @@ check.py — 2080's KEYSTONE gate. `2080 check`: is this target's second-85% clo
 One command unifies three capabilities the feature-spine dogfood flagged as 2080's own gaps,
 each by exposing a primitive 2080 already has:
 
-  CUSTOM RULES  ← the spine/checklist (--spine) IS the rule set; lenses (cluster_fixes / lens_mine)
+  CUSTOM RULES  ← the spine/checklist (--spine) IS the rule set; lenses (lens_mine / surface_mine)
                   define what those rules are. Point check at any checklist.
   QUALITY GATE  ← runs diff_target's assessment, then BLOCKS (exit 3) when required-tier gaps remain
                   above --threshold. The blocking logic is lens-agnostic.

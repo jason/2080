@@ -7,16 +7,16 @@ prose; everything else (cross-neighbor synthesis, convergence tiering, day-1 tel
 emission) is shared. Current lenses/axes:
 
   feature-surface    → SCOPE       product capabilities (README + feat: commits) — GATES (+0.27)
-  robustness-surface → ROBUSTNESS  capability-phrased hardening (fix-commit subjects) — the
-                                   experiment vehicle to supersede cluster_fixes' change-shaped labels
+  robustness-surface → ROBUSTNESS  capability-phrased hardening (fix commits) + generic-baseline
+                                   floor; superseded archive/cluster_fixes 2026-06-11 (−0.04 vs −0.20)
   issue-surface      → ISSUES      gaps users actually hit (GitHub issues) — GATES (+0.41 ×3, 2026-06-11)
   config-surface     → CONFIG      knob groups (config files + recurring env keys)
   test-surface       → TESTS       verification surface (test files + names)
   docs-surface       → DOCS        support surface (markdown headings)
 
 The deterministic operability-surface lens (file-presence probes, no LLM) lives in
-surface_mine.py. cluster_fixes.py is the original embedding/DBSCAN robustness mine —
-superseded-pending-measurement by robustness-surface here (see its docstring).
+surface_mine.py. The original embedding/DBSCAN robustness mine lives in archive/cluster_fixes.py
+(lost the interleaved control to robustness-surface; see archive/README.md).
 
 None of these predict a project's SPECIFIC product bets — that's strategy, not completeness,
 and is deliberately out of scope. An axis gates only after beating the generic-baseline control
@@ -255,6 +255,25 @@ LENSES = {
 }
 
 
+def merge_baseline(cats, baseline_cats):
+    """Codified measurement verdict (2026-06-10, replicated ×3): a generic common-sense checklist
+    RECALLS later robustness work better than a mined spine — so every emitted ROBUSTNESS-axis
+    spine ships with the generic baseline as its floor (the only part check.py gates), and mined
+    categories add the sub-type-specific advisory detail. A generic category is skipped only when
+    a mined category already covers its vocabulary (keyword overlap). Mutates cats; returns #appended."""
+    from diff_target import category_keywords
+    mined_kws = {k for c in cats for k in category_keywords(c)}
+    added = 0
+    for b in baseline_cats:
+        if set(category_keywords(b)) & mined_kws:
+            continue
+        cats.append({"category": b["category"], "aliases": b.get("aliases", b["category"]),
+                     "tier": "required", "origin": "generic-baseline",
+                     "projects": [], "recurrence_projects": 0, "day1_tell": ""})
+        added += 1
+    return added
+
+
 def synth_prompt(materials, app_type, lens):
     """Shared spine-synthesis prompt; lenses differ only in material_label + abstract prose."""
     names = [m["name"] for m in materials]
@@ -289,6 +308,9 @@ def main():
     ap.add_argument("--model", default="gpt-5.5")
     ap.add_argument("--provider", default="openai-codex")
     ap.add_argument("--reasoning", default="low")
+    ap.add_argument("--baseline", default=str(Path(__file__).resolve().parent / "checklists/generic-software.baseline.json"),
+                    help="generic baseline merged into ROBUSTNESS-axis spines as the gating floor")
+    ap.add_argument("--no-baseline", action="store_true", help="skip the baseline merge (measurement runs)")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
 
@@ -351,6 +373,13 @@ def main():
     for i, c in enumerate(cats):
         c["day1_tell"] = str(tells.get(str(i + 1)) or tells.get(i + 1) or "").strip()
 
+    # ROBUSTNESS spines ship the generic baseline as their gating floor (measured verdict)
+    baseline_merged = False
+    if lens["axis"] == "ROBUSTNESS" and not a.no_baseline and Path(a.baseline).exists():
+        n_added = merge_baseline(cats, json.loads(Path(a.baseline).read_text()).get("required", []))
+        baseline_merged = True
+        print(f"merged generic baseline floor: +{n_added} categories", file=sys.stderr)
+
     derived = sorted(m["name"] for m in materials)
     required = [c for c in cats if c["tier"] == "required"]
     optional = [c for c in cats if c["tier"] == "optional"]
@@ -358,6 +387,7 @@ def main():
         "app_type": a.app_type,
         "lens": a.lens,
         "axis": lens["axis"],
+        "baseline_merged": baseline_merged,
         "scope_note": (f"{lens['axis']}-axis spine for {a.app_type}, mined via the {a.lens} lens "
                        f"({lens['desc'].replace('<app_type>', a.app_type)}) from {derived}. "
                        f"Does NOT predict project-specific product direction — that is strategy, not "

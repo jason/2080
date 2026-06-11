@@ -14,7 +14,6 @@ COMMANDS = {
     "emit": ("emit.py", "blocking gaps → agent-ready task queue (json|md)"),
     "mine": ("lens_mine.py", "LLM lenses: feature/robustness/issue/config/test/docs-surface"),
     "surface": ("surface_mine.py", "deterministic operability lens (no LLM)"),
-    "cluster": ("cluster_fixes.py", "original robustness mine (superseded-pending-measurement)"),
     "neighbors": ("find_neighbors.py", "intent → mature neighbor repos via gh"),
     "measure": ("measure.py", "recall-lift controls (spine vs generic baseline)"),
     "recall": ("measure_recall.py", "gate recall vs a neighbor's own future"),

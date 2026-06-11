@@ -19,10 +19,17 @@ _Last updated: 2026-06-10 (session 5)_
   that read like a real backlog — tool/plugin governance, multimodal handling, schema/data
   migrations (vecstore!), release automation, packaging. Map at /tmp/vip-advisory-map.txt.
 - **Consolidation:** feature_mine.py → lens_mine.py (mines six surfaces); new
-  robustness-surface lens (capability-phrased, the cluster_fixes successor candidate);
-  cluster_fixes marked SUPERSEDED-PENDING-MEASUREMENT with an explicit decision rule in its
-  docstring. Open: run robustness-surface vs cluster_fixes through the same control, then
-  archive the loser.
+  robustness-surface lens (capability-phrased, the cluster_fixes successor candidate).
+- **Supersession SETTLED (2026-06-11, interleaved ×3 control, same targets/conditions):**
+  robustness-surface lift **−0.04 ±0.02** (recall 0.59–0.64) vs cluster_fixes **−0.20 ±0.04**
+  (recall 0.46–0.51) — capability phrasing closes most of the gap to the generic baseline with
+  no embedding stack. cluster_fixes + its tests → `archive/` (README has the pull-back
+  criteria); `merge_baseline` (the gating floor) moved to lens_mine and applies to every
+  ROBUSTNESS-axis emission; `embed`/`abstract_via_fan` moved into measure.py (last consumer);
+  init.py mines robustness via the lens now. ROBUSTNESS stays advisory (still doesn't beat the
+  baseline) — but its advisory content is now judgeable capabilities, not change-labels.
+  Also fixed live: lens attribution (normalized name matching + neighbors REQUIRED in the
+  synthesis prompt) — identity-poor material had zeroed the required tier.
 
 ## ⏩ Session-5b: five new mining lenses (published repo: github.com/jason/2080, public)
 

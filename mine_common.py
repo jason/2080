@@ -2,7 +2,7 @@
 mine_common.py — shared substrate for 2080's mining tools (the "mine family").
 
 2080 mines neighbor history along multiple AXES (lenses): recurring-fix → robustness spine
-(`cluster_fixes.py`), feature-surface → scope spine (`lens_mine.py`), and future dimensions
+(`lens_mine.py --lens robustness-surface`), feature-surface → scope spine (`lens_mine.py`), and future dimensions
 (integration-surface, threat-surface, operability-surface, …). Every lens shares the same shape:
 read a source, abstract through an LLM, aggregate across neighbors. This module is the shared
 LLM-call + JSON-extraction substrate so each new lens is a config, not new plumbing.

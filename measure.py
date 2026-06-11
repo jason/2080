@@ -8,13 +8,13 @@ recall LIFT = recall(real spine) − recall(NULL spine), with a strict single-be
 lift over a wrong-domain baseline is signal.
 
 Signals (both reported, per layer):
-  ML (deterministic):  abstract each answer-key item -> category phrase (cluster_fixes.abstract_via_fan),
+  ML (deterministic):  abstract each answer-key item -> category phrase (abstract_via_fan below),
       embed (all-MiniLM), recall = frac whose max cosine to the spine >= threshold. Null = same vs the
       foreign-domain spine.
   fan (conceptual):    J independent STRICT judges ("name the ONE category this is a DIRECT INSTANCE of,
       or null") via parallel `fan`. hit = majority. Run against real spine AND null spine.
 
-Layers: robustness (vs cluster_fixes spine) | scope (vs lens_mine spine). Targets must be OUTSIDE
+Layers: robustness (vs robustness-axis spine) | scope (vs SCOPE-axis spine). Targets must be OUTSIDE
 both spine pools (no leakage). Default: dexto, goose, cline.
 
 Usage:
@@ -23,12 +23,85 @@ Usage:
 Exit codes: 0 OK | 1 USAGE/ERR | 2 NOT_FOUND
 """
 from __future__ import annotations
-import argparse, json, re, subprocess, sys
+import argparse, hashlib, json, os, pickle, re, subprocess, sys
 from pathlib import Path
 import numpy as np
 
 from mine_common import fan_batch, extract_json, EXIT_OK, EXIT_NOT_FOUND
-from cluster_fixes import embed, abstract_via_fan
+
+# ── embedding + LLM-abstraction substrate (moved here from cluster_fixes.py when it was
+# archived 2026-06-11 — measure.py was its last consumer; caches stay path-compatible) ──
+CACHE_DIR = Path.home() / ".cache" / "2080-cluster-fixes"
+PHRASE_CACHE = CACHE_DIR / "phrases.json"
+
+
+def _emb_cache_path(model): return CACHE_DIR / f"emb--{model.replace('/', '--')}.pkl"
+def _ekey(model, text): return hashlib.sha256(f"{model}\n{text}".encode()).hexdigest()[:32]
+def _pkey(subj): return hashlib.sha256(subj.encode()).hexdigest()[:32]
+
+
+def embed(texts, model_name="sentence-transformers/all-MiniLM-L6-v2"):
+    p = _emb_cache_path(model_name)
+    try:
+        cache = pickle.loads(p.read_bytes()) if p.exists() else {}
+    except Exception:
+        cache = {}
+    todo = [t for t in set(texts) if _ekey(model_name, t) not in cache]
+    if todo:
+        from sentence_transformers import SentenceTransformer
+        m = SentenceTransformer(model_name)
+        vecs = m.encode(todo, normalize_embeddings=True, show_progress_bar=False)
+        for t, v in zip(todo, vecs):
+            cache[_ekey(model_name, t)] = np.asarray(v, dtype="float32")
+        p.parent.mkdir(parents=True, exist_ok=True)
+        tmp = p.with_suffix(".tmp")
+        tmp.write_bytes(pickle.dumps(cache, protocol=pickle.HIGHEST_PROTOCOL)); os.replace(tmp, p)
+    return np.vstack([cache[_ekey(model_name, t)] for t in texts])
+
+
+def abstract_via_fan(items, model, provider, reasoning, batch_size=32):
+    """Commit subject -> short domain-general phrase, content-hash cached. Mutates items."""
+    try:
+        cache = json.loads(PHRASE_CACHE.read_text()) if PHRASE_CACHE.exists() else {}
+    except Exception:
+        cache = {}
+    max_tokens = max(1500, batch_size * 60)
+    todo = [it for it in items if _pkey(it["subject"]) not in cache]
+    if todo:
+        batches = [todo[i:i + batch_size] for i in range(0, len(todo), batch_size)]
+        calls = []
+        for bi, batch in enumerate(batches):
+            listing = "\n".join(f"{j + 1}. {it['subject'][:160]}" for j, it in enumerate(batch))
+            prompt = (
+                "For each numbered commit return (a) a SHORT (2-4 word) DOMAIN-GENERAL engineering-category phrase "
+                "describing the KIND of work — NO project names/specifics (e.g. 'cost usage telemetry', 'secret "
+                "redaction', 'retry on transient failure', 'input validation', 'peer liveness detection'); and "
+                "(b) substantive: false if it's churn/chore/vague/filler/version-bump/formatting (not real "
+                "engineering work), true otherwise. Return ONLY JSON mapping each number (string) to "
+                '{"phrase": "...", "substantive": true|false}.\n\n' + listing
+            )
+            calls.append({"id": str(bi), "prompt": prompt, "maxTokens": max_tokens})
+        print(f"fanning {len(calls)} parallel {model}({reasoning}) calls for {len(todo)} commits…", file=sys.stderr)
+        texts = fan_batch(calls, model, provider, reasoning, timeout_ms=120000)
+        for bid, text in texts.items():
+            if text is None:
+                continue
+            batch = batches[int(bid)]
+            mapping = extract_json(text) or {}
+            for j, it in enumerate(batch):
+                e = mapping.get(str(j + 1)) or mapping.get(j + 1)
+                if isinstance(e, dict) and e.get("phrase"):
+                    cache[_pkey(it["subject"])] = {"phrase": str(e["phrase"]).strip().lower(),
+                                                   "substantive": bool(e.get("substantive", True))}
+                elif isinstance(e, str) and e.strip():
+                    cache[_pkey(it["subject"])] = {"phrase": e.strip().lower(), "substantive": True}
+        PHRASE_CACHE.parent.mkdir(parents=True, exist_ok=True)
+        PHRASE_CACHE.write_text(json.dumps(cache))
+    for it in items:
+        e = cache.get(_pkey(it["subject"]))
+        if e:
+            it["phrase"] = e["phrase"]; it["substantive"] = e["substantive"]
+    return items
 
 THRESHOLDS = [0.35, 0.40, 0.45, 0.50, 0.55]
 HEADLINE_T = 0.45

@@ -36,6 +36,21 @@ def test_registry_only_control_passed_lenses_may_gate():
             f"{n}: gating={gates} but control-passed={n in CONTROL_PASSED}"
 
 
+def test_merge_baseline_floor_appends_only_uncovered_categories():
+    # intent: the baseline floor is the ONLY gating part of a robustness spine (measured: generic
+    # beats mined, −0.15); dropping it un-gates robustness entirely, while duplicating an
+    # already-mined vocabulary doubles a category and confuses assessment. (Moved with the
+    # cluster_fixes→lens_mine supersession, 2026-06-11.)
+    from lens_mine import merge_baseline
+    cats = [{"category": "timeout error handling", "aliases": "timeout handling / retries"}]
+    baseline = [{"category": "retry and timeout handling", "aliases": "retries / timeouts / backoff"},
+                {"category": "internationalization", "aliases": "i18n / localization"}]
+    added = merge_baseline(cats, baseline)
+    assert added == 1  # retry/timeout vocabulary already mined -> skipped; i18n appended
+    assert cats[-1]["category"] == "internationalization"
+    assert cats[-1]["origin"] == "generic-baseline" and cats[-1]["tier"] == "required"
+
+
 def test_norm_name_matches_product_name_variants():
     # intent: the model attributes categories to PRODUCT names ('open-interpreter', 'Aider')
     # while canonical names are clone-dir names ('openinterpreter'); exact-match dropped every

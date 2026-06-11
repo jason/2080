@@ -177,6 +177,96 @@
       "recurrence_projects": 2,
       "tier": "required",
       "day1_tell": "Generate help, README model docs, and FAQ snippets, then compare commands, options, model names, and figures against the running product behavior."
+    },
+    {
+      "category": "dependency upgrades",
+      "aliases": "dependency updates / version bumps / library upgrades",
+      "tier": "required",
+      "origin": "generic-baseline",
+      "projects": [],
+      "recurrence_projects": 0,
+      "day1_tell": ""
+    },
+    {
+      "category": "performance optimization",
+      "aliases": "performance / speed / memory usage / optimization",
+      "tier": "required",
+      "origin": "generic-baseline",
+      "projects": [],
+      "recurrence_projects": 0,
+      "day1_tell": ""
+    },
+    {
+      "category": "security hardening",
+      "aliases": "security / vulnerability fix / secrets handling / permissions",
+      "tier": "required",
+      "origin": "generic-baseline",
+      "projects": [],
+      "recurrence_projects": 0,
+      "day1_tell": ""
+    },
+    {
+      "category": "packaging and installation",
+      "aliases": "packaging / install / distribution / setup",
+      "tier": "required",
+      "origin": "generic-baseline",
+      "projects": [],
+      "recurrence_projects": 0,
+      "day1_tell": ""
+    },
+    {
+      "category": "retry and timeout handling",
+      "aliases": "retries / timeouts / backoff / transient failure handling",
+      "tier": "required",
+      "origin": "generic-baseline",
+      "projects": [],
+      "recurrence_projects": 0,
+      "day1_tell": ""
+    },
+    {
+      "category": "caching",
+      "aliases": "cache / caching layer / cache invalidation",
+      "tier": "required",
+      "origin": "generic-baseline",
+      "projects": [],
+      "recurrence_projects": 0,
+      "day1_tell": ""
+    },
+    {
+      "category": "authentication and access control",
+      "aliases": "auth / login / API keys / access control",
+      "tier": "required",
+      "origin": "generic-baseline",
+      "projects": [],
+      "recurrence_projects": 0,
+      "day1_tell": ""
+    },
+    {
+      "category": "UI and UX polish",
+      "aliases": "user interface / usability / display fixes / formatting",
+      "tier": "required",
+      "origin": "generic-baseline",
+      "projects": [],
+      "recurrence_projects": 0,
+      "day1_tell": ""
+    },
+    {
+      "category": "internationalization",
+      "aliases": "i18n / localization / translations",
+      "tier": "required",
+      "origin": "generic-baseline",
+      "projects": [],
+      "recurrence_projects": 0,
+      "day1_tell": ""
+    },
+    {
+      "category": "resource cleanup",
+      "aliases": "resource leaks / file handles / memory cleanup / shutdown handling",
+      "tier": "required",
+      "origin": "generic-baseline",
+      "projects": [],
+      "recurrence_projects": 0,
+      "day1_tell": ""
     }
   ],
   "optional": [
@@ -270,5 +360,6 @@
       "tier": "optional",
       "day1_tell": "Trigger a failing CI run followed by automated repair, then confirm repair logs link to that run and a structured draft PR opens only after gates pass."
     }
-  ]
+  ],
+  "baseline_merged": true
 }

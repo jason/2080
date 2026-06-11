@@ -66,9 +66,10 @@ class TestIntentDerivation(unittest.TestCase):
 
 
 class TestHarvestContract(unittest.TestCase):
-    def test_harvest_shape_matches_cluster_fixes_input(self):
-        # intent: cluster_fixes.py consumes exactly {"project", "commits":[{"sha","subject"}]};
-        # shape drift silently empties the robustness mine (load_items drops everything).
+    def test_harvest_shape_is_stable(self):
+        # intent: harvests are the mine-input provenance record ({"project","commits":[{"sha",
+        # "subject"}]}); consumers (archived cluster_fixes, future lenses) and humans rely on the
+        # shape staying put — drift silently empties whatever reads it next.
         h = init.build_harvest(HERE, "2080", max_commits=0)
         self.assertEqual(set(h), {"project", "commits"})
         self.assertEqual(h["project"], "2080")
@@ -80,19 +81,6 @@ class TestHarvestContract(unittest.TestCase):
         n = int(subprocess.run(["git", "-C", str(HERE), "rev-list", "--count", "HEAD"],
                                capture_output=True, text=True).stdout.strip())
         self.assertLessEqual(len(h["commits"]), n)  # ≤: empty-subject commits are dropped
-
-    def test_harvest_roundtrips_through_cluster_fixes_loader(self):
-        # intent: the harvest file init writes must load through cluster_fixes'
-        # OWN load_items — the real consumer boundary, not a copy of its schema.
-        import cluster_fixes  # heavy deps are function-local; import is stdlib-only
-        h = init.build_harvest(HERE, "2080", max_commits=10)
-        with tempfile.TemporaryDirectory() as d:
-            p = Path(d) / "2080.json"
-            p.write_text(json.dumps(h))
-            items = cluster_fixes.load_items([str(p)])
-        self.assertGreater(len(items), 0)
-        self.assertEqual(items[0]["project"], "2080")
-        self.assertTrue(items[0]["sha"] and items[0]["subject"])
 
     def test_harvest_respects_max_commits(self):
         # intent: --max-commits is the LLM-spend cap; ignoring it makes a

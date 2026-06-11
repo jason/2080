@@ -1,0 +1,94 @@
+{
+  "targets": [
+    "dexto",
+    "goose",
+    "cline"
+  ],
+  "judges": 2,
+  "ml_threshold": 0.45,
+  "control": "null spine = mined spine checklists/generic-software.baseline.json",
+  "robustness_spine": "checklists/ai-agent-cli.robustness-surface.json",
+  "scope_spine": "checklists/ai-agent-tool.features.json",
+  "per_target": {
+    "dexto": {
+      "robustness": {
+        "n": 61,
+        "ml_real": 0.11,
+        "ml_null": 0.18,
+        "ml_lift": -0.07,
+        "llm_real": 0.66,
+        "llm_null": 0.7,
+        "llm_lift": -0.04
+      },
+      "scope": {
+        "n": 39,
+        "ml_real": 0.18,
+        "ml_null": 0.08,
+        "ml_lift": 0.1,
+        "llm_real": 0.54,
+        "llm_null": 0.28,
+        "llm_lift": 0.26
+      }
+    },
+    "goose": {
+      "robustness": {
+        "n": 99,
+        "ml_real": 0.11,
+        "ml_null": 0.11,
+        "ml_lift": 0.0,
+        "llm_real": 0.62,
+        "llm_null": 0.69,
+        "llm_lift": -0.07
+      },
+      "scope": {
+        "n": 19,
+        "ml_real": 0.16,
+        "ml_null": 0.05,
+        "ml_lift": 0.11,
+        "llm_real": 0.37,
+        "llm_null": 0.42,
+        "llm_lift": -0.05
+      }
+    },
+    "cline": {
+      "robustness": {
+        "n": 88,
+        "ml_real": 0.1,
+        "ml_null": 0.15,
+        "ml_lift": -0.05,
+        "llm_real": 0.53,
+        "llm_null": 0.51,
+        "llm_lift": 0.02
+      },
+      "scope": {
+        "n": 21,
+        "ml_real": 0.19,
+        "ml_null": 0.14,
+        "ml_lift": 0.05,
+        "llm_real": 0.76,
+        "llm_null": 0.29,
+        "llm_lift": 0.47
+      }
+    }
+  },
+  "aggregate": {
+    "robustness": {
+      "n_total": 248,
+      "ml_real": 0.11,
+      "ml_null": 0.15,
+      "ml_lift": -0.04,
+      "llm_real": 0.6,
+      "llm_null": 0.63,
+      "llm_lift": -0.03
+    },
+    "scope": {
+      "n_total": 79,
+      "ml_real": 0.18,
+      "ml_null": 0.09,
+      "ml_lift": 0.09,
+      "llm_real": 0.56,
+      "llm_null": 0.33,
+      "llm_lift": 0.23
+    }
+  }
+}

@@ -38,9 +38,10 @@ second search before they're final. Novelty positioning (verified two-pass surve
 app-store-mining prior art; the commit-mined category spine used as a day-1 predictor **and
 enforcement gate** is the unoccupied residue.
 
-Mining is **lens-parameterized**: each axis is a lens. Six ship today — recurring-fix → ROBUSTNESS
-(`cluster_fixes.py`); feature-surface → SCOPE, plus issue-surface (GitHub issues = gaps users
-actually hit), config-surface, test-surface, and docs-surface (`lens_mine.py` `--lens`); and a
+Mining is **lens-parameterized**: each axis is a lens. Seven ship today — feature-surface →
+SCOPE, robustness-surface → ROBUSTNESS (capability-phrased, generic-baseline floor merged in),
+issue-surface (GitHub issues = gaps users actually hit), config-surface, test-surface, and
+docs-surface (all `lens_mine.py` `--lens`); and a
 fully deterministic operability-surface lens (`surface_mine.py`, zero LLM calls — Dockerfile/CI/
 release/config-example/migrations convergence). **An axis gates only after beating the
 generic-baseline control**: SCOPE (+0.27 ±0.05) and ISSUES (+0.41 ±0.06 on scope-layer work, ×3,
