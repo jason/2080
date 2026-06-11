@@ -1,0 +1,113 @@
+{
+  "app_type": "ai-agent-cli",
+  "lens": "issue-surface",
+  "axis": "ISSUES",
+  "scope_note": "ISSUES-axis spine for ai-agent-cli, mined via the issue-surface lens (gaps users actually hit or demanded (GitHub issues, reaction-weighted)) from ['aider', 'gptme', 'openinterpreter']. Does NOT predict project-specific product direction \u2014 that is strategy, not completeness. Non-SCOPE axes are advisory in check.py until they beat the generic-baseline control.",
+  "derived_from": [
+    "aider",
+    "gptme",
+    "openinterpreter"
+  ],
+  "required": [
+    {
+      "category": "Model/provider setup",
+      "what": "Users struggle to configure local or OpenAI-compatible models and understand provider/quota errors.",
+      "projects": [
+        "aider",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Configure a fresh local/OpenAI-compatible provider with an invalid API key or quota-exceeded account and confirm the UI shows a clear setup path and actionable provider/quota error."
+    },
+    {
+      "category": "Tool execution reliability",
+      "what": "Agent commands/tools sometimes produce JSON, hang, vanish, or fail to execute actions as expected.",
+      "projects": [
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Run an agent task that invokes a shell/tool command returning structured JSON and confirm it executes, completes, and displays the result instead of hanging, disappearing, or treating JSON as an error."
+    },
+    {
+      "category": "File editing correctness",
+      "what": "Users need reliable create/edit/delete behavior, atomic patching, and guardrails against bad edits.",
+      "projects": [
+        "aider",
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 3,
+      "tier": "required",
+      "day1_tell": "Ask the agent to create one file, patch one existing file, and delete one file, then verify the exact intended diff is applied atomically with no unintended edits."
+    },
+    {
+      "category": "Security and isolation",
+      "what": "Users report vulnerabilities and ask for safer execution, vulnerability reporting, and isolation guidance.",
+      "projects": [
+        "aider",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Run an untrusted command/tool action in the product and confirm it is sandboxed or clearly prompts with isolation and vulnerability-reporting guidance before execution."
+    },
+    {
+      "category": "Transparency and reasoning visibility",
+      "what": "Users want clearer visibility into model thinking, tool calls, command status, and why nothing happened.",
+      "projects": [
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Start a task where the agent decides not to act and confirm the UI shows visible status, tool-call history, and a clear explanation of why no action happened."
+    },
+    {
+      "category": "Terminal/Web UI experience",
+      "what": "Users hit rough edges in streaming, routing output, settings routes, tab completion, and general CLI ergonomics.",
+      "projects": [
+        "gptme",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Use the terminal/Web UI to stream a long response, route output, open settings, and use tab completion, confirming none break or produce confusing behavior."
+    },
+    {
+      "category": "Maintenance confidence",
+      "what": "Users worry about release cadence, project activity, and whether the tool is still maintained.",
+      "projects": [
+        "aider",
+        "openinterpreter"
+      ],
+      "recurrence_projects": 2,
+      "tier": "required",
+      "day1_tell": "Check the app\u2019s release/about/update surface and confirm it shows a recent version, changelog or activity signal, and a clear maintenance/update path."
+    }
+  ],
+  "optional": [
+    {
+      "category": "MCP and external integrations",
+      "what": "Users want agent CLI interoperability with MCP servers and other external agent/tool ecosystems.",
+      "projects": [
+        "openinterpreter"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Connect the CLI to a simple MCP server exposing one tool and confirm the agent discovers and successfully calls that tool."
+    },
+    {
+      "category": "Project instructions and repo context",
+      "what": "Users want better project-level instruction templates and smarter repo-map/context personalization.",
+      "projects": [
+        "aider"
+      ],
+      "recurrence_projects": 1,
+      "tier": "optional",
+      "day1_tell": "Open a new repo with project instructions and a nontrivial file tree, then confirm the agent loads the instructions and uses relevant repo context in its first response."
+    }
+  ]
+}
