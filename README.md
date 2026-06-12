@@ -47,11 +47,14 @@ operability surface (`surface_mine.py`, zero LLM calls — 16 probes: Dockerfile
 config-example/migrations/distribution-channels/changelog-discipline/upgrade-guides/telemetry/
 CLI-polish convergence) and the threat surface (`threat_mine.py` — neighbor dependency stacks →
 OSV advisories → the vulnerability classes this category is empirically exposed to, axis
-SECURITY). The gating floor itself is industry-curated
+SECURITY; `2080 threat --scan <your-repo>` runs the same plumbing as a direct supply-chain
+check of YOUR dependencies — known-vulnerable deps exit 3, like the gate). The gating floor itself is industry-curated
 (`checklists/generic-software.floor.json` — OpenSSF Scorecard/Best-Practices-Badge +
-community-profile criteria layered over the frozen 20-category measurement control). **An axis gates only after passing TWO controls** — recall lift over the
-generic baseline AND out-of-domain specificity above the baseline's (a spine that matches
-everything everywhere has breadth, not foresight). Only SCOPE survives both (+0.27 ±0.05 lift;
+community-profile criteria layered over the frozen 20-category measurement control). **An axis gates only after passing THREE arms** — recall lift over the
+generic baseline, out-of-domain specificity above the baseline's (a spine that matches
+everything everywhere has breadth, not foresight), and blocking-verdict precision through the
+REAL assess path (`measure_recall.py` adjudicates every block against the target repo's own
+history at a snapshot). Only SCOPE survives the spine controls (+0.27 ±0.05 lift;
 specificity 0.337 vs an adjacent domain, +0.474 vs a foreign one). TESTS scored the highest
 lift ever measured (+0.61) and was demoted the same day when the specificity control showed
 that lift was breadth (out-of-domain recall 0.86, specificity below the baseline's); ISSUES
@@ -65,12 +68,18 @@ See [`docs/HANDOFF.md`](docs/HANDOFF.md) for the full arc and findings.
 ## Quickstart
 
 Python 3.11+, no packages needed for the core pipeline (measurement extras run via `uv`).
-LLM calls go to any OpenAI-compatible endpoint — bring your own key:
+LLM calls work with **either** an OpenAI-compatible key **or** a Claude subscription —
+pick one, nothing else to set up:
 
 ```sh
-export OPENAI_API_KEY=sk-...           # required (the only setup)
+# Option A: any OpenAI-compatible endpoint (bring your own key)
+export OPENAI_API_KEY=sk-...           # the only required setup
 export OPENAI_BASE_URL=...             # optional: OpenRouter / Azure / local server
 export LLM_2080_MODEL=gpt-5.5         # optional: override the model every tool uses
+
+# Option B: Claude subscription — if you have Claude Code installed and logged in,
+# there is NO setup: 2080 auto-detects the `claude` CLI and runs calls through it.
+# (Force it explicitly with LLM_2080_BACKEND=claude; LLM_2080_MODEL=haiku|sonnet|opus.)
 
 ./2080 init <your-repo>                # find neighbors → clone → harvest → mine matched spines
 ./2080 check <your-repo> --spine checklists/<app-type>.*.json --save-assessment .2080-assessments/
@@ -81,10 +90,10 @@ export LLM_2080_MODEL=gpt-5.5         # optional: override the model every tool 
 ```
 
 `check` exits 3 while applicable required gaps remain (CI-ready); `--from-assessment` re-gates
-deterministically without an LLM. Preflight which backend/model/key source your calls will use
-(sources only, never secret values): `python3 check.py --json | jq .llm`. (If a `fan`
-parallel-LLM CLI is on your PATH it's used automatically as a local accelerator; nothing
-requires it.)
+deterministically without an LLM. Backend auto-detection order: `fan` CLI (local parallel-LLM
+accelerator, if installed) → `OPENAI_API_KEY` (native HTTP) → `claude` CLI (subscription).
+Override with `LLM_2080_BACKEND=native|fan|claude`. Preflight which backend/model/key source
+your calls will use (sources only, never secret values): `python3 check.py --json | jq .llm`.
 
 ## The loop
 
