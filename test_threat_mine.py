@@ -348,6 +348,47 @@ def test_network_failure_exits_1_with_structured_error():
     assert "OSV API failure" in payload["error"]
 
 
+def test_scan_report_flags_only_vulnerable_deps_and_is_clean_otherwise():
+    # intent: the target-side supply-chain scan is the user-facing finding surface — a
+    # vulnerable direct dep missing from findings is a silently shipped known CVE; a clean
+    # dep appearing as a finding is a false alarm that erodes trust in the gate.
+    deps = [("PyPI", "requests"), ("PyPI", "safe-pkg"), ("npm", "lodash")]
+    vulns = {("PyPI", "requests"): ["GHSA-9999", "GHSA-0001"],
+             ("npm", "lodash"): ["GHSA-7777"]}
+    details = {"GHSA-9999": {"text": "prototype pollution in merge", "severity": "CVSS:9.8"},
+               "GHSA-7777": {"text": "command injection via template", "severity": "CVSS:7.2"}}
+    r = threat_mine.build_scan_report("/tmp/t", deps, vulns, details)
+    assert r["ok"] is False and r["vulnerable"] == 2 and r["deps_scanned"] == 3
+    pkgs = {f["package"]: f for f in r["findings"]}
+    assert set(pkgs) == {"requests", "lodash"}
+    assert pkgs["requests"]["vulns"] == ["GHSA-9999", "GHSA-0001"]  # newest-first preserved
+    assert pkgs["requests"]["severity"] == "CVSS:9.8"
+    clean = threat_mine.build_scan_report("/tmp/t", [("PyPI", "safe-pkg")], {}, {})
+    assert clean["ok"] is True and clean["findings"] == []
+
+
+def test_scan_mode_exit_3_on_findings_and_0_when_clean():
+    # intent: agents and CI branch on the exit code (scan: 3 = supply-chain findings,
+    # mirroring check.py's GATED) — a scan that finds a known-vulnerable dep but exits 0
+    # lets the build ship it.
+    def fake_post(url, payload):
+        return {"results": [{"vulns": [{"id": "GHSA-1"}]} if q["package"]["name"] == "requests"
+                            else {} for q in payload["queries"]]}
+    def fake_get(url):
+        return {"summary": "path traversal", "details": "", "severity": [{"score": "CVSS:8.1"}]}
+    with tempfile.TemporaryDirectory() as tmp:
+        vuln_repo = _mk_repo(tmp, {"requirements.txt": "requests==2.0\n"}, "vuln")
+        clean_repo = _mk_repo(tmp, {"requirements.txt": "safe-pkg==1.0\n"}, "clean")
+        with _patched(threat_mine, "_post_json", fake_post), \
+             _patched(threat_mine, "_get_json", fake_get):
+            code, out, _ = _run_main(["--scan", vuln_repo, "--json"])
+            assert code == 3
+            rep = json.loads(out)
+            assert rep["mode"] == "scan" and rep["findings"][0]["package"] == "requests"
+            code2, out2, _ = _run_main(["--scan", clean_repo, "--json"])
+            assert code2 == 0 and json.loads(out2)["ok"] is True
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for fn in fns:

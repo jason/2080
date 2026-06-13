@@ -14,8 +14,14 @@ until this lens beats the generic-baseline control.
 OSV text is untrusted data: it flows only into deterministic keyword matching (bounded read,
 truncated before regex), never into prompts or shell commands.
 
+SCAN MODE (--scan): the same plumbing pointed at the TARGET instead of neighbors — a direct
+supply-chain check that reports every direct dependency with known OSV advisories as a
+finding. Findings exit 3 (mirrors check.py's GATED), clean exits 0.
+
 Usage: threat_mine.py <neighbor-repo-dir>... [--app-type T] [--max-vulns N] [--emit PATH] [--json]
-Exit codes: 0 OK | 1 USAGE/ERR (incl. network failure after retries) | 2 NOT_FOUND | 3 EMPTY
+       threat_mine.py --scan <target-repo>... [--json]
+Exit codes: 0 OK/clean | 1 USAGE/ERR (incl. network failure after retries) | 2 NOT_FOUND
+            | 3 mine: EMPTY / scan: findings
 """
 from __future__ import annotations
 import argparse, json, re, subprocess, sys, time, tomllib
@@ -279,15 +285,37 @@ def aggregate(per_neighbor):
     return cats
 
 
+def build_scan_report(target, deps, vulns_by_pkg, details):
+    """TARGET-side findings: every direct dependency with known OSV vulns, newest-id-first,
+    classified into this lens's threat classes (pure — tests feed synthetic OSV data)."""
+    findings = []
+    for eco, name in sorted(deps):
+        ids = vulns_by_pkg.get((eco, name))
+        if not ids:
+            continue
+        top = details.get(ids[0], {})
+        findings.append({"ecosystem": eco, "package": name, "vulns": ids,
+                         "class": classify(top.get("text", "")),
+                         "severity": top.get("severity", ""),
+                         "summary": top.get("text", "")[:200]})
+    return {"tool": "threat_mine", "mode": "scan", "target": target,
+            "deps_scanned": len(deps), "vulnerable": len(findings),
+            "ok": not findings, "findings": findings}
+
+
 def capability_map():
-    return {"tool": "threat_mine", "version": "0.1", "lens": "threat-surface",
+    return {"tool": "threat_mine", "version": "0.2", "lens": "threat-surface",
             "axis": "SECURITY", "deterministic": True,
-            "args": "<neighbor-repo-dir>... [--app-type T] [--max-vulns N] [--emit PATH] [--json]",
+            "args": "<neighbor-repo-dir>... [--app-type T] [--max-vulns N] [--emit PATH] [--json] | "
+                    "--scan <target-repo> [--json]",
+            "scan": "target-side supply-chain check: the TARGET's direct deps vs OSV; "
+                    "findings -> exit 3 (mirrors check.py's gate), clean -> 0",
             "classes": [c[0] for c in CLASSES],
             "ecosystems": ["npm", "PyPI", "crates.io", "Go"],
             "gating": "SECURITY is advisory in check.py until this lens beats the generic-baseline control",
-            "exit_codes": {"0": "ok", "1": "usage/err (incl. network failure after retries)",
-                           "2": "not_found", "3": "empty (no deps or no classifiable vulns)"}}
+            "exit_codes": {"0": "ok / scan clean", "1": "usage/err (incl. network failure after retries)",
+                           "2": "not_found", "3": "mine: empty (no deps or no classifiable vulns); "
+                                                  "scan: known vulnerabilities found"}}
 
 
 def main():
@@ -297,8 +325,42 @@ def main():
     ap.add_argument("--max-vulns", type=int, default=150,
                     help="cap on vuln detail fetches (newest-id-first, deterministic)")
     ap.add_argument("--emit", metavar="PATH")
+    ap.add_argument("--scan", action="store_true",
+                    help="scan mode: repos are TARGETS — report their own vulnerable deps "
+                         "(exit 3 on findings) instead of mining a neighbor spine")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
+
+    if a.scan and a.repos:
+        worst = EXIT_OK
+        for repo in a.repos:
+            files = _git(repo, "ls-tree", "-r", "--name-only", "HEAD").splitlines()
+            if not files:
+                print(f"not a readable git repo: {repo}", file=sys.stderr); sys.exit(EXIT_NOT_FOUND)
+            deps = parse_manifests(repo)
+            try:
+                vulns_by_pkg = query_osv(deps)
+                first_ids = [ids[0] for ids in vulns_by_pkg.values()]
+                details = fetch_vulns(sorted(set(first_ids))[:a.max_vulns])
+            except (OSError, ValueError) as e:
+                # aborts the WHOLE batch, discarding earlier repos' output — deliberate
+                # fail-closed: a supply-chain gate that half-ran must not exit clean
+                print(json.dumps({"ok": False, "error": f"OSV API failure after retries: {e}",
+                                  "exit_code": EXIT_ERR}), file=sys.stderr)
+                sys.exit(EXIT_ERR)
+            report = build_scan_report(repo, deps, vulns_by_pkg, details)
+            if a.json:
+                print(json.dumps(report, indent=2))
+            else:
+                print(f"=== supply-chain scan: {repo} ({report['deps_scanned']} direct deps) ===")
+                if not report["findings"]:
+                    print("clean — no known OSV vulnerabilities in direct dependencies")
+                for f in report["findings"]:
+                    print(f"  ⚠ {f['package']} ({f['ecosystem']}) — {len(f['vulns'])} advisories, "
+                          f"newest {f['vulns'][0]} [{f['class']}] {f['severity']}")
+            if report["findings"]:
+                worst = EXIT_EMPTY  # 3 — mirrors check.py's GATED: findings demand attention
+        sys.exit(worst)
 
     if not a.repos:
         if a.json:
