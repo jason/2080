@@ -77,6 +77,28 @@ def rank_evidence_files(kw_hits, nfiles, top=6):
     return [f for f, _ in score.most_common(top)]
 
 
+EXT_LANG = {".py": "Python", ".ts": "TypeScript", ".tsx": "TypeScript", ".js": "JavaScript",
+            ".jsx": "JavaScript", ".go": "Go", ".rs": "Rust", ".ex": "Elixir", ".exs": "Elixir",
+            ".rb": "Ruby", ".java": "Java", ".kt": "Kotlin", ".swift": "Swift", ".c": "C",
+            ".h": "C", ".cc": "C++", ".cpp": "C++", ".hpp": "C++", ".cs": "C#", ".php": "PHP",
+            ".sh": "Shell", ".bash": "Shell", ".zsh": "Shell", ".lua": "Lua", ".zig": "Zig",
+            ".scala": "Scala", ".clj": "Clojure", ".hs": "Haskell", ".ml": "OCaml", ".r": "R",
+            ".jl": "Julia", ".dart": "Dart", ".vue": "Vue", ".svelte": "Svelte", ".sql": "SQL"}
+
+
+def detect_languages(files):
+    """Programming languages present in the fileset, most files first — pure and deterministic.
+    Reported in the evidence preamble AND the assessment output so a mixed-language target's
+    verdict states which languages the analysis actually covered (day-1 tell for the
+    multi-language category; markup/config files are deliberately not 'languages')."""
+    c = Counter()
+    for f in files:
+        lang = EXT_LANG.get(Path(f).suffix.lower())
+        if lang:
+            c[lang] += 1
+    return [{"language": l, "files": n} for l, n in c.most_common()]
+
+
 def build_dir_map(files, top=40):
     """Directory → file-count summary (depth ≤2). The model sees the SHAPE of the repo
     instead of an alphabetical file dump that starts at .github/."""
@@ -168,6 +190,7 @@ def gather_evidence(repo, cats=None):
         for i, c in enumerate(cats):
             cat_ev[i] = category_evidence(repo, c, len(allowed), cache, budget)
     return {"readme": readme, "files": files, "dir_map": build_dir_map(files),
+            "languages": detect_languages(files),
             "source_excerpt": src[:10000], "category_evidence": cat_ev}
 
 
@@ -361,6 +384,8 @@ def assess_target(target, cl):
         f"TARGET repo '{target}' (claimed app_type {cl.get('app_type')}; inferred sub_type: {sub_type}). Evidence:\n"
         f"README:\n{ev['readme']}\n\n"
         f"REPO MAP (directory → file count; the repo's real shape and size):\n{ev['dir_map']}\n\n"
+        "LANGUAGES (by source-file count — ALL are in scope of this analysis): "
+        + (", ".join(f"{l['language']} ({l['files']})" for l in ev["languages"]) or "(none detected)") + "\n\n"
         f"ENTRY-POINT SOURCE EXCERPTS:\n{ev['source_excerpt']}\n\n")
     rules = (
         f"The CHECKLIST below was mined from mature repos labeled '{cl.get('app_type')}' "
@@ -431,7 +456,7 @@ def assess_target(target, cl):
     cats = apply_assessments(cats, merge_chunk_assessments(outs, ASSESS_CHUNK), fileset)
     cats = escalate_gaps(target, cl, cats, ev, fileset)
     return {"sub_type": sub_type, "app_type": cl.get("app_type"), "axis": cl.get("axis"),
-            "categories": cats}
+            "languages": ev["languages"], "categories": cats}
 
 
 def print_fix_sites(c):

@@ -7,7 +7,7 @@ against a fake fileset. Run: python3 test_diff_evidence.py
 """
 from diff_target import (validate_fix_sites, apply_assessments, category_keywords,
                          rank_evidence_files, build_dir_map, evidence_candidate,
-                         clean_synonym_terms, merge_escalation)
+                         clean_synonym_terms, merge_escalation, detect_languages)
 
 FILESET = {"app.py", "cli.py", "store.py"}
 
@@ -211,6 +211,19 @@ def test_escalation_batched_grep_keeps_each_gap_on_its_own_terms():
     # sharing a term gets gap 2 RE-JUDGED on real evidence, but the re-judge kept it a gap
     assert out[2]["status"] == "gap" and out[2]["escalated"] is True
     assert grep_calls.count("alpha_impl") == 1  # shared term greps ONCE for the whole batch
+
+
+def test_detect_languages_reports_every_language_in_mixed_repo():
+    # intent: a mixed-language target's verdict must STATE which languages the analysis
+    # covered — silent single-language assumptions misreport coverage on polyglot repos
+    # (the multi-language category's day-1 tell). Markup/config files must not inflate
+    # the list with non-languages.
+    langs = detect_languages(["src/app.py", "src/util.py", "web/index.ts", "scripts/run.sh",
+                              "README.md", "config.yaml", "data.json"])
+    assert langs == [{"language": "Python", "files": 2},
+                     {"language": "TypeScript", "files": 1},
+                     {"language": "Shell", "files": 1}]
+    assert detect_languages(["README.md", "notes.txt"]) == []
 
 
 if __name__ == "__main__":

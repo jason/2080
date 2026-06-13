@@ -88,6 +88,15 @@ class FromAssessmentGate(unittest.TestCase):
             self.assertEqual(r.returncode, 3, r.stderr)
             self.assertEqual(json.loads(r.stdout)["blocking_gaps"][0]["fix_sites"], ["src/config.py", "cli.py"])
 
+    def test_verdict_summary_counts_statuses_by_tier(self):
+        # intent: the summary block is the verdict's reporting surface (CI annotations,
+        # dashboards) — miscounted health stats misreport project state to every consumer
+        # that doesn't re-walk the category list itself.
+        with tempfile.TemporaryDirectory() as tmp:
+            r = run_check(tmp, make_assessment("gap"))
+            v = json.loads(r.stdout)
+            self.assertEqual(v["summary"], {"required": {"gap": 1, "covered": 1}})
+
     def test_fail_on_gap_does_not_block_partial(self):
         # intent: --fail-on gap is the lenient contract teams opt into; if partials still block,
         # the knob is a lie and thresholds get cranked instead.

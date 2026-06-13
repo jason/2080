@@ -86,12 +86,34 @@ def die(msg, code, as_json):
 # run through measure.py's embedding+judge protocol over spine CATEGORIES — they certify SPINE
 # PREDICTIVENESS (the mined categories anticipate the work mature repos actually did). They
 # never invoke diff_target, so they are NOT evidence of GATE ADJUDICATION ACCURACY on a live
-# target — that is a separate claim, measured separately (blocking-verdict precision 0.77 via
-# adversarial two-lens refutation; measure_recall.py is the protocol that exercises the real
-# assess_target path). An axis can be predictive while the gate misjudges it (and vice versa).
-# Open follow-up (HANDOFF): add an assess_target arm to the promotion criterion so axes earn
-# gating on the path that gates.
+# target — that is a separate claim with its own instrument: measure_recall.py's blocking-
+# precision arm runs the REAL assess_target at a historical snapshot and adjudicates every
+# blocking verdict against the repo's own history (future commits built it = right block;
+# past commits already had it = false block; ground truth by construction — supersedes the
+# 0.77 adversarial-refutation number). PROMOTION THEREFORE HAS THREE ARMS: (1) recall lift,
+# (2) out-of-domain specificity (both measure.py), and (3) assess-path blocking precision
+# >= 0.70 with >= 5 adjudicated verdicts on the candidate axis's spine (measure_recall.py).
+# An axis can be predictive while the gate misjudges it (and vice versa) — arm 3 closes that.
 VALIDATED_GATING_AXES = {"SCOPE"}
+
+
+def _bump(acc, tier, st, n=1):
+    """acc[tier][st] += n with auto-vivification — the one accounting line behind every
+    status×tier count, factored so the per-run and merged paths can't drift."""
+    t = acc.setdefault(tier, {})
+    t[st] = t.get(st, 0) + n
+
+
+def summarize(runs):
+    """Status×tier counts over every assessed category, merged across spines (pure).
+    The verdict's compact reporting surface: project health for CI annotations and
+    dashboards without consumers re-walking the category list."""
+    total = {}
+    for r in runs:
+        for tier, sts in r.get("status_counts", {}).items():
+            for st, n in sts.items():
+                _bump(total, tier, st, n)
+    return total
 
 
 def evaluate(result, fail_on, axis=None, enforce_mined_robustness=False):
@@ -231,8 +253,12 @@ def main():
         axis = result.get("axis") or cl.get("axis")  # old saved assessments lack axis; the spine has it
         blocking, advisory, required_total, unassessed = evaluate(
             result, a.fail_on, axis=axis, enforce_mined_robustness=a.enforce_mined_robustness)
+        counts = {}
+        for c in result.get("categories", []):
+            _bump(counts, c.get("tier", "required"), c.get("status") or "unknown")
         runs.append({"spine": str(spine_path), "app_type": cl.get("app_type"),
                      "sub_type": result.get("sub_type", "?"), "axis": axis,
+                     "languages": result.get("languages", []), "status_counts": counts,
                      "required_total": required_total, "unassessed_count": unassessed,
                      "blocking_count": len(blocking), "advisory_count": len(advisory),
                      "blocking_gaps": blocking, "advisory_gaps": advisory})
@@ -262,6 +288,9 @@ def main():
         "spines": [r["spine"] for r in runs],
         "app_type": runs[0]["app_type"],
         "sub_type": runs[0]["sub_type"],
+        # which languages the evidence pass actually covered — a mixed-language target's
+        # verdict must SAY so, not leave coverage implicit
+        "languages": runs[0]["languages"],
         "axis": runs[0]["axis"] if not battery else None,
         "required_total": sum(r["required_total"] for r in runs),
         "blocking_count": len(all_blocking),
@@ -270,6 +299,9 @@ def main():
         "fail_on": a.fail_on,
         "blocking_gaps": all_blocking,
         "advisory_gaps": all_advisory,
+        # compact reporting surface (CI annotations, dashboards): status×tier counts across
+        # every assessed category, so consumers get project health without re-deriving it
+        "summary": summarize(runs),
     }
     if battery:
         verdict["per_spine"] = [{k: r[k] for k in ("spine", "axis", "required_total",
@@ -289,13 +321,22 @@ def main():
         r = runs[0]
         print(f"{head} — {a.target} vs {r['app_type']} spine ({Path(r['spine']).name})")
         print(f"sub_type: {r['sub_type']}")
+        if r["languages"]:
+            print("languages analyzed: " + ", ".join(f"{l['language']} ({l['files']})" for l in r["languages"]))
         print(f"required: {r['required_total']} | blocking (applicable required {a.fail_on}s): "
               f"{len(all_blocking)} | threshold: {a.threshold}\n")
     else:
         print(f"{head} — {a.target} day-1 map ({len(runs)} spines, {verdict['required_total']} required categories)")
         print(f"sub_type: {runs[0]['sub_type']}")
+        if runs[0]["languages"]:
+            print("languages analyzed: " + ", ".join(f"{l['language']} ({l['files']})" for l in runs[0]["languages"]))
         print(f"blocking: {len(all_blocking)} (gating axes) | advisory: {len(all_advisory)} "
               f"| threshold: {a.threshold}\n")
+    summary = verdict["summary"]
+    if summary:
+        print("health: " + " | ".join(
+            f"{tier}: " + ", ".join(f"{n} {st}" for st, n in sorted(sts.items(), key=lambda kv: -kv[1]))
+            for tier, sts in sorted(summary.items(), reverse=True)) + "\n")
     if total_unassessed:
         note = "blocking PASS until re-assessed" if incomplete else "--allow-unassessed in effect"
         print(f"⚠ {total_unassessed} required categor{'y' if total_unassessed == 1 else 'ies'} "
