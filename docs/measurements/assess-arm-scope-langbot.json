@@ -1,0 +1,103 @@
+{
+  "ok": true,
+  "repo": "LangBot",
+  "spine": "checklists/telegram-llm-bot.features.json",
+  "axis": "SCOPE",
+  "snapshot_sha": "23016a07916eee70efb8e1e77f2e464ae59e27a6",
+  "history_commits": 3581,
+  "future_commits": 2685,
+  "future_judged": 400,
+  "past_judged": 400,
+  "ground_truth": [
+    "adapter onboarding flows",
+    "admin dashboard",
+    "dashboard auth/account security",
+    "deployment/configuration ergonomics",
+    "internationalization/localization",
+    "knowledge base / document qa",
+    "llm provider/model management",
+    "memory/context management",
+    "multi-channel adapters",
+    "plugin marketplace/extensions",
+    "rich message handling",
+    "streaming responses"
+  ],
+  "n_ground_truth": 12,
+  "covered_before_snapshot": [
+    "agent command system",
+    "deployment/configuration ergonomics",
+    "llm provider/model management",
+    "memory/context management",
+    "multi-channel adapters",
+    "plugin marketplace/extensions",
+    "rich message handling",
+    "tool/function permissions"
+  ],
+  "runs": [
+    {
+      "recall": 0.75,
+      "misses": {
+        "admin dashboard": "na_by_design",
+        "dashboard auth/account security": "na_by_design",
+        "rich message handling": "covered"
+      },
+      "blocking": {
+        "flagged": 10,
+        "right": [
+          "adapter onboarding flows",
+          "deployment/configuration ergonomics",
+          "internationalization/localization",
+          "knowledge base / document qa",
+          "llm provider/model management",
+          "memory/context management",
+          "multi-channel adapters",
+          "plugin marketplace/extensions",
+          "streaming responses"
+        ],
+        "wrong": [
+          "tool/function permissions"
+        ],
+        "unverified": [],
+        "adjudicated": 10,
+        "precision": 0.9,
+        "n_adequate": 2,
+        "false_block_rate": 0.5
+      }
+    },
+    {
+      "recall": 0.5,
+      "misses": {
+        "admin dashboard": "na_by_design",
+        "dashboard auth/account security": "na_by_design",
+        "internationalization/localization": "covered",
+        "memory/context management": "covered",
+        "multi-channel adapters": "covered",
+        "rich message handling": "covered"
+      },
+      "blocking": {
+        "flagged": 7,
+        "right": [
+          "adapter onboarding flows",
+          "deployment/configuration ergonomics",
+          "knowledge base / document qa",
+          "llm provider/model management",
+          "plugin marketplace/extensions",
+          "streaming responses"
+        ],
+        "wrong": [
+          "tool/function permissions"
+        ],
+        "unverified": [],
+        "adjudicated": 7,
+        "precision": 0.857,
+        "n_adequate": 2,
+        "false_block_rate": 0.5
+      }
+    }
+  ],
+  "mean_recall": 0.625,
+  "recall_spread": 0.25,
+  "mean_blocking_precision": 0.879,
+  "limitation": "self-prediction: spine mined from this repo's full history; assessor never sees future commits, but a leave-one-out spine is cleaner",
+  "adjudication": "future-wins (recomputed from the same run's flagged sets after the past-wins rule was rejected \u2014 see measure_recall.precision_of_run docstring)"
+}

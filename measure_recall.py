@@ -1,10 +1,26 @@
 #!/usr/bin/env python3
 """
-measure_recall.py — gate RECALL against a repo's own future (the missing half of gate quality).
+measure_recall.py — the ASSESS-PATH arm of gate quality: recall AND blocking precision of the
+REAL assessor (diff_target.assess_target), with ground truth by construction from a repo's own
+history. This is the instrument that measures the path that actually gates — measure.py's
+lift/specificity controls certify spine predictiveness but never invoke assess_target.
 
-Precision (0.77, adversarial two-lens refutation) says blocking verdicts are usually right.
-This measures the other failure mode: how much GENUINELY-UPCOMING work does the gate MISS
-(false 'covered'/'na' verdicts = blind spots)?
+Two quantities per run:
+  RECALL — how much GENUINELY-UPCOMING work does the gate MISS (false 'covered'/'na' = blind
+  spots)?
+  BLOCKING PRECISION — of the gap/partial verdicts at the snapshot, how many were RIGHT?
+  Future-wins adjudication: verified-right when the repo's FUTURE commits substantially built
+  the category (its own admission of inadequacy); verified-wrong when the past had built it
+  and the future left it dormant (the repo treated it as done); unverified otherwise.
+  Reported alongside false_block_rate on the adequate (built-before, dormant-after) set —
+  the discrimination half that future-wins alone can't show. This supersedes the adversarial
+  two-lens refutation number (0.77) as the precision instrument: ground truth here is the
+  repo's own history, not another LLM's opinion.
+
+PROMOTION (third arm): an axis seeking gating power must ALSO clear this instrument on its own
+spine — mean blocking precision ≥ 0.70 with ≥ 5 adjudicated verdicts — in addition to the two
+spine controls (recall lift + out-of-domain specificity) in measure.py. See check.py
+VALIDATED_GATING_AXES.
 
 Protocol (ground truth by construction, no hand labels):
   1. Snapshot a cloned neighbor repo PART-WAY through its FULL history (--snapshot-frac of all
@@ -40,7 +56,12 @@ FLAGGED = {"gap", "partial"}
 
 
 def capability_map():
-    return {"tool": "measure_recall", "version": "0.1",
+    return {"tool": "measure_recall", "version": "0.2",
+            "what": "assess-path arm of gate quality: recall + blocking precision of the REAL "
+                    "assessor vs a repo's own past/future (ground truth by construction)",
+            "promotion_bar": "third arm of axis promotion: mean blocking precision >= 0.70 "
+                             "with >= 5 adjudicated verdicts on the candidate axis's spine "
+                             "(plus measure.py's lift + specificity controls)",
             "args": "[--repo NAME] [--spine FILE] [--snapshot-frac F] [--min-commits N] "
                     "[--judges J] [--runs R] [--json]",
             "exit_codes": {"0": "ok", "1": "usage/err", "2": "not_found", "3": "empty ground truth"}}
@@ -71,16 +92,19 @@ def repo_commits(repo_dir):
             for ln in r.stdout.splitlines() if ln]
 
 
-def judge_future_calls(future, cats, judges):
-    """STRICT introduction-judge calls: map each future commit subject to the ONE spine category
-    it INTRODUCES, or null. Same chunking discipline as measure.py (pure)."""
+def judge_future_calls(commits, cats, judges, idp="recall", when="LATER"):
+    """STRICT introduction-judge calls: map each commit subject to the ONE spine category
+    it INTRODUCES, or null. Same chunking discipline as measure.py (pure). `when` labels the
+    commits' position relative to the snapshot (LATER = future, EARLIER = the snapshot's own
+    past — used by the blocking-precision arm); `idp` keeps the two judge passes' call ids
+    disjoint in one batch."""
     calls, CH = [], 18
     listing_cats = "\n".join(f"- {c['category']}" for c in cats)
-    for ci in range(0, len(future), CH):
-        chunk = future[ci:ci + CH]
+    for ci in range(0, len(commits), CH):
+        chunk = commits[ci:ci + CH]
         listing = "\n".join(f"{j+1}. {c['subject']}" for j, c in enumerate(chunk))
         prompt = (f"PREDICTED capability categories for this app type:\n{listing_cats}\n\n"
-                  f"Commits this project shipped LATER in its life:\n{listing}\n\n"
+                  f"Commits this project shipped {when} in its life:\n{listing}\n\n"
                   "For each commit, name the SINGLE category above that the commit is a DIRECT "
                   "INSTANCE of, and ONLY if the commit INTRODUCES or substantially builds out that "
                   "capability (a new feature/surface) — NOT routine maintenance, bugfixing, or polish "
@@ -88,7 +112,7 @@ def judge_future_calls(future, cats, judges):
                   "matches none, return null. Be STRICT — when unsure, return null. "
                   'Return ONLY JSON {number: {"cat": "<exact category label or null>"}}.')
         for jdg in range(judges):
-            calls.append({"id": f"recall|{ci}|{jdg}", "prompt": prompt, "maxTokens": 1100,
+            calls.append({"id": f"{idp}|{ci}|{jdg}", "prompt": prompt, "maxTokens": 1100,
                           "_chunk_start": ci, "_n": len(chunk)})
     return calls
 
@@ -130,6 +154,43 @@ def recall_of_run(gt, assessment):
     return (len(hit) / len(gt) if gt else 0.0), misses
 
 
+def precision_of_run(gt_future, covered_past, assessment):
+    """Blocking-verdict precision for one run, ground truth by construction (pure).
+
+    Adjudication is FUTURE-WINS: a flagged (gap/partial) required category is verified-RIGHT
+    when the repo's FUTURE commits substantially built it (the repo's own admission the
+    snapshot state was inadequate — regardless of embryonic past work), verified-WRONG only
+    when PAST commits had built it AND the future left it dormant (the repo treated it as
+    done — a false block), UNVERIFIED otherwise (never built; could be a right block nobody
+    closed). The rejected alternative — past-wins, any prior work makes a block false — scores
+    the gate's correct core behavior under fail_on=partial ("exists but incomplete still
+    blocks") as error by construction: measured on LangBot it called partial-verdicts on
+    categories the repo then built for 2700 more commits "false blocks" (0.41 vs 0.88 here).
+
+    Because future-wins alone would flatter a trigger-happy assessor (every future-built
+    category scores right no matter what), the report also carries the discrimination test:
+    false_block_rate = flagged fraction of the ADEQUATE set (covered before snapshot, dormant
+    after — the repo's own 'done' list), with its n. Both numbers matter; n_adequate is small
+    on early snapshots. NOTE: this measures the gate ACTION (block/pass), not status-label
+    accuracy — a 'gap' label on an embryonic-but-present category is a wrong label but a
+    right block, and scores as such."""
+    flagged = sorted(c["category"].lower() for c in assessment["categories"]
+                     if c.get("tier") == "required" and c.get("status") in FLAGGED)
+    adequate = sorted(set(covered_past) - set(gt_future))  # built before, dormant after
+    right = [f for f in flagged if f in gt_future]
+    wrong = [f for f in flagged if f in adequate]
+    unverified = [f for f in flagged if f not in gt_future and f not in adequate]
+    adjudicated = len(right) + len(wrong)
+    return {"flagged": len(flagged), "right": right, "wrong": wrong, "unverified": unverified,
+            "adjudicated": adjudicated,
+            "precision": round(len(right) / adjudicated, 3) if adjudicated else None,
+            "n_adequate": len(adequate),
+            # the rate travels in artifacts without this docstring — carry the caveat in-band
+            # so a consumer can't read 0.5-at-n=2 as a real discrimination number
+            "false_block_rate_low_n": len(adequate) < 5,
+            "false_block_rate": round(len(wrong) / len(adequate), 3) if adequate else None}
+
+
 def make_snapshot(repo_dir, sha):
     wt = Path(f"/tmp/2080-recall-{repo_dir.name}-{sha[:8]}")
     if not wt.exists():
@@ -165,13 +226,18 @@ def main():
     commits = repo_commits(repo_dir)
     all_future, snap_sha = split_at(commits, a.snapshot_frac)
     future = sample_even(all_future, a.future_cap)
+    all_past = commits[len(all_future):]  # the snapshot's own history (newest-first)
+    past = sample_even(all_past, a.future_cap)
 
-    print(f"[1/3] history {len(commits)} commits; snapshot after {len(commits) - len(all_future)}; "
-          f"judging {len(future)}/{len(all_future)} future commits vs {len(cats)} required categories "
-          f"({a.judges} strict judges, agreement required)…", file=sys.stderr)
+    print(f"[1/3] history {len(commits)} commits; snapshot after {len(all_past)}; "
+          f"judging {len(future)}/{len(all_future)} future + {len(past)}/{len(all_past)} past commits "
+          f"vs {len(cats)} required categories ({a.judges} strict judges, agreement required)…",
+          file=sys.stderr)
     calls = judge_future_calls(future, cats, a.judges)
-    results = fan_batch(calls)
+    past_calls = judge_future_calls(past, cats, a.judges, idp="past", when="EARLIER")
+    results = fan_batch(calls + past_calls)
     gt = ground_truth(agreed_mappings(calls, results, a.judges), cats, a.min_commits)
+    covered_past = set(ground_truth(agreed_mappings(past_calls, results, a.judges), cats, a.min_commits))
     if not gt:
         print(json.dumps({"ok": False, "error": "no ground-truth categories survived the judges",
                           "exit_code": EXIT_EMPTY}) if a.json else "no ground truth survived", file=sys.stderr)
@@ -189,27 +255,44 @@ def main():
             print(f"run {r + 1} failed (unparseable assessment) — skipped", file=sys.stderr)
             continue
         rec, misses = recall_of_run(gt, result)
-        runs.append({"recall": round(rec, 3), "misses": misses})
+        runs.append({"recall": round(rec, 3), "misses": misses,
+                     "blocking": precision_of_run(gt, covered_past, result)})
     if not runs:
         print("all assessment runs failed", file=sys.stderr); sys.exit(EXIT_ERR)
 
     recalls = [r["recall"] for r in runs]
-    report = {"ok": True, "repo": a.repo, "spine": str(spine_path), "snapshot_sha": snap_sha,
+    precisions = [r["blocking"]["precision"] for r in runs if r["blocking"]["precision"] is not None]
+    report = {"ok": True, "repo": a.repo, "spine": str(spine_path), "axis": cl.get("axis"),
+              "snapshot_sha": snap_sha,
               "history_commits": len(commits), "future_commits": len(all_future),
-              "future_judged": len(future), "ground_truth": gt, "n_ground_truth": len(gt),
+              "future_judged": len(future), "past_judged": len(past),
+              "ground_truth": gt, "n_ground_truth": len(gt),
+              "covered_before_snapshot": sorted(covered_past),
               "runs": runs, "mean_recall": round(sum(recalls) / len(recalls), 3),
               "recall_spread": round(max(recalls) - min(recalls), 3),
+              "mean_blocking_precision": round(sum(precisions) / len(precisions), 3) if precisions else None,
               "limitation": "self-prediction: spine mined from this repo's full history; assessor "
                             "never sees future commits, but a leave-one-out spine is cleaner"}
     if a.json:
         print(json.dumps(report, indent=2))
     else:
-        print(f"\nGATE RECALL — {a.repo} @ {snap_sha[:8]} vs {spine_path.name}")
+        print(f"\nGATE RECALL + BLOCKING PRECISION — {a.repo} @ {snap_sha[:8]} vs {spine_path.name}")
         print(f"ground truth ({len(gt)} categories the repo later introduced): {', '.join(gt)}")
+        print(f"covered before snapshot ({len(covered_past)}): {', '.join(sorted(covered_past)) or '(none)'}")
         for i, r in enumerate(runs):
             miss = "; ".join(f"{k} (got {v})" for k, v in r["misses"].items()) or "none"
-            print(f"run {i + 1}: recall {r['recall']:.2f} | missed: {miss}")
-        print(f"mean recall {report['mean_recall']:.2f} (spread {report['recall_spread']:.2f} across {len(runs)} runs)")
+            b = r["blocking"]
+            p = f"{b['precision']:.2f}" if b["precision"] is not None else "n/a (0 adjudicable)"
+            fbr = f"{b['false_block_rate']:.2f} (n={b['n_adequate']})" \
+                if b["false_block_rate"] is not None else f"n/a (n_adequate={b['n_adequate']})"
+            print(f"run {i + 1}: recall {r['recall']:.2f} | blocking precision {p} "
+                  f"({len(b['right'])} right / {len(b['wrong'])} wrong / {len(b['unverified'])} unverified "
+                  f"of {b['flagged']} flagged) | false-block rate on adequate set: {fbr} | missed: {miss}")
+            if b["wrong"]:
+                print(f"        false blocks: {', '.join(b['wrong'])}")
+        mp = report["mean_blocking_precision"]
+        print(f"mean recall {report['mean_recall']:.2f} (spread {report['recall_spread']:.2f}) | "
+              f"mean blocking precision {mp if mp is not None else 'n/a'} across {len(runs)} runs")
         print(f"limitation: {report['limitation']}")
     sys.exit(EXIT_OK)
 
