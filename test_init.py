@@ -35,7 +35,9 @@ pip install fancytool
 
 
 def run_cli(*args, env_extra=None):
-    env = dict(os.environ, **(env_extra or {}))
+    # REGISTRY_2080 pinned to a dead path: unit tests must never hit the live registry
+    # (registry_fetch degrades to {} on failure, so behavior = registry-miss everywhere)
+    env = dict(os.environ, REGISTRY_2080="/nonexistent-registry/index.json", **(env_extra or {}))
     return subprocess.run([PY, str(INIT), *args], capture_output=True, text=True, env=env)
 
 
@@ -216,6 +218,112 @@ class TestCLISurface(unittest.TestCase):
             self.assertEqual(plan["would_clone"],
                              [f"{cache}/neighbors/opencode", f"{cache}/neighbors/goose"])
             self.assertNotIn("<", plan["app_type"])  # deterministic slug, no placeholder
+
+
+class TestRegistryFetch(unittest.TestCase):
+    """registry_fetch against a local fixture registry — no network."""
+
+    GOOD = json.dumps({"app_type": "demo-bot", "required": [{"category": "Rate limiting"}]})
+
+    def fixture(self, tmp, spine_text, sha=None, tier="validated"):
+        import hashlib
+        reg = Path(tmp) / "registry"
+        (reg / "spines").mkdir(parents=True)
+        (reg / "spines" / "demo-bot.features.json").write_text(spine_text)
+        index = {"spines": [{"id": "demo-bot.features", "app_type": "demo-bot",
+                             "path": "spines/demo-bot.features.json", "tier": tier,
+                             "axis": "SCOPE",
+                             "sha256": sha or hashlib.sha256(spine_text.encode()).hexdigest()}]}
+        (reg / "index.json").write_text(json.dumps(index))
+        return str(reg / "index.json")
+
+    def test_downloads_and_sha_verifies(self):
+        # intent: the registry's trust model is hash pinning — a spine arriving intact must
+        # land in checklists/ with its tier, so review-time trust survives to use-time.
+        with tempfile.TemporaryDirectory() as tmp:
+            idx = self.fixture(tmp, self.GOOD)
+            dest = Path(tmp) / "checklists"
+            got = init.registry_fetch("demo-bot", idx, dest)
+            self.assertEqual(got["demo-bot.features.json"]["tier"], "validated")
+            self.assertTrue((dest / "demo-bot.features.json").exists())
+
+    def test_sha_mismatch_refused(self):
+        # intent: a spine that changed after review (registry compromise, MITM, stale index)
+        # must be refused — accepting it voids the review-once-per-hash guarantee.
+        with tempfile.TemporaryDirectory() as tmp:
+            idx = self.fixture(tmp, self.GOOD, sha="0" * 64)
+            got = init.registry_fetch("demo-bot", idx, Path(tmp) / "checklists")
+            self.assertEqual(got, {})
+            self.assertFalse((Path(tmp) / "checklists" / "demo-bot.features.json").exists())
+
+    def test_control_chars_refused_even_with_valid_hash(self):
+        # intent: client-side hardening is unconditional — a correctly-hashed spine carrying
+        # ANSI escapes means the registry's own gate failed; the client must not inherit it.
+        evil = json.dumps({"app_type": "demo-bot",
+                           "required": [{"category": "Rate \\u001b[31mlimiting"}]})
+        evil = json.loads(evil)  # round-trip so the escape is a REAL control char in the file
+        evil["required"][0]["category"] = "Rate \x1b[31mlimiting"
+        evil = json.dumps(evil)
+        with tempfile.TemporaryDirectory() as tmp:
+            idx = self.fixture(tmp, evil)
+            got = init.registry_fetch("demo-bot", idx, Path(tmp) / "checklists")
+            self.assertEqual(got, {})
+
+    def test_illegal_spine_filename_refused(self):
+        # intent: the sha256 proves bytes match the index, NOT that the index's claims are
+        # sane — a hostile index naming its (correctly-hashed) payload 'evil.sh' or '..'
+        # must not get to choose what lands in checklists/.
+        import hashlib
+        with tempfile.TemporaryDirectory() as tmp:
+            reg = Path(tmp) / "registry"
+            (reg / "spines").mkdir(parents=True)
+            (reg / "spines" / "evil.sh").write_text(self.GOOD)
+            sha = hashlib.sha256(self.GOOD.encode()).hexdigest()
+            index = {"spines": [{"id": "x", "app_type": "demo-bot", "tier": "validated",
+                                 "path": "spines/evil.sh", "sha256": sha}]}
+            (reg / "index.json").write_text(json.dumps(index))
+            dest = Path(tmp) / "checklists"
+            got = init.registry_fetch("demo-bot", str(reg / "index.json"), dest)
+            self.assertEqual(got, {})
+            self.assertFalse((dest / "evil.sh").exists())
+
+    def test_plaintext_http_registry_refused(self):
+        # intent: the index carries the sha256 pins — over plaintext http a network attacker
+        # rewrites the pins and the hash check verifies attacker-chosen bytes; refusing http
+        # is what keeps the lockfile model honest.
+        with self.assertRaises(ValueError):
+            init._registry_read("http://example.com/index.json")
+        got = init.registry_fetch("demo-bot", "http://example.com/index.json", Path("/tmp/x"))
+        self.assertEqual(got, {})  # and through the full path: degrades to mining, no crash
+
+    def test_local_file_wins_over_registry(self):
+        # intent: a hand-tuned or freshly-mined local spine must never be silently replaced
+        # by a registry download — local edits are the user's rule set.
+        with tempfile.TemporaryDirectory() as tmp:
+            idx = self.fixture(tmp, self.GOOD)
+            dest = Path(tmp) / "checklists"
+            dest.mkdir()
+            (dest / "demo-bot.features.json").write_text('{"app_type":"demo-bot","required":[],"local":true}')
+            got = init.registry_fetch("demo-bot", idx, dest)
+            self.assertEqual(got["demo-bot.features.json"]["tier"], "local (kept)")
+            self.assertIn("local", (dest / "demo-bot.features.json").read_text())
+
+    def test_instrument_tier_never_downloaded(self):
+        # intent: instrument spines (frozen baseline, foreign-domain controls) are measurement
+        # apparatus — handing one to a user as their day-1 map would gate them on a checklist
+        # designed to be generic on purpose.
+        with tempfile.TemporaryDirectory() as tmp:
+            idx = self.fixture(tmp, self.GOOD, tier="instrument")
+            self.assertEqual(init.registry_fetch("demo-bot", idx, Path(tmp) / "checklists"), {})
+
+    def test_any_failure_degrades_to_mining_not_crash(self):
+        # intent: the registry accelerates, never blocks — an unreachable index or garbage
+        # JSON must return {} (init falls back to mining), never abort init.
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(init.registry_fetch("x", str(Path(tmp) / "nope.json"), Path(tmp)), {})
+            bad = Path(tmp) / "bad.json"
+            bad.write_text("{not json")
+            self.assertEqual(init.registry_fetch("x", str(bad), Path(tmp)), {})
 
 
 if __name__ == "__main__":

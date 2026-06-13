@@ -22,9 +22,14 @@ Clone + harvest are idempotent (re-run refreshes, never re-clones), so init doub
 prints the complete plan with zero network/LLM, and any write requires confirmation (--yes in
 --json mode, prompt otherwise).
 
+Stage 0 (before any of that): the spine REGISTRY. A published app_type match downloads
+sha256-verified spines in seconds instead of a 30-60 min mine — the registry accelerates,
+never blocks (any failure falls back to mining). Local files always win; --force re-mines.
+
 Usage:
   init.py <target-dir | "intent string"> [--intent S] [--max-neighbors N]
           [--neighbors owner/repo,...] [--app-type T] [--max-commits N]
+          [--registry URL|PATH] [--no-registry]
           [--skip-robustness] [--skip-scope] [--dry-run] [--json] [--yes]
 Exit codes: 0 OK | 1 USAGE/ERR/DECLINED | 2 NOT_FOUND | 3 EMPTY (no neighbors/commits)
 """
@@ -42,10 +47,14 @@ REPO_RE = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\Z")  # also blocks ../ pa
 
 
 def capability_map():
-    return {"tool": "2080-init", "version": "0.2",
+    return {"tool": "2080-init", "version": "0.3",
             "args": '<target-dir | "intent string"> [--intent S] [--max-neighbors N] '
                     '[--neighbors owner/repo,...] [--app-type T] [--max-commits N] '
+                    '[--registry URL|PATH] [--no-registry] '
                     '[--skip-robustness] [--skip-scope] [--dry-run] [--force] [--json] [--yes]',
+            "registry": "stage 0: a published app_type match in the spine registry downloads "
+                        "sha256-verified spines in seconds instead of mining (REGISTRY_2080 env "
+                        "overrides the default index; local index paths supported; --force re-mines)",
             "exit_codes": {"0": "ok", "1": "usage/err/declined/would-overwrite", "2": "not_found",
                            "3": "empty (no neighbors or no commits)"}}
 
@@ -207,6 +216,89 @@ def run_mine(cmd, as_json):
     return r.returncode == 0
 
 
+# ── registry lookup (stage 0 when --app-type is known; post-discovery otherwise) ──
+
+REGISTRY_DEFAULT = "https://raw.githubusercontent.com/jason/2080-registry/main/index.json"
+REGISTRY_MAX_BYTES = 4 * 1024 * 1024
+_REG_CTRL = re.compile(r"[\x00-\x08\x0b-\x1f\x7f]")
+
+
+def _registry_read(url_or_path, timeout=15):
+    """Bytes from an index/spine location — httpS URL or local path (size-capped).
+    Local paths make the registry testable offline and let teams point at a checkout.
+    Plaintext http is REFUSED: the index carries the sha256 pins, so a network attacker
+    who controls the index controls every pin — TLS on the index is what the whole
+    lockfile model hangs on."""
+    if url_or_path.startswith("http://"):
+        raise ValueError("plaintext http registry refused (use https:// or a local path)")
+    if url_or_path.startswith("https://"):
+        import urllib.request
+        with urllib.request.urlopen(url_or_path, timeout=timeout) as r:
+            return r.read(REGISTRY_MAX_BYTES)
+    return Path(url_or_path).read_bytes()[:REGISTRY_MAX_BYTES]
+
+
+def _reg_dirty(v):
+    """True if any string anywhere in decoded JSON carries a control char. Checked on
+    DECODED strings: a backslash-u001b escape in the JSON source is invisible to a
+    raw-bytes scan but decodes to a live ANSI escape at every consumer (the intent test
+    caught exactly this in the first version). Hostile deep nesting can raise
+    RecursionError — contained by registry_fetch's outer except (degrades to mining)."""
+    if isinstance(v, str):
+        return bool(_REG_CTRL.search(v))
+    if isinstance(v, dict):
+        return any(_reg_dirty(x) for kv in v.items() for x in kv)
+    if isinstance(v, list):
+        return any(_reg_dirty(x) for x in v)
+    return False
+
+
+def registry_fetch(app_type, index_url, dest_dir):
+    """Download this app_type's published spines from the registry (never overwrites local
+    files — local wins). Each file is verified against the index's sha256 (lockfile
+    semantics: review-time trust survives to use-time) and rejected on control characters
+    or non-object JSON regardless of hash — client-side hardening is unconditional.
+    Returns {filename: {"path", "tier", "axis"}} for files now present (downloaded OR
+    already local). Any failure degrades to {} — the registry accelerates, never blocks."""
+    try:
+        import hashlib
+        index = json.loads(_registry_read(index_url))
+        base = index_url.rsplit("/", 1)[0]
+        got = {}
+        for e in index.get("spines", []):
+            if e.get("app_type") != app_type or e.get("tier") == "instrument":
+                continue
+            fname = e["path"].rsplit("/", 1)[-1]
+            # the hash proves bytes match the index — it does NOT constrain what the index
+            # CLAIMS. The filename is index-controlled input: pin it to the only legal shape
+            # (<app_type>.<kind>.json) so a hostile index can't write '..', dotfiles, or
+            # evil.sh into checklists/
+            if not re.fullmatch(re.escape(app_type) + r"\.[a-z0-9_-]+\.json", fname):
+                print(f"  registry: illegal spine filename {fname!r} — refusing it", file=sys.stderr)
+                continue
+            dest = dest_dir / fname
+            if dest.exists():
+                got[fname] = {"path": str(dest), "tier": "local (kept)", "axis": e.get("axis")}
+                continue
+            raw = _registry_read(f"{base}/{e['path']}")
+            if hashlib.sha256(raw).hexdigest() != e.get("sha256"):
+                print(f"  registry: sha256 MISMATCH for {fname} — refusing it", file=sys.stderr)
+                continue
+            text = raw.decode("utf-8")
+            parsed = json.loads(text)
+            if not isinstance(parsed, dict) or _reg_dirty(parsed):
+                print(f"  registry: {fname} failed client-side safety checks — refusing it", file=sys.stderr)
+                continue
+            dest_dir.mkdir(parents=True, exist_ok=True)
+            write_atomic(dest, text)
+            got[fname] = {"path": str(dest), "tier": e.get("tier"), "axis": e.get("axis")}
+            print(f"  ✓ registry: {fname} [{e.get('tier')}] sha256-verified", file=sys.stderr)
+        return got
+    except Exception as e:
+        print(f"  registry lookup failed ({e}) — falling back to mining", file=sys.stderr)
+        return {}
+
+
 # ── orchestration ─────────────────────────────────────────────────────────────
 
 def spine_paths(app_type):
@@ -226,10 +318,14 @@ def main():
     ap.add_argument("--max-commits", type=int, default=500, help="newest commits harvested per neighbor (0 = all)")
     ap.add_argument("--skip-robustness", action="store_true", help="skip the robustness-surface mine")
     ap.add_argument("--skip-issues", action="store_true",
-                    help="skip the issue-surface mine (a VALIDATED gating lens; skip only if gh/remotes unavailable)")
+                    help="skip the issue-surface mine (advisory axis; skip if gh/remotes unavailable)")
     ap.add_argument("--skip-tests", action="store_true",
-                    help="skip the test-surface mine (a VALIDATED gating lens)")
+                    help="skip the test-surface mine (advisory axis)")
     ap.add_argument("--skip-scope", action="store_true", help="skip the lens_mine scope mine")
+    ap.add_argument("--registry", default=os.environ.get("REGISTRY_2080", REGISTRY_DEFAULT),
+                    help="registry index.json (URL or local path); a published app_type match "
+                         "downloads sha256-verified spines instead of mining (REGISTRY_2080 env)")
+    ap.add_argument("--no-registry", action="store_true", help="skip the registry; always mine")
     ap.add_argument("--dry-run", action="store_true", help="print the full plan; NO network/LLM, NO writes")
     ap.add_argument("--force", action="store_true", help="overwrite existing spine files for this app-type")
     ap.add_argument("--json", action="store_true")
@@ -284,6 +380,58 @@ def main():
     if a.json and not a.yes:
         fail("--yes is required to clone + mine in --json mode (use --dry-run for the plan)", EXIT_ERR, a.json)
 
+    def registry_stage(app_type_label):
+        """Consented registry lookup. Returns {} when declined/disabled/failed."""
+        if a.no_registry or a.force:
+            return {}
+        print(f"→ checking registry for app_type '{app_type_label}'…", file=sys.stderr)
+        if not a.yes:
+            try:
+                ans = input(f"Download published spines for '{app_type_label}' from the registry? [y/N] ").strip().lower()
+            except EOFError:
+                ans = ""
+            if ans not in ("y", "yes"):
+                return {}
+        return registry_fetch(app_type_label, a.registry, SCRIPT_DIR / "checklists")
+
+    def kind_table(app_type_label):
+        rob, feat, ops, iss, tst = spine_paths(app_type_label)
+        return {"robustness": (rob, a.skip_robustness), "scope": (feat, a.skip_scope),
+                "operability": (ops, False), "issues": (iss, a.skip_issues),
+                "tests": (tst, a.skip_tests)}
+
+    def all_present(app_type_label):
+        """True when every non-skipped kind already exists on disk — the condition that
+        gates the zero-clone/zero-LLM fast path."""
+        return all(skip or p.exists() for p, skip in kind_table(app_type_label).values())
+
+    def finish_from_registry(app_type_label, sub_type_label, pre_set):
+        """Every needed kind is on disk — summarize and exit 0 with zero clone/LLM."""
+        kinds = kind_table(app_type_label)
+        spines = {k: ("skipped" if skip else
+                      {"path": str(p), "ok": True,
+                       "source": "local" if p in pre_set else "registry"})
+                  for k, (p, skip) in kinds.items()}
+        out = {"ok": True, "intent": intent, "target": next_target, "app_type": app_type_label,
+               "sub_type": sub_type_label, "source": "registry", "spines": spines,
+               "next": f"check.py {next_target} --spine {kinds['scope'][0]}"}
+        if a.json:
+            print(json.dumps(out, indent=2)); sys.exit(EXIT_OK)
+        print(f"\n✅ init complete from registry — app_type={app_type_label} (no mining needed)")
+        for k, s in spines.items():
+            print(f"  {k}: {s if isinstance(s, str) else s['path'] + ' [' + s['source'] + ']'}")
+        print(f"\nnext: {out['next']}")
+        sys.exit(EXIT_OK)
+
+    # ── stage 0: registry — a published app_type match downloads in seconds instead of a
+    # 30-60 min mine. Pre-discovery only when --app-type pins the label; local files win.
+    reg_got, pre_exists = {}, set()
+    if a.app_type:
+        pre_exists = {p for p, _ in kind_table(a.app_type).values() if p.exists()}
+        reg_got = registry_stage(a.app_type)
+        if reg_got and all_present(a.app_type):
+            finish_from_registry(a.app_type, None, pre_exists)
+
     # ── stage 2: neighbors ──
     if override:
         neighbors = [{"repo": r, "why_valuable": "user-specified via --neighbors",
@@ -300,16 +448,29 @@ def main():
         if not neighbors:
             fail("find_neighbors returned no neighbors — refine the intent or pass --neighbors", EXIT_EMPTY, a.json)
 
+    # ── stage 0 (post-discovery): registry lookup with the discovered app_type ──
+    if not reg_got:
+        pre_exists = {p for p, _ in kind_table(app_type).values() if p.exists()}
+        reg_got = registry_stage(app_type)
+
+    # registry-satisfied kinds skip their mine (downloaded files are NOT clobber candidates —
+    # the guard below applies only to files that existed before the registry ran)
+    satisfied = {k for k, (p, skip) in kind_table(app_type).items()
+                 if not skip and p.exists() and p not in pre_exists}
+    if satisfied:
+        print(f"  registry satisfied: {', '.join(sorted(satisfied))} — mining only the rest", file=sys.stderr)
+
     # ── overwrite guard: a colliding app_type label would silently clobber a different sub-type's
     # spine (sub-type match is load-bearing; an LLM-classified label is not unique). Refuse early.
-    rob_guard, feat_guard, ops_guard, iss_guard, tst_guard = spine_paths(app_type)
-    clobber = [str(p) for p, skip in ((rob_guard, a.skip_robustness), (feat_guard, a.skip_scope),
-                                      (ops_guard, False), (iss_guard, a.skip_issues),
-                                      (tst_guard, a.skip_tests))
-               if not skip and p.exists()]
+    clobber = [str(p) for k, (p, skip) in kind_table(app_type).items()
+               if not skip and k not in satisfied and p in pre_exists]
     if clobber and not a.force:
         fail(f"refusing to overwrite existing spine(s) for app_type '{app_type}': {', '.join(clobber)} "
              f"— pass --app-type <more-specific-label> (recommended) or --force", EXIT_ERR, a.json)
+
+    # registry covered every needed kind → no clone, no harvest, no LLM
+    if all_present(app_type):
+        finish_from_registry(app_type, sub_type, pre_exists)
 
     listing = "\n".join(f"  {n['repo']}  [{(n.get('maturity') or {}).get('label')}: "
                         f"{(n.get('maturity') or {}).get('commits')} commits] — {n.get('why_valuable', '')[:90]}"
@@ -348,7 +509,9 @@ def main():
     rob_path, feat_path, ops_path, iss_path, tst_path = spine_paths(app_type)
     rob_path.parent.mkdir(parents=True, exist_ok=True)
     spines = {}
-    if a.skip_robustness:
+    if "robustness" in satisfied:
+        spines["robustness"] = {"path": str(rob_path), "ok": True, "source": "registry"}
+    elif a.skip_robustness:
         spines["robustness"] = "skipped"
     else:
         # robustness-surface lens (capability-phrased + baseline floor) — superseded cluster_fixes
@@ -357,22 +520,30 @@ def main():
         ok = run_mine(_tool_cmd("lens_mine.py") + [c["path"] for c in cloned.values()]
                       + ["--app-type", app_type, "--lens", "robustness-surface", "--emit", str(rob_path)], a.json)
         spines["robustness"] = {"path": str(rob_path), "ok": ok and rob_path.exists()}
-    if a.skip_scope:
+    if "scope" in satisfied:
+        spines["scope"] = {"path": str(feat_path), "ok": True, "source": "registry"}
+    elif a.skip_scope:
         spines["scope"] = "skipped"
     else:
         print(f"→ mining scope spine (lens_mine) from {len(cloned)} clones…", file=sys.stderr)
         ok = run_mine(_tool_cmd("lens_mine.py") + [c["path"] for c in cloned.values()]
                       + ["--app-type", app_type, "--emit", str(feat_path)], a.json)
         spines["scope"] = {"path": str(feat_path), "ok": ok and feat_path.exists()}
-    # operability is deterministic and free (no LLM) — always mined, no skip flag needed
-    print(f"→ mining operability spine (surface_mine, deterministic) from {len(cloned)} clones…", file=sys.stderr)
-    ok = run_mine(_tool_cmd("surface_mine.py") + [c["path"] for c in cloned.values()]
-                  + ["--app-type", app_type, "--emit", str(ops_path)], a.json)
-    spines["operability"] = {"path": str(ops_path), "ok": ok and ops_path.exists()}
-    # issues + tests are VALIDATED GATING lenses (ISSUES +0.41, TESTS +0.61/+0.28 over the
-    # control) — a day-1 map without them is missing the strongest measured predictors
+    # operability is deterministic and free (no LLM) — always mined unless the registry provided it
+    if "operability" in satisfied:
+        spines["operability"] = {"path": str(ops_path), "ok": True, "source": "registry"}
+    else:
+        print(f"→ mining operability spine (surface_mine, deterministic) from {len(cloned)} clones…", file=sys.stderr)
+        ok = run_mine(_tool_cmd("surface_mine.py") + [c["path"] for c in cloned.values()]
+                      + ["--app-type", app_type, "--emit", str(ops_path)], a.json)
+        spines["operability"] = {"path": str(ops_path), "ok": ok and ops_path.exists()}
+    # issues + tests are ADVISORY lenses (both demoted 2026-06-11: high lift, baseline-level
+    # out-of-domain specificity) — still mined for the day-1 map's advisory ranking
     for kind, skip, lens, path in (("issues", a.skip_issues, "issue-surface", iss_path),
                                    ("tests", a.skip_tests, "test-surface", tst_path)):
+        if kind in satisfied:
+            spines[kind] = {"path": str(path), "ok": True, "source": "registry"}
+            continue
         if skip:
             spines[kind] = "skipped"
             continue
