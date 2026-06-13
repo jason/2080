@@ -9,7 +9,9 @@ LLM-call + JSON-extraction substrate so each new lens is a config, not new plumb
 
 Three interchangeable LLM backends behind ONE seam (`fan_batch`):
   native — any OpenAI-compatible chat-completions endpoint, stdlib-only, parallel via threads.
-           Bring your own key: OPENAI_API_KEY (+ OPENAI_BASE_URL for OpenRouter/Azure/local).
+           Bring your own key: OPENAI_API_KEY, or OPENAI_API_KEY_CMD — an external command
+           (OS keychain, vault, password manager) whose stdout is the key, so it never sits
+           in plaintext env/dotfiles (+ OPENAI_BASE_URL for OpenRouter/Azure/local).
   fan    — the `fan` parallel-LLM CLI, used automatically when found on PATH (a local
            accelerator with its own provider auth). Not required by anything.
   claude — Claude Code headless (`claude -p`), billed to a Claude SUBSCRIPTION via the CLI's
@@ -20,7 +22,7 @@ fails loudly with setup guidance). Pin explicitly with LLM_2080_BACKEND=native|f
 Override the model every tool uses with LLM_2080_MODEL (LLM_2080_PROVIDER is fan-only).
 """
 from __future__ import annotations
-import json, os, re, shutil, subprocess, time
+import json, os, re, shlex, shutil, subprocess, sys, time
 import urllib.request, urllib.error
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -59,16 +61,44 @@ FAN_CONCURRENCY = int(os.environ.get("FAN_CONCURRENCY", "16"))
 FAN_RETRIES = int(os.environ.get("FAN_RETRIES", "1"))
 
 
+_key_cmd_cache = {}
+
+
+def resolve_api_key():
+    """API key for the native backend: OPENAI_API_KEY, or — so the key never sits in plaintext
+    env/dotfiles — OPENAI_API_KEY_CMD, an external command whose stdout is the key (OS keychain,
+    vault, password manager; e.g. `security find-generic-password -w -s openai`). The command's
+    output is cached per-process, used only in the Authorization header, and never logged."""
+    k = os.environ.get("OPENAI_API_KEY", "")
+    if k:
+        return k
+    cmd = os.environ.get("OPENAI_API_KEY_CMD", "").strip()
+    if not cmd:
+        return ""
+    if cmd not in _key_cmd_cache:
+        try:
+            r = subprocess.run(shlex.split(cmd), capture_output=True, text=True, timeout=30)
+            _key_cmd_cache[cmd] = r.stdout.strip() if r.returncode == 0 else ""
+        except (OSError, subprocess.TimeoutExpired, ValueError):
+            _key_cmd_cache[cmd] = ""
+        if not _key_cmd_cache[cmd]:
+            # say WHY there's no key (never the value) — a silently-empty key falls through
+            # to a different backend and the misconfiguration surfaces as a billing mystery
+            print("OPENAI_API_KEY_CMD produced no key (non-zero exit, timeout, or empty stdout)",
+                  file=sys.stderr)
+    return _key_cmd_cache[cmd]
+
+
 def backend():
     """native|fan|claude. Explicit LLM_2080_BACKEND wins; otherwise: fan on PATH (accelerator) →
-    OPENAI_API_KEY set (native) → claude CLI on PATH (subscription compute) → native, whose
+    API key available (native) → claude CLI on PATH (subscription compute) → native, whose
     missing-key error then carries the setup guidance."""
     b = os.environ.get("LLM_2080_BACKEND", "").strip().lower()
     if b in ("native", "fan", "claude"):
         return b
     if shutil.which("fan"):
         return "fan"
-    if os.environ.get("OPENAI_API_KEY"):
+    if resolve_api_key():
         return "native"
     if shutil.which("claude"):
         return "claude"
@@ -91,8 +121,13 @@ def llm_runtime():
             "model": os.environ.get("LLM_2080_MODEL") or "gpt-5.5 (tool default)"}
     if b == "native":
         info["base_url"] = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
-        info["key_source"] = "OPENAI_API_KEY (set)" if os.environ.get("OPENAI_API_KEY") \
-            else "OPENAI_API_KEY (MISSING — calls will fail)"
+        if os.environ.get("OPENAI_API_KEY"):
+            info["key_source"] = "OPENAI_API_KEY (set)"
+        elif os.environ.get("OPENAI_API_KEY_CMD"):
+            info["key_source"] = "OPENAI_API_KEY_CMD (external secret command" + \
+                (")" if resolve_api_key() else " — returned NOTHING; calls will fail)")
+        else:
+            info["key_source"] = "OPENAI_API_KEY (MISSING — calls will fail)"
     elif b == "claude":
         info["model"] = os.environ.get("LLM_2080_MODEL") or "haiku (claude-backend default)"
         info["key_source"] = "Claude Code CLI OAuth (subscription; CLAUDE_CODE_OAUTH_TOKEN on servers)"
@@ -176,9 +211,9 @@ def _native_one(call, model, reasoning, timeout_ms, api_key, base_url):
 
 
 def _native_once(calls, model, reasoning, timeout_ms, concurrency):
-    api_key = os.environ.get("OPENAI_API_KEY", "")
+    api_key = resolve_api_key()
     if not api_key:
-        raise RuntimeError("native LLM backend needs OPENAI_API_KEY "
+        raise RuntimeError("native LLM backend needs OPENAI_API_KEY or OPENAI_API_KEY_CMD "
                            "(or install `fan` on PATH / set LLM_2080_BACKEND=fan)")
     base_url = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
     with ThreadPoolExecutor(max_workers=max(1, concurrency)) as ex:

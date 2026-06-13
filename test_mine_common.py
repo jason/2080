@@ -274,6 +274,46 @@ def test_model_env_override_reaches_backend():
         env("LLM_2080_BACKEND", old_b); env("LLM_2080_MODEL", old_m)
 
 
+def test_secret_command_key_reaches_request_and_never_output():
+    # intent: OPENAI_API_KEY_CMD is the non-plaintext credential path (keychain/vault) — if
+    # the command's stdout doesn't land in the Authorization header the feature is a lie, and
+    # if the key value leaks into stdout/stderr diagnostics it's a credential exposure.
+    import io, json as _json, sys as _sys
+    old = {k: os.environ.get(k) for k in ("LLM_2080_BACKEND", "OPENAI_API_KEY", "OPENAI_API_KEY_CMD")}
+    captured = {}
+
+    class FakeResp(io.BytesIO):
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+
+    def fake_urlopen(req, timeout=None):
+        captured["auth"] = req.get_header("Authorization")
+        return FakeResp(_json.dumps({"choices": [{"message": {"content": "pong"}}]}).encode())
+
+    old_urlopen = mine_common.urllib.request.urlopen
+    out_buf, err_buf = io.StringIO(), io.StringIO()
+    old_out, old_err = _sys.stdout, _sys.stderr
+    try:
+        env("LLM_2080_BACKEND", "native")
+        env("OPENAI_API_KEY", None)
+        env("OPENAI_API_KEY_CMD", "printf sk-from-keychain")
+        mine_common._key_cmd_cache.clear()
+        mine_common.urllib.request.urlopen = fake_urlopen
+        _sys.stdout, _sys.stderr = out_buf, err_buf
+        out = fan_batch([{"id": "1", "prompt": "ping"}])
+        rt = mine_common.llm_runtime()
+    finally:
+        _sys.stdout, _sys.stderr = old_out, old_err
+        mine_common.urllib.request.urlopen = old_urlopen
+        mine_common._key_cmd_cache.clear()
+        for k, v in old.items():
+            env(k, v)
+    assert out == {"1": "pong"}
+    assert captured["auth"] == "Bearer sk-from-keychain"
+    assert "sk-from-keychain" not in out_buf.getvalue() + err_buf.getvalue() + _json.dumps(rt)
+    assert "OPENAI_API_KEY_CMD" in rt["key_source"]  # preflight names the SOURCE, not the value
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for fn in fns:
