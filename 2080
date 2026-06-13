@@ -14,10 +14,12 @@ COMMANDS = {
     "emit": ("emit.py", "blocking gaps → agent-ready task queue (json|md)"),
     "mine": ("lens_mine.py", "LLM lenses: feature/robustness/issue/discussions/config/test/docs-surface"),
     "surface": ("surface_mine.py", "deterministic operability lens (no LLM)"),
-    "threat": ("threat_mine.py", "SECURITY lens: neighbor deps → OSV → category threat profile (no LLM)"),
+    "threat": ("threat_mine.py", "SECURITY lens: neighbor deps → OSV → category threat profile; "
+                                 "--scan <target> = target-side supply-chain check (no LLM)"),
     "neighbors": ("find_neighbors.py", "intent → mature neighbor repos via gh"),
     "measure": ("measure.py", "recall-lift controls (spine vs generic baseline)"),
-    "recall": ("measure_recall.py", "gate recall vs a neighbor's own future"),
+    "recall": ("measure_recall.py", "assess-path arm: gate recall + blocking precision vs a "
+                                    "neighbor's own past/future (promotion arm 3)"),
 }
 
 

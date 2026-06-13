@@ -59,3 +59,27 @@ ended by the user.
 Live LLM mode in CI is deliberately out of scope: it would need `fan` plus Codex OAuth credentials
 on the runner. Keep CI on the committed-assessment path; refresh assessments locally where the
 auth lives.
+
+## Secrets and credential handling
+
+2080 is bring-your-own-key and deliberately never persists credentials:
+
+- **Source**: keys are read from the environment (`OPENAI_API_KEY`, optional
+  `OPENAI_BASE_URL` / `LLM_2080_MODEL`), from an external secret command
+  (`OPENAI_API_KEY_CMD`, below), or supplied transparently by the `fan` CLI's own
+  auth when it is on PATH. No tool reads keys from config files, and `.2080.json` has no
+  credential fields — committing it is always safe.
+- **Storage**: nothing under 2080 writes a key to disk — not in saved assessments, caches
+  (`~/.cache/2080-*`), emitted task queues, or measurement JSONs. Keys exist only in process
+  environment for the lifetime of a run.
+- **Diagnostics**: the BYOK preflight (`./2080 check --json`, `llm` field) reports which
+  SOURCE a key came from (env var name / fan), never the value or any prefix of it.
+- **Recommended local setup — `OPENAI_API_KEY_CMD`**: point 2080 at your OS keychain, vault,
+  or password manager and never materialize the key in env/dotfiles at all:
+  `export OPENAI_API_KEY_CMD='security find-generic-password -w -s openai'` (macOS Keychain),
+  `'op read op://dev/openai/key'` (1Password), `'pass show openai'`. The command's stdout is
+  used as the key (cached per-process), flows only into the Authorization header, and is
+  never logged; the preflight reports the source as `OPENAI_API_KEY_CMD`, never the value.
+- **CI**: the shipped workflow is deliberately LLM-free (gates on the committed assessment),
+  so CI needs NO secret at all. If you do run live assessment in CI, use the platform's
+  secret store (GitHub Actions `secrets.*`) — never a committed file.

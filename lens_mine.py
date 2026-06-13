@@ -58,11 +58,13 @@ def neighbor_name(repo_dir):
 # material as ONE text block; `material_label` + `abstract` parameterize the shared synthesis
 # prompt. Aggregation (convergence tiering) and day-1 tells are lens-agnostic in main().
 #
-# GATING DISCIPLINE: an axis gates only after passing BOTH controls — recall lift over the
-# generic baseline AND out-of-domain specificity above the baseline's (check.py
-# VALIDATED_GATING_AXES is the source of truth; currently SCOPE only, +0.27 lift / spec 0.337
-# adjacent and +0.474 foreign). TESTS (+0.61) and ISSUES (+0.41) both proved why lift alone is
-# insufficient: each demoted for baseline-level out-of-domain specificity (breadth).
+# GATING DISCIPLINE: an axis gates only after passing THREE arms — (1) recall lift over the
+# generic baseline and (2) out-of-domain specificity above the baseline's (both measure.py),
+# plus (3) assess-path blocking precision >= 0.70 on its own spine (measure_recall.py — the
+# instrument that exercises the path that actually gates). check.py VALIDATED_GATING_AXES is
+# the source of truth (currently SCOPE only: +0.27 lift / spec 0.337 adjacent, +0.474 foreign).
+# TESTS (+0.61) and ISSUES (+0.41) both proved why lift alone is insufficient: each demoted
+# for baseline-level out-of-domain specificity (breadth).
 # Do not mark a new lens with a gating axis to make it gate.
 
 def _ls_tree(repo):

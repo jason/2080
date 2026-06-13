@@ -81,7 +81,10 @@ export LLM_2080_MODEL=gpt-5.5         # optional: override the model every tool 
 # there is NO setup: 2080 auto-detects the `claude` CLI and runs calls through it.
 # (Force it explicitly with LLM_2080_BACKEND=claude; LLM_2080_MODEL=haiku|sonnet|opus.)
 
-./2080 init <your-repo>                # find neighbors → clone → harvest → mine matched spines
+./2080 init <your-repo>                # registry hit = spines in seconds; else find neighbors → clone → harvest → mine
+# known app types resolve from the spine registry (github.com/jason/2080-registry):
+#   sha256-pinned downloads, trust tiers (curated/validated/advisory), local files always win
+#   --no-registry to always mine; REGISTRY_2080=<index url|path> to point at your own
 ./2080 check <your-repo> --spine checklists/<app-type>.*.json --save-assessment .2080-assessments/
 # ^ battery mode: ONE merged day-1 map — SCOPE gaps gate; the other axes
 #   (issues, operability, tests, config, docs, robustness, security, discussions) render as ranked advisory

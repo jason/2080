@@ -1,6 +1,81 @@
 # 2080 — Handoff
 
-_Last updated: 2026-06-11 (foreign-domain rerun: ISSUES demoted; DISCUSSIONS provisional pass; floor calibrated)_
+_Last updated: 2026-06-12 (spine registry shipped: github.com/jason/2080-registry + init stage-0 lookup)_
+
+## 📦 Spine registry shipped (the network-effects spike)
+
+**Decision record** (full reasoning in the 2026-06-12 session): registry = git repo + CI gate
++ raw-fetch client, NOT a hosted server. Picked over a server because the network effect lives
+in validated-spine content and the contribution loop; a server is premature infra for zero
+users. Index format is the contract so a server can front it later unchanged.
+
+- **github.com/jason/2080-registry**: 21 spines (3 validated SCOPE, 1 curated floor, 14
+  advisory, 3 instruments) + all measurement artifacts. `index.json` = client contract:
+  sha256-pinned entries with trust tier + per-arm validation record. The superseded
+  ai-agent-cli recurring-fix robustness spine was deliberately NOT published (reuse-first).
+- **Contribution gate in registry CI** (deterministic layers only): `validate_spine.py`
+  (shape, size caps, printable charset, **no URLs/protocol strings in category text** — a
+  checklist has no business naming network destinations), `build_index.py --check` (hash/meta
+  drift; every spine needs a consciously-assigned tier), gate tests. Tier promotion to
+  `validated` is maintainer-run battery only — CI enforces the index can't claim what meta
+  doesn't record. Security model documented in the registry README (residual risk: fluent
+  poisoned guidance → human review + pinning + community-never-gates).
+- **`init` stage 0** (v0.3): known app_type → sha256-verified download in seconds instead of
+  a 30–60 min mine. Local files always win; `--force` re-mines; `--no-registry` opts out;
+  `REGISTRY_2080` env points at a private index (local paths supported — tests use fixture
+  registries, never the network). Client hardening is unconditional: hash check + control-char
+  scan on DECODED JSON strings (the raw-bytes version shipped first and the new intent test
+  caught the JSON-escaped-control-char hole — fixed before commit).
+- **Live-verified cold start**: empty dir + `--app-type telegram-llm-bot` → 7 spines
+  downloaded sha256-verified from the live GitHub raw URL, init exit 0 in ~3 s, zero LLM.
+- Also fixed riding along: init's stale "ISSUES/TESTS are VALIDATED gating lenses" comments
+  (both axes demoted 2026-06-11; mining stays, framing corrected).
+
+## 🎯 Promotion arm 3 shipped: blocking precision through the REAL assess path
+
+The "controls certify spine predictiveness, not gate adjudication" loophole is closed.
+`measure_recall.py` (v0.2) now adjudicates every blocking verdict the real
+`diff_target.assess_target` makes at a historical snapshot against the repo's own history —
+ground truth by construction, superseding the 0.77 adversarial-refutation number. Promotion
+now requires THREE arms: lift + out-of-domain specificity (measure.py) + assess-path blocking
+precision ≥ 0.70 with ≥ 5 adjudicated verdicts (measure_recall.py).
+
+**Adjudication rule decided after the first live run exposed a flaw** (recorded in
+`precision_of_run`'s docstring): past-wins (any prior work ⇒ false block) scored LangBot
+partials on categories the repo then built for 2,700 more commits as errors — 0.414 "precision"
+that was actually the gate being right. **Picked:** future-wins (future building = the repo's
+own admission of inadequacy ⇒ right block; built-before-then-dormant = repo's own done-list ⇒
+false block; never-built ⇒ unverified). **Over:** past-wins. **Why:** fail_on=partial's contract
+is "exists-but-incomplete still blocks"; past-wins scores that core behavior as error by
+construction. **Rejected fate:** deleted; both numbers recorded here. To keep future-wins honest
+against a trigger-happy assessor, the instrument also reports false_block_rate on the adequate
+set (built before, dormant after).
+
+**First measurement — SCOPE passes its own arm 3** (LangBot @ 25% snapshot, 2 runs, artifact
+`docs/measurements/assess-arm-scope-langbot.json`): mean blocking precision **0.879** (10 and
+7 adjudicated; the recomputation from 0.414 used the same run's flagged sets, no re-spend).
+Caveats: n=1 repo; false_block_rate 0.5 at n_adequate=2 — an early snapshot leaves almost
+nothing dormant, so the discrimination half is uninformative here. Follow-up: rerun at
+--snapshot-frac 0.6–0.75 where the adequate set is larger; the repeated false block both runs
+was `tool/function permissions`.
+
+## ✅ Self-assessment refreshed — repo gates green on its own spine again
+
+The committed `.2080-assessment.json` predated the floor/demotions. Refreshing it surfaced 4
+real gaps across runs (LLM verdict variance flips borderline categories run-to-run — exactly
+the arm-3 problem above); all 4 closed substantively, no bar-gaming:
+
+- **Languages reporting**: `detect_languages` (pure) — verdict JSON + human output now state
+  which languages the evidence pass covered (`languages` field; mixed-language day-1 tell).
+- **Supply-chain scan**: `threat_mine.py --scan <target>` — the target's own direct deps vs
+  OSV, findings exit 3. Live-verified on dexto: real findings incl. the chalk MAL-2025 attack.
+- **Non-plaintext credentials**: `OPENAI_API_KEY_CMD` (external secret command → stdout is the
+  key; cached per-process, never logged — test proves the value reaches only the Authorization
+  header). INTEGRATIONS.md secrets section documents keychain/1Password/pass recipes.
+- **Reporting surface**: verdict JSON `summary` (status×tier counts) + `health:` line.
+
+Final state: `check.py . --spine ai-codebase-gap-analysis.features.json` → PASS exit 0
+(9 covered + 5 na_by_design of 14 required); committed assessment + CI path re-verified.
 
 ## 🔬 Foreign-domain rerun: ISSUES demoted — SCOPE is the only gating axis
 
