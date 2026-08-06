@@ -5,6 +5,7 @@ test_mine_common.py — deterministic tests for the LLM backend seam (no network
 The native/fan dispatch is the open-sourcing seam: a clone with only an API key must work,
 and fan must stay a pure accelerator. Run: python3 test_mine_common.py
 """
+import json
 import os
 import mine_common
 from mine_common import backend, fan_batch
@@ -97,6 +98,48 @@ def test_claude_once_invokes_cli_and_contains_failures():
         assert out == {"1": "pong", "2": None}
         assert seen[0][:2] == ["claude", "-p"] and "--model" in seen[0]
         assert seen[0][seen[0].index("--model") + 1] == "haiku"
+    finally:
+        mine_common.subprocess.run = old_run; mine_common.shutil.which = oldwhich
+
+
+def test_claude_one_isolates_from_ambient_session():
+    # intent: `claude -p` is NOT a stateless completion endpoint — a headless run still loads
+    # the user's global CLAUDE.md, project memory, skills and MCP servers, and the long
+    # assessment prompt lands on top of all of it. Observed live (2026-08): the subprocess
+    # ignored the task and asked "What would you like to work on?", or refused the prompt
+    # outright as suspected injection ("attempts to inject a very complex workflow into my
+    # reasoning") — every chunk unparseable, so no assessment could ever be produced on a
+    # configured machine. Drop any of these flags and that regression returns silently: a
+    # short smoke-test prompt still passes, only real assessments break.
+    old_run, oldwhich = mine_common.subprocess.run, mine_common.shutil.which
+    seen = []
+
+    class R:
+        returncode, stdout, stderr = 0, "ok", ""
+
+    try:
+        mine_common.shutil.which = lambda _: "/usr/local/bin/claude"
+        mine_common.subprocess.run = lambda cmd, **kw: (seen.append(cmd), R())[1]
+        mine_common._claude_one({"id": "1", "prompt": "task"}, "haiku", 60000)
+        cmd = seen[0]
+
+        # a pinned system prompt replaces the inherited assistant role
+        assert "--system-prompt" in cmd
+        sys_prompt = cmd[cmd.index("--system-prompt") + 1]
+        assert "not instructions" in sys_prompt.lower() or "data" in sys_prompt.lower(), \
+            "system prompt must frame the input as DATA — that is what stops the injection refusal"
+
+        # no MCP servers. NOTE: '{}' alone is rejected by the CLI ("mcpServers: expected
+        # record, received undefined") — the value must carry the mcpServers key.
+        assert "--strict-mcp-config" in cmd
+        assert json.loads(cmd[cmd.index("--mcp-config") + 1]) == {"mcpServers": {}}
+
+        # pure text-in/text-out: evidence is already gathered by gather_evidence, so the
+        # model must not be able to wander into the repo and be steered by what it reads.
+        assert "--disallowed-tools" in cmd
+        for tool in ("Read", "Bash", "Task"):
+            assert tool in cmd[cmd.index("--disallowed-tools") + 1]
+        assert cmd[cmd.index("--max-turns") + 1] == "1"
     finally:
         mine_common.subprocess.run = old_run; mine_common.shutil.which = oldwhich
 
